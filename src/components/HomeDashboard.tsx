@@ -6,8 +6,6 @@ import {
   Network,
   Code2,
   Search,
-  Sun,
-  Moon,
   ArrowRight,
   BookOpen,
   Cpu,
@@ -55,8 +53,6 @@ export type AppView =
 
 interface HomeDashboardProps {
   recentIds: string[];
-  theme: 'dark' | 'light';
-  onToggleTheme: () => void;
   onSelectProtocol: (id: string) => void;
   onSelectIp: (id: string) => void;
   onNavigate: (view: AppView) => void;
@@ -66,8 +62,6 @@ interface HomeDashboardProps {
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   recentIds,
-  theme,
-  onToggleTheme,
   onSelectProtocol,
   onSelectIp,
   onNavigate,
@@ -130,82 +124,103 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <span className="tabular-nums">{GLOSSARY_TERMS.length} Glossary Terms</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onNavigate('completeness-dashboard')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap font-medium"
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            Completeness Dashboard
-          </button>
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap"
-          >
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-700" />}
-            {theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate('completeness-dashboard')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap font-medium"
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          Completeness Dashboard
+        </button>
       </div>
 
-      {/* Hero Split */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      {/* Hero Split — Blueprint Engineering Showcase */}
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-slate-900/55 bg-engineering-grid p-6 sm:p-8 shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
-            <p className="text-xs font-medium text-cyan-700 dark:text-cyan-400 tracking-wide">
-              Understand. Visualize. Verify. · Explore Silicon. Reverse Engineer IP.
-            </p>
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-[1.12] [text-wrap:balance]">
-              Open-Source Semiconductor IP & Protocol Intelligence Hub
+            <div className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
+              <span>Understand. Visualize. Verify.</span>
+              <span aria-hidden="true">·</span>
+              <span>Explore Silicon. Reverse Engineer IP.</span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-[1.1] [text-wrap:balance]">
+              Open-Source Semiconductor IP &amp; Protocol Intelligence Hub
             </h1>
-            <p className="text-base text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
               Examine complete SoC protocols alongside real reverse-engineered open-source silicon from OpenTitan, Ibex, CVA6, Rocket Chip, Vortex GPGPU, Gemmini, and PULP—with dual IP/Protocol Explorers, RTL module trees, HJSON CSR maps, and upstream UVM verification frameworks.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={onOpenSearch}
-              className="flex-1 min-w-[240px] max-w-md flex items-center justify-between px-4 py-2.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-cyan-500 transition-colors cursor-pointer"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Search className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                Search IPs (Ibex, Vortex), RTL modules, protocols, or glossary...
-              </span>
-              <span className="font-mono text-[11px] text-slate-400">Ctrl K</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('ip-universe')}
-              className="px-4 py-2.5 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-500 text-white transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Explore IP Universe
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('simulator')}
-              className="px-4 py-2.5 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              Waveform Lab
-            </button>
-            {onFeelingLucky && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={() => onFeelingLucky('any')}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer whitespace-nowrap"
+                onClick={onOpenSearch}
+                className="flex-1 min-w-[240px] max-w-md flex items-center justify-between px-4 py-2.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-cyan-500 transition-colors cursor-pointer shadow-2xs"
               >
-                <Dices className="w-3.5 h-3.5" />
-                I&apos;m Feeling Lucky
+                <span className="inline-flex items-center gap-2">
+                  <Search className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                  Search IPs (Ibex, Vortex), RTL modules, protocols, or glossary...
+                </span>
+                <span className="font-mono text-[11px] text-slate-400">Ctrl K</span>
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => onNavigate('ip-universe')}
+                className="px-4 py-2.5 text-xs font-semibold rounded-md bg-cyan-600 hover:bg-cyan-500 text-white transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
+              >
+                Explore IP Universe
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('simulator')}
+                className="px-4 py-2.5 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Waveform Lab
+              </button>
+              {onFeelingLucky && (
+                <button
+                  type="button"
+                  onClick={() => onFeelingLucky('any')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Dices className="w-3.5 h-3.5" />
+                  I&apos;m Feeling Lucky
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-200/80 dark:border-slate-800/80 text-xs">
+              <div>
+                <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                  {ALL_PROTOCOLS.length}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Protocols &amp; Standards</div>
+              </div>
+              <div>
+                <div className="font-mono text-lg font-bold text-cyan-700 dark:text-cyan-400 tabular-nums">
+                  {ALL_IPS.length}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Open-Source Silicon IPs</div>
+              </div>
+              <div>
+                <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                  {PROTOCOL_CATEGORIES.length}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Engineering Domains</div>
+              </div>
+              <div>
+                <div className="font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                  L1–L3
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Progressive Depth Model</div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Right Hero Anchor: Dual Spotlights (Core Protocols & Deep IPs) */}
-        <div className="lg:col-span-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/85 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
           <div>
             <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -214,7 +229,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigate('ip-universe')}
-                className="text-xs text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
+                className="text-xs font-medium text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
               >
                 View All {ALL_IPS.length} →
               </button>
@@ -228,7 +243,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     key={id}
                     type="button"
                     onClick={() => onSelectIp(id)}
-                    className="w-full py-2.5 flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 px-2 -mx-2 rounded transition-colors cursor-pointer"
+                    className="w-full py-2.5 flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-900 px-2.5 -mx-2.5 rounded-md transition-colors cursor-pointer"
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">

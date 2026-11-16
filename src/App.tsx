@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Dices, X } from 'lucide-react';
+import { Dices, Moon, Sun, X } from 'lucide-react';
 import { AppView, HomeDashboard } from './components/HomeDashboard';
 import { ProtocolDocView } from './components/ProtocolDocView';
 import { SimulatorLab } from './components/SimulatorLab';
@@ -230,12 +230,12 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-[#0B1120] dark:text-slate-100">
       {/* Strict 3-Zone Top Bar Contract */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-sm">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-8">
+      <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-6">
           <button
             type="button"
             onClick={() => navigate('home')}
-            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0 cursor-pointer"
+            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0 cursor-pointer hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
           >
             VLSI Protocol Atlas
           </button>
@@ -268,7 +268,7 @@ export default function App() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Dices className="w-3.5 h-3.5" />
-              Feeling Lucky
+              <span className="hidden sm:inline">Feeling Lucky</span>
             </button>
             <button
               type="button"
@@ -276,6 +276,20 @@ export default function App() {
               className="px-3.5 py-1.5 text-xs font-medium rounded-md bg-slate-900 dark:bg-cyan-600 text-white hover:bg-slate-800 dark:hover:bg-cyan-500 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Search Atlas
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+              aria-label={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-3.5 h-3.5 text-amber-400" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-slate-700" />
+              )}
+              <span className="hidden lg:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </button>
           </div>
         </div>
@@ -383,8 +397,6 @@ export default function App() {
         {(view === 'home' || view === 'protocol-atlas') && (
           <HomeDashboard
             recentIds={recentIds}
-            theme={theme}
-            onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
             onSelectProtocol={openProtocol}
             onSelectIp={openIp}
             onNavigate={navigate}
@@ -536,8 +548,13 @@ export default function App() {
       {/* Quiet Engineering Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] py-6 px-4 sm:px-6 text-xs text-slate-500 dark:text-slate-400">
         <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div>
-            VLSI Protocol Atlas & Open-Source IP Universe · Grounded in ARM AMBA, PCI-SIG, JEDEC, OpenTitan, Ibex, OpenHW, UC Berkeley, PULP, Vortex & LiteX repositories.
+          <div className="space-y-0.5">
+            <div className="font-medium text-slate-700 dark:text-slate-300">
+              VLSI Protocol Atlas &amp; Open-Source IP Universe · MIT License
+            </div>
+            <div>
+              Grounded in ARM AMBA, PCI-SIG, JEDEC, MIPI, RISC-V, OpenTitan, Ibex, OpenHW, UC Berkeley, PULP, Vortex &amp; LiteX repositories.
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <button type="button" onClick={() => navigate('ip-universe')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">

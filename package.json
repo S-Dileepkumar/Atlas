@@ -1,7 +1,9 @@
 {
-  "name": "react-example",
+  "name": "vlsi-protocol-atlas",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "VLSI Protocol Atlas & Open-Source IP Universe — Interactive semiconductor protocol reference, waveform simulator, RTL explorer, and UVM verification hub.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 220" width="680" height="220">
+  <defs>
+    <!-- Primary Cyan-Blue Silicon Trace Gradient -->
+    <linearGradient id="traceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+
+    <!-- Open-Source & Signal Accent Gradient (Emerald to Teal) -->
+    <linearGradient id="accentGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+
+    <!-- Subtle Glow for Core Silicon Nodes -->
+    <filter id="nodeGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Blueprint Canvas Background -->
+  <rect width="680" height="220" rx="18" fill="#0B1120" />
+  <rect x="4" y="4" width="672" height="212" rx="14" fill="none" stroke="#1E293B" stroke-width="1.5" />
+
+  <!-- Subtle Background Silicon Grid -->
+  <g stroke="#1E293B" stroke-width="0.75" opacity="0.55">
+    <line x1="40" y1="0" x2="40" y2="220" />
+    <line x1="110" y1="0" x2="110" y2="220" />
+    <line x1="180" y1="0" x2="180" y2="220" />
+    <line x1="0" y1="40" x2="230" y2="40" />
+    <line x1="0" y1="110" x2="230" y2="110" />
+    <line x1="0" y1="180" x2="230" y2="180" />
+  </g>
+
+  <!-- ICON MARK: VLSI Silicon Die + Atlas Globe + Open-Source IP Core -->
+  <g transform="translate(110, 110)">
+    
+    <!-- Outer IC Package Pins (Top, Bottom, Left, Right) -->
+    <g stroke="#475569" stroke-width="3" stroke-linecap="round">
+      <!-- Top Pins -->
+      <line x1="-24" y1="-64" x2="-24" y2="-75" />
+      <line x1="-8" y1="-64" x2="-8" y2="-75" />
+      <line x1="8" y1="-64" x2="8" y2="-75" />
+      <line x1="24" y1="-64" x2="24" y2="-75" />
+      <!-- Bottom Pins -->
+      <line x1="-24" y1="64" x2="-24" y2="75" />
+      <line x1="-8" y1="64" x2="-8" y2="75" />
+      <line x1="8" y1="64" x2="8" y2="75" />
+      <line x1="24" y1="64" x2="24" y2="75" />
+      <!-- Left Pins -->
+      <line x1="-64" y1="-24" x2="-75" y2="-24" />
+      <line x1="-64" y1="-8" x2="-75" y2="-8" />
+      <line x1="-64" y1="8" x2="-75" y2="8" />
+      <line x1="-64" y1="24" x2="-75" y2="24" />
+      <!-- Right Pins -->
+      <line x1="64" y1="-24" x2="75" y2="-24" />
+      <line x1="64" y1="-8" x2="75" y2="-8" />
+      <line x1="64" y1="8" x2="75" y2="8" />
+      <line x1="64" y1="24" x2="75" y2="24" />
+    </g>
+
+    <!-- Silicon Chip Die Frame (Beveled Octagonal Die Boundary) -->
+    <polygon points="-46,-62 46,-62 62,-46 62,46 46,62 -46,62 -62,46 -62,-46" fill="#0F172A" stroke="url(#traceGrad)" stroke-width="2.5" />
+
+    <!-- Corner Pin-1 Alignment Dot -->
+    <circle cx="-46" cy="-46" r="3" fill="#10B981" />
+
+    <!-- Atlas Globe (Meridians & Parallels representing Universal Protocol Map) -->
+    <g fill="none" stroke="url(#traceGrad)" stroke-width="1.6" opacity="0.9">
+      <!-- Outer Atlas Sphere -->
+      <circle cx="0" cy="0" r="44" stroke-width="2" />
+      <!-- Vertical Longitude Arcs -->
+      <ellipse cx="0" cy="0" rx="22" ry="44" />
+      <line x1="0" y1="-44" x2="0" y2="44" stroke-dasharray="3 3" />
+      <!-- Horizontal Latitude Arcs -->
+      <ellipse cx="0" cy="0" rx="44" ry="18" />
+      <line x1="-44" y1="0" x2="44" y2="0" />
+    </g>
+
+    <!-- Protocol Bus Traces & Open-Source IP Core Ring -->
+    <g filter="url(#nodeGlow)">
+      <!-- Open-Source Ring (C-shape opening symbolizing open access) -->
+      <path d="M 11,-11 A 15.5,15.5 0 1,0 11,11" fill="none" stroke="url(#accentGrad)" stroke-width="3.5" stroke-linecap="round" />
+
+      <!-- Routing Traces from Core to Globe Intersections -->
+      <path d="M 11,-11 L 24,-24 L 33,-24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" />
+      <path d="M 11,11 L 24,24 L 33,24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" />
+      <path d="M -15.5,0 L -32,0" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" />
+
+      <!-- Protocol / IP Interconnect Vias (Nodes) -->
+      <circle cx="0" cy="0" r="4.5" fill="#10B981" />
+      <circle cx="34" cy="-24" r="3" fill="#38BDF8" />
+      <circle cx="34" cy="24" r="3" fill="#38BDF8" />
+      <circle cx="-33" cy="0" r="3" fill="#10B981" />
+      <circle cx="0" cy="-31" r="2.5" fill="#38BDF8" />
+      <circle cx="0" cy="31" r="2.5" fill="#38BDF8" />
+    </g>
+  </g>
+
+  <!-- Vertical Divider Trace -->
+  <line x1="215" y1="48" x2="215" y2="172" stroke="#1E293B" stroke-width="2" />
+  <circle cx="215" cy="48" r="3" fill="#38BDF8" />
+  <circle cx="215" cy="172" r="3" fill="#10B981" />
+
+  <!-- TYPOGRAPHY & BRANDING -->
+  <g transform="translate(242, 0)">
+    <!-- Primary Title -->
+    <text x="0" y="96" font-family="&#39;Segoe UI&#39;, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="3.5" fill="#F8FAFC">
+      VLSI
+    </text>
+    
+    <!-- Accent Tag Pill next to VLSI -->
+    <rect x="122" y="67" width="112" height="28" rx="6" fill="#10B981" fill-opacity="0.14" stroke="#10B981" stroke-width="1.2" />
+    <text x="178" y="85" text-anchor="middle" font-family="&#39;Courier New&#39;, Courier, monospace" font-size="13" font-weight="700" letter-spacing="1.5" fill="#34D399">
+      OPEN-SOURCE
+    </text>
+
+    <!-- Subtitle: PROTOCOL ATLAS -->
+    <text x="0" y="136" font-family="&#39;Segoe UI&#39;, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif" font-size="30" font-weight="600" letter-spacing="3" fill="url(#traceGrad)">
+      PROTOCOL ATLAS
+    </text>
+
+    <!-- Technical Bus Tagline -->
+    <text x="1" y="166" font-family="&#39;Courier New&#39;, Courier, monospace" font-size="12.5" font-weight="600" letter-spacing="1.4" fill="#94A3B8">
+      BUSES • INTERCONNECTS • VERIFIED IP CORES
+    </text>
+  </g>
+</svg>
