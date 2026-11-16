@@ -1,0 +1,6 @@
+{
+  "name": "VLSI Protocol Atlas",
+  "description": "Understand. Visualize. Verify. An interactive semiconductor protocol reference, SVG waveform simulator, RTL mapper, and UVM verification platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
