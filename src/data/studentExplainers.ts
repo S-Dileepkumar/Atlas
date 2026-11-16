@@ -437,14 +437,25 @@ export function getProtocolStudentExplainer(p: ProtocolDocument): StudentExplain
       keyTakeaway: `Important Note: ${p.name} defines logical cache-coherency state transitions rather than physical pin wiring—typically carried over ACE, CHI, or TileLink.`,
     };
   }
-  if (cat === 'power-mgmt' || cat === 'security' || cat === 'standards') {
+  if (
+    cat === 'power-mgmt' ||
+    cat === 'security' ||
+    cat === 'standards' ||
+    cat === 'dft-test' ||
+    cat === 'clock-cdc' ||
+    cat === 'verif-eda' ||
+    cat === 'proc-arch' ||
+    cat === 'phys-design' ||
+    cat === 'safety' ||
+    cat === 'packaging'
+  ) {
     return {
       analogyTitle: `First-Principles Intuition for ${p.name}`,
-      everydayAnalogy: `${p.name} (${p.fullName}) enforces strict system-wide contracts—either coordinating glitch-free clock/power/reset transitions, protecting hardware keys/integrity against faults, or establishing foundational arithmetic/modeling rules across silicon teams.`,
+      everydayAnalogy: `${p.name} (${p.fullName}) enforces strict engineering contracts—spanning clock/power/CDC safety boundaries, DFT manufacturing testability, EDA verification/signoff standards, processor ISA contracts, cryptographic primitives, functional safety, or 2.5D/3D packaging integration.`,
       threeStepFlow: [
-        '1. Explicit Policy / Contract: Hardware or metadata defines legal operating states, power domains, or integrity bounds.',
-        '2. Synchronized Handshake / Guard: State transitions only proceed after ack/denial or SECDED verification passes.',
-        '3. Safe Commit / Alert: Clean state entry, power saving, or immediate fault-alert escalation occurs deterministically.',
+        '1. Explicit Architecture / Standard Contract: Design intent defines legal timing, power, test, or ISA invariants.',
+        '2. Structural Guard / Verification Check: Synchronizers, BIST/ECC comparators, or static timing/formal signoff enforce correctness.',
+        '3. Deterministic Signoff / Fault Containment: Clean silicon operation, verified coverage, or safe fault escalation completes reliably.',
       ],
       keyTakeaway: p.tagline,
     };

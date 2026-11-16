@@ -5,6 +5,11 @@ import { ALL_IPS } from '../data/ips';
 import { ALL_SOCS } from '../data/socs';
 import { GLOSSARY_TERMS } from '../data/glossary';
 import { AES_CURRICULUM } from '../data/aesCurriculum';
+import {
+  getEntityClassification,
+  getEntityRelationships,
+  getLifecycleStatus,
+} from '../utils/entityTaxonomy';
 
 interface SearchResultItem {
   kind: 'protocol' | 'ip' | 'soc' | 'glossary' | 'aes';
@@ -64,8 +69,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         ...ALL_PROTOCOLS.slice(0, 4).map((p) => ({
           kind: 'protocol' as const,
           targetId: p.id,
-          contextLabel: p.standardBody,
-          matchType: 'Protocol',
+          contextLabel: `${p.standardBody} · ${getLifecycleStatus(p)}`,
+          matchType: getEntityClassification(p),
           title: `${p.name} — ${p.fullName}`,
           snippet: p.tagline,
         })),
@@ -135,17 +140,23 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     }
 
     for (const p of ALL_PROTOCOLS) {
+      const entityCls = getEntityClassification(p);
+      const lifecycle = getLifecycleStatus(p);
+      const relText = getEntityRelationships(p).join(' ');
       if (
         p.name.toLowerCase().includes(q) ||
         p.fullName.toLowerCase().includes(q) ||
         p.tagline.toLowerCase().includes(q) ||
-        p.overview.definition.toLowerCase().includes(q)
+        p.overview.definition.toLowerCase().includes(q) ||
+        entityCls.toLowerCase().includes(q) ||
+        lifecycle.toLowerCase().includes(q) ||
+        relText.toLowerCase().includes(q)
       ) {
         out.push({
           kind: 'protocol',
           targetId: p.id,
-          contextLabel: p.name,
-          matchType: 'Protocol',
+          contextLabel: `${p.standardBody} · ${lifecycle}`,
+          matchType: entityCls,
           title: `${p.name} — ${p.fullName}`,
           snippet: p.tagline,
         });

@@ -34,6 +34,12 @@ import {
 import { ALL_IPS } from '../data/ips';
 import { LayeredExplanationPanel } from './LayeredExplanationPanel';
 import { getProtocolLayeredExplanation } from '../data/conceptDepthEngine';
+import {
+  getEntityClassification,
+  getEntityRelationships,
+  getLifecycleNote,
+  getLifecycleStatus,
+} from '../utils/entityTaxonomy';
 
 interface ProtocolDocViewProps {
   protocol: ProtocolDocument;
@@ -103,6 +109,10 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
 
   const officialLinks = useMemo(() => getProtocolOfficialLinks(protocol), [protocol]);
   const layeredExplanation = useMemo(() => getProtocolLayeredExplanation(protocol), [protocol]);
+  const entityCls = useMemo(() => getEntityClassification(protocol), [protocol]);
+  const lifecycleStatus = useMemo(() => getLifecycleStatus(protocol), [protocol]);
+  const lifecycleNote = useMemo(() => getLifecycleNote(protocol), [protocol]);
+  const relationships = useMemo(() => getEntityRelationships(protocol), [protocol]);
 
   // Sync defaults when switching protocols
   React.useEffect(() => {
@@ -161,11 +171,25 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-cyan-700 dark:text-cyan-400">{entityCls}</span>
+              <span aria-hidden="true">·</span>
+              <span
+                className={
+                  lifecycleStatus === 'Superseded / Merged'
+                    ? 'font-semibold text-amber-700 dark:text-amber-400'
+                    : lifecycleStatus === 'Deprecated / Historical'
+                    ? 'font-semibold text-rose-700 dark:text-rose-400'
+                    : lifecycleStatus === 'Research / Emerging'
+                    ? 'font-semibold text-cyan-700 dark:text-cyan-400'
+                    : 'text-emerald-700 dark:text-emerald-400 font-medium'
+                }
+              >
+                {lifecycleStatus}
+              </span>
+              <span aria-hidden="true">·</span>
               <span>{protocol.standardBody}</span>
               <span aria-hidden="true">·</span>
               <span>{protocol.specVersion}</span>
-              <span aria-hidden="true">·</span>
-              <span>{protocol.depth}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-0.5">
               {protocol.name} <span className="font-normal text-slate-500 dark:text-slate-400 text-lg sm:text-xl">— {protocol.fullName}</span>
@@ -419,6 +443,33 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
                   </ul>
                 </div>
               </div>
+            </div>
+          )}
+
+          {(lifecycleNote ||
+            relationships.length > 0 ||
+            lifecycleStatus === 'Superseded / Merged' ||
+            lifecycleStatus === 'Deprecated / Historical' ||
+            entityCls !== 'Communication Protocol') && (
+            <div
+              className={`rounded-lg border p-4 text-xs space-y-1.5 ${
+                lifecycleStatus === 'Superseded / Merged' || lifecycleStatus === 'Deprecated / Historical'
+                  ? 'border-amber-500/40 bg-amber-50/70 dark:bg-amber-950/25 text-amber-900 dark:text-amber-200'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <div className="font-semibold flex flex-wrap items-center gap-2">
+                <span>Classification: {entityCls}</span>
+                <span aria-hidden="true">·</span>
+                <span>Lifecycle Status: {lifecycleStatus}</span>
+              </div>
+              {lifecycleNote && <p className="leading-relaxed">{lifecycleNote}</p>}
+              {relationships.length > 0 && (
+                <div className="text-[11px] opacity-90">
+                  <strong className="font-semibold">Architecture &amp; Standard Lineage:</strong>{' '}
+                  {relationships.join(' · ')}
+                </div>
+              )}
             </div>
           )}
 

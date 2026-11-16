@@ -1218,6 +1218,244 @@ function makeCategoryTemplate(p: ProtocolDocument): LayeredConceptExplanation {
         siliconDebugPlaybook: `Inspect synthesis/lint reports and compare bit-accurate reference outputs against RTL waveforms on edge inputs (e.g., subnormals/NaN or UPF isolation transitions).`,
       },
     },
+    'dft-test': {
+      level1: {
+        intuitionSummary: `${p.name} (${p.fullName}) is a manufacturing test and silicon diagnostics mechanism used to verify physical transistors and memory arrays after wafer fabrication.`,
+        whyItExists: `Physical silicon defects (bridging shorts, stuck-at faults, marginal SRAM cells) occur randomly during lithography; functional tests alone take too long and miss hidden structural defects.`,
+        everydayAnalogy: `Like built-in airplane pre-flight diagnostic harnesses that test every wire, actuator, and sensor automatically on the ground before passengers ever board.`,
+        stepByStepMentalModel: [
+          `1. Test Mode Entry: ${firstStep}`,
+          `2. Structural Shift / BIST Execution: ${secondStep}`,
+          `3. Signature Compare & Repair: ${thirdStep}`,
+        ],
+        beginnerMisconception: `Confusing DFT test structures with functional I/O protocols—scan, MBIST, and IEEE 1149.x/1687 networks only activate during manufacturing test or debug.`,
+      },
+      level2: {
+        architectureAndMechanics: `${p.architecture.summary} Operates across ${p.channels.join(', ') || 'TAP / Scan / BIST'} with strict test-clock and reset isolation.`,
+        mathematicalAndTimingRules: [
+          `Normative Scope: ${p.standardBody} (${p.year}).`,
+          `Fault Coverage Goal: >99% Stuck-At + >90% Transition-Delay ATPG / March-C+ SRAM screening.`,
+        ],
+        workedEngineeringExample: `During wafer sort ATE runs, testers shift compressed ATPG patterns through ${p.name} wrappers to catch nanoscale defects in milliseconds per die.`,
+        resetAndInitialization: `Test logic asserts asynchronous reset/clamp isolation on functional I/Os before shifting vectors.`,
+      },
+      level3: {
+        rtlMicroarchitecture: `DFT insertion must eliminate combinational test-clock gating glitches, float-proof tri-states, and asynchronous set/reset loops during scan shift.`,
+        cornerCasesAndFailureModes: [
+          {
+            symptom: 'Scan chain fails continuity or produces X-corruption in ATPG simulation.',
+            rootCause: 'Uncontrolled non-scan flop, unmasked analog output, or missing OCC lockup latch across clock domains.',
+            resolution: 'Insert DFT lockup latches on clock-domain crossings and constrain async resets under test_mode.',
+          },
+        ],
+        verificationAndAssertions: `Verify zero X-propagation across parallel/serial scan patterns using gate-level SDF-annotated ATPG simulation.`,
+        siliconDebugPlaybook: `Use JTAG/iJTAG chain bypass diagnostic shifts first to bisect broken scan segments before running full March memory diagnostics.`,
+      },
+    },
+    'clock-cdc': {
+      level1: {
+        intuitionSummary: `${p.name} (${p.fullName}) is an internal microarchitectural timing, synchronization, or power-boundary mechanism—NOT an external chip-to-chip communication bus.`,
+        whyItExists: `Modern SoCs contain dozens of asynchronous clocks, dynamic frequency/voltage islands, and power-gated subsystems; crossing them carelessly guarantees random metastability failures.`,
+        everydayAnalogy: `Imagine synchronized airlocks between rooms at different air pressures: ${p.name} ensures data, resets, or clock enables pass cleanly without half-open doors.`,
+        stepByStepMentalModel: [
+          `1. Domain Boundary Setup: ${firstStep}`,
+          `2. Synchronizer / Glitch Guard: ${secondStep}`,
+          `3. Safe Capture / Quiescence: ${thirdStep}`,
+        ],
+        beginnerMisconception: `Thinking a 2-flop synchronizer solves multi-bit bus crossings—multi-bit buses require Gray coding, Req/Ack handshakes, or Async FIFOs to prevent skew corruption.`,
+      },
+      level2: {
+        architectureAndMechanics: `${p.architecture.summary} Coordinates boundaries cleanly via ${sigNames}.`,
+        mathematicalAndTimingRules: [
+          `MTBF Equation: Mean Time Between Failures grows exponentially with synchronizer resolve time t_MET / tau.`,
+          `Key Rule: ${p.specifications.slice(0, 2).map((s) => `${s.parameter}=${s.value}`).join(' · ')}.`,
+        ],
+        workedEngineeringExample: `When passing pointers or control signals across ${clk} boundaries, ${p.name} guarantees zero glitch propagation and monotonic single-bit transitions.`,
+        resetAndInitialization: `Reset distribution combines asynchronous assertion (works before clocks run) with synchronous deassertion inside every destination domain.`,
+      },
+      level3: {
+        rtlMicroarchitecture: `Enforce ASYNC_REG / dont_touch attributes on synchronizer flops, prohibit combinational logic before Stage-1 flop, and validate UPF clamp values for isolation cells.`,
+        cornerCasesAndFailureModes: [
+          {
+            symptom: 'Rare non-deterministic silicon hang occurring once every several million cycles.',
+            rootCause: 'Reconvergence bug where two independently synchronized bits fan into downstream combinational logic.',
+            resolution: 'Run structural CDC/RDC signoff (SpyGlass/Questa CDC) and pack related bits behind a single handshake or Gray FIFO.',
+          },
+        ],
+        verificationAndAssertions: `Inject randomized +/-1 cycle jitter models in CDC-aware simulation alongside formal structural CDC/RDC signoff.`,
+        siliconDebugPlaybook: `Sweep PLL frequency ratios to hit worst-case phase beats while checking MTBF / FIFO watermark error counters.`,
+      },
+    },
+    'verif-eda': {
+      level1: {
+        intuitionSummary: `${p.name} (${p.fullName}) is a formal hardware description, verification, or EDA interoperability standard—NOT a physical wire-level bus protocol.`,
+        whyItExists: `Chip teams use multiple simulators, linters, formal provers, and coverage databases across organizations; standardized languages and schemas prevent vendor lock-in and simulation ambiguity.`,
+        everydayAnalogy: `Like ISO architectural drafting rules and structural load test codes: they don't carry water or electricity themselves, they verify the blueprint won't fail before pouring concrete.`,
+        stepByStepMentalModel: [
+          `1. Specification Contract: ${firstStep}`,
+          `2. Simulation / Formal Execution: ${secondStep}`,
+          `3. Coverage / Compliance Signoff: ${thirdStep}`,
+        ],
+        beginnerMisconception: `Mistaking UVM, SVA, SystemVerilog, or SystemRDL for hardware buses—these standards describe, stimulate, check, or generate hardware rather than carrying runtime chip traffic.`,
+      },
+      level2: {
+        architectureAndMechanics: `${p.architecture.summary} Normative rules governed by ${p.standardBody} (${p.year}).`,
+        mathematicalAndTimingRules: [
+          `Standard Body: ${p.standardBody} (${p.year}).`,
+          `Scope: ${p.specifications.slice(0, 2).map((s) => `${s.parameter}=${s.value}`).join(' · ')}.`,
+        ],
+        workedEngineeringExample: `Verification architects combine ${p.name} cleanly with constrained-random scoreboards and formal assertions to close functional coverage before tape-out.`,
+        resetAndInitialization: `Simulation and formal engines establish deterministic initial/reset invariants cleanly prior to phase execution.`,
+      },
+      level3: {
+        rtlMicroarchitecture: `Directly dictates RTL lint hygiene, 4-state X-optimism/pessimism traps, SVA sampled-value preponed-region semantics, and UVM phase objection determinism.`,
+        cornerCasesAndFailureModes: [
+          {
+            symptom: 'Test passes in simulation but exhibits hidden race or vacuous assertion coverage.',
+            rootCause: 'Overuse of non-deterministic active-region sampling or missing disable iff reset guards.',
+            resolution: 'Enforce strict IEEE event-scheduler semantics and run vacuity + formal reachability audits.',
+          },
+        ],
+        verificationAndAssertions: `Audit covergroups, assertion vacuity, and multi-simulator reproducibility across Verilator, VCS, Xcelium, and Questa.`,
+        siliconDebugPlaybook: `Cross-compare pre-silicon formal counterexamples or UCIS regression holes directly against silicon bring-up failure signatures.`,
+      },
+    },
+    'proc-arch': {
+      level1: {
+        intuitionSummary: `${p.name} (${p.fullName}) defines Instruction Set Architecture (ISA) or CPU microarchitecture execution mechanics—distinct from external chip interconnect buses.`,
+        whyItExists: `Software compilers require a stable binary ISA contract, while hardware architects exploit out-of-order execution, branch prediction, and vector pipelines underneath to hit maximum IPC.`,
+        everydayAnalogy: `The ISA is the standardized dashboard pedals and steering wheel any driver expects; microarchitecture is the twin-turbo engine and transmission hidden under the hood.`,
+        stepByStepMentalModel: [
+          `1. Fetch & ISA Decode: ${firstStep}`,
+          `2. Rename / Issue / Execute: ${secondStep}`,
+          `3. Architectural Retire & Exception Commit: ${thirdStep}`,
+        ],
+        beginnerMisconception: `Confusing ISA extensions (like RISC-V Vector RVV or ARM SVE instructions) with on-chip bus protocols (like AXI4 or TileLink) that connect the core to L2/DRAM.`,
+      },
+      level2: {
+        architectureAndMechanics: `${p.architecture.summary} Architectural pipelines balance clock frequency against IPC and memory consistency.`,
+        mathematicalAndTimingRules: [
+          `Architecture / Spec: ${p.standardBody} (${p.year}).`,
+          `Key Metrics: ${p.specifications.slice(0, 2).map((s) => `${s.parameter}=${s.value}`).join(' · ')}.`,
+        ],
+        workedEngineeringExample: `When an exception or branch mispredict occurs mid-flight, the Reorder Buffer flushes younger speculative micro-ops cleanly so architectural state matches sequential program order.`,
+        resetAndInitialization: `Reset initializes PC to the reset vector, clears privilege CSRs to Machine/EL3 secure state, and invalidates speculative predictor tables.`,
+      },
+      level3: {
+        rtlMicroarchitecture: `Critical RTL timing paths cluster around register-alias table rename, wakeup-select scheduler CAMs, bypass forwarding muxes, and precise-exception ROB commit.`,
+        cornerCasesAndFailureModes: [
+          {
+            symptom: 'Silent data corruption under multithreaded locks or speculative transient execution leak.',
+            rootCause: 'Store-buffer forwarding hazard violating memory ordering or unmitigated speculative cache timing leak.',
+            resolution: 'Enforce strict acquire/release fence barriers and verify with litmus tests (herd7 / riscv-formal).',
+          },
+        ],
+        verificationAndAssertions: `Co-simulate instruction-by-instruction against golden ISA ISS (Spike / Sail) plus hardware litmus tests and formal equivalence checks.`,
+        siliconDebugPlaybook: `Capture Nexus/RISC-V instruction trace packets and Performance Monitoring Unit (PMU) stall counters to isolate microarchitectural hazards.`,
+      },
+    },
+    'phys-design': {
+      level1: {
+        intuitionSummary: `${p.name} (${p.fullName}) is a physical implementation and tape-out signoff methodology converting synthesized gates into foundry-ready GDSII/OASIS masks.`,
+        whyItExists: `Clean RTL means nothing if wires suffer crosstalk, clocks arrive skewed, or transistors violate foundry spacing rules at 3nm/5nm nodes.`,
+        everydayAnalogy: `Writing RTL is drafting a circuit schematic; physical design is routing millions of copper traces across a multi-layer PCB city without short circuits or signal delays.`,
+        stepByStepMentalModel: [
+          `1. Floorplan & Synthesis: ${firstStep}`,
+          `2. CTS & Detailed Routing: ${secondStep}`,
+          `3. Parasitic Extraction & MMMC STA Signoff: ${thirdStep}`,
+        ],
+        beginnerMisconception: `Assuming RTL clock frequency alone determines silicon Fmax—wire RC delay, clock skew, OCV/POCV margins, and IR-drop dominate modern FinFET/GAA timing.`,
+      },
+      level2: {
+        architectureAndMechanics: `${p.architecture.summary} Coordinates ${p.specifications.slice(0, 2).map((s) => `${s.parameter}=${s.value}`).join(' · ')}.`,
+        mathematicalAndTimingRules: [
+          `Setup Rule: T_launch + T_cq + T_comb <= T_clk + T_capture - T_setup - OCV_margin.`,
+          `Hold Rule: T_launch + T_cq + T_comb >= T_capture + T_hold + OCV_margin (independent of clock period!).`,
+        ],
+        workedEngineeringExample: `Tools read .sdc constraints, place standard cells (.lef/.def), extract .spef wire RC, and solve worst negative slack (WNS >= 0) across all PVT corners.`,
+        resetAndInitialization: `Physical power-grid verification checks IR-drop and decoupling capacitance across active/sleep rush currents.`,
+      },
+      level3: {
+        rtlMicroarchitecture: `High-fanout buses, deep combinational mux trees, and poorly constrained false/multicycle paths bottleneck PnR congestion and force late ECO loops.`,
+        cornerCasesAndFailureModes: [
+          {
+            symptom: 'Chip fails at cold temperature (-40°C) despite passing room-temperature STA.',
+            rootCause: 'Sub-1V FinFET temperature inversion makes cells slower at cold than hot—omitting cold slow corner in MMMC.',
+            resolution: 'Include both slow-cold and slow-hot corners in setup MMMC signoff.',
+          },
+        ],
+        verificationAndAssertions: `Run formal logic equivalence (LEC/Formality) between RTL, post-synth netlist, and post-CTS/ECO GDS netlist.`,
+        siliconDebugPlaybook: `Adjust PLL frequency/VDD shmoo plots on tester ATE to distinguish setup-limited Fmax paths from supply-independent hold failures.`,
+      },
+    },
+    safety: {
+      level1: {
+        intuitionSummary: `${p.name} (${p.fullName}) is a functional safety standard or fault-tolerant silicon architecture ensuring catastrophic failures cannot go undetected in life-critical systems.`,
+        whyItExists: `Cosmic-ray soft errors (SEUs), aging electromigration, or random transistor faults in automotive ADAS, avionics, or medical silicon must be caught within strict FTTI fault budgets.`,
+        everydayAnalogy: `Like dual-pilot aviation controls where two pilots fly identically and an automated monitor immediately alerts and hands control to safe backup if they ever disagree.`,
+        stepByStepMentalModel: [
+          `1. Redundant Execution / ECC Guard: ${firstStep}`,
+          `2. Real-Time Fault Detection: ${secondStep}`,
+          `3. Safe-State Escalation (< FTTI): ${thirdStep}`,
+        ],
+        beginnerMisconception: `Confusing Functional Safety (ISO 26262 protecting against random physical faults & systematic errors) with Cybersecurity (protecting against malicious attackers).`,
+      },
+      level2: {
+        architectureAndMechanics: `${p.architecture.summary} Enforces ${p.specifications.slice(0, 2).map((s) => `${s.parameter}=${s.value}`).join(' · ')}.`,
+        mathematicalAndTimingRules: [
+          `ASIL-D Targets: SPFM >= 99%, LFM >= 90%, PMHF < 10 FIT (10^-8 failures/hour).`,
+          `FTTI: Fault Detection + Reaction must complete inside Fault Tolerant Time Interval.`,
+        ],
+        workedEngineeringExample: `A Dual-Core Lockstep (DCLS) safety island runs delayed checker pipelines 2 cycles behind the primary core so common-mode clock noise hits different instructions.`,
+        resetAndInitialization: `Power-on LBIST/MBIST and Safety Island self-tests verify fault-detection comparators aren't stuck at "always pass" before mission boot.`,
+      },
+      level3: {
+        rtlMicroarchitecture: `Requires temporal/spatial separation in PnR for lockstep cores, SECDED ECC across SRAM/buses, and latent-fault comparator self-test injection hooks.`,
+        cornerCasesAndFailureModes: [
+          {
+            symptom: 'Fault-injection campaign fails ASIL-D SPFM coverage target.',
+            rootCause: 'Untested comparator logic or unguarded interconnect parity between safety island and main SoC.',
+            resolution: 'Add end-to-end bus ECC/CRC and periodically run checker fault-injection diagnostics.',
+          },
+        ],
+        verificationAndAssertions: `Execute formal safety fault-injection (Z01X / VC Functional Safety) toggling single/multi-bit SEUs on every safety-critical flip-flop.`,
+        siliconDebugPlaybook: `Inspect Fault Collection & Control Unit (FCCU) sticky error registers and ECC syndrome logs to localize soft vs permanent hardware faults.`,
+      },
+    },
+    packaging: {
+      level1: {
+        intuitionSummary: `${p.name} (${p.fullName}) covers 2.5D interposer and 3D stacked chiplet packaging technologies replacing monolithic single-die reticles.`,
+        whyItExists: `Leading-edge lithography hits the ~858 mm² reticle limit with skyrocketing yield losses; disaggregating compute, I/O, and HBM across known-good chiplets boosts yield and density.`,
+        everydayAnalogy: `Instead of carving an entire skyscraper out of one giant marble boulder (where one crack ruins everything), modular chiplets bolt factory-tested floors together seamlessly.`,
+        stepByStepMentalModel: [
+          `1. Die Disaggregation & Floorplan: ${firstStep}`,
+          `2. Interposer / EMIB / Hybrid-Bond Routing: ${secondStep}`,
+          `3. Known-Good-Die & Thermal Signoff: ${thirdStep}`,
+        ],
+        beginnerMisconception: `Thinking UCIe/BoW protocol logic replaces physical packaging engineering—2.5D silicon interposers, EMIB bridges, microbumps, and 3D hybrid bonding dictate bandwidth, yield, and heat.`,
+      },
+      level2: {
+        architectureAndMechanics: `${p.architecture.summary} Bridges die boundaries cleanly via ${p.specifications.slice(0, 2).map((s) => `${s.parameter}=${s.value}`).join(' · ')}.`,
+        mathematicalAndTimingRules: [
+          `Shoreline BW: Microbump pitch (~35–55 µm 2.5D) vs Hybrid Bonding (<9 µm 3D) scales areal bandwidth >10×.`,
+          `Key Metrics: ${p.specifications.slice(0, 2).map((s) => `${s.parameter}=${s.value}`).join(' · ')}.`,
+        ],
+        workedEngineeringExample: `AI accelerators pair multiple leading-edge 3nm compute chiplets beside 8-12 HBM stacks on a CoWoS silicon interposer with <0.5 pJ/bit energy per bit.`,
+        resetAndInitialization: `Pre-bond Known-Good-Die (KGD) wafer probing uses IEEE 1838 3D-DFT wrappers so a single bad die never scraps an expensive multi-chip package.`,
+      },
+      level3: {
+        rtlMicroarchitecture: `Floorplanning must align chiplet shoreline macros cleanly with bump-map pitch, thermal hotspots, PDN TSV inductance, and lane-repair spare wires.`,
+        cornerCasesAndFailureModes: [
+          {
+            symptom: 'Package fails warpage or thermal throttling under sustained AI matrix load.',
+            rootCause: 'Unbalanced dark-silicon thermal density on stacked 3D compute tiles without thermal TSV relief.',
+            resolution: 'Co-simulate 3D electro-thermal + mechanical warpage early alongside RTL floorplanning.',
+          },
+        ],
+        verificationAndAssertions: `Verify IEEE 1838 FPP/Die-Wrapper structural continuity and UCIe/BoW lane-repair failover across microbump shorts/opens.`,
+        siliconDebugPlaybook: `Query per-lane eye/BER diagnostics and IEEE 1838 loopback test patterns across interposer bridges to isolate assembly defects.`,
+      },
+    },
   };
 
   return {

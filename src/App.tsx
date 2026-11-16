@@ -19,6 +19,7 @@ import { RepoIngestionView } from './components/RepoIngestionView';
 import { ClockDomainAnalyzerView } from './components/ClockDomainAnalyzerView';
 import { AesDeepDiveView } from './components/AesDeepDiveView';
 import { DocumentationCompletenessDashboard } from './components/DocumentationCompletenessDashboard';
+import { MasterArchitectureView } from './components/MasterArchitectureView';
 import { ALL_PROTOCOLS, getProtocolById } from './data/protocols';
 import { ALL_IPS, getIpById } from './data/ips';
 import { AES_CURRICULUM } from './data/aesCurriculum';
@@ -187,7 +188,7 @@ export default function App() {
     {
       id: 'soc-explorer',
       label: 'SoCs & RTL',
-      matchViews: ['soc-explorer', 'rtl-explorer', 'cdc-analyzer', 'aes-deep-dive', 'verification-hub', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'],
+      matchViews: ['master-architecture', 'soc-explorer', 'rtl-explorer', 'cdc-analyzer', 'aes-deep-dive', 'verification-hub', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'],
     },
     { id: 'glossary', label: 'Glossary', matchViews: ['glossary'] },
   ];
@@ -195,7 +196,7 @@ export default function App() {
   // Context-aware workspace sub-bars: only appear inside multi-view engineering hubs (calm 5-6 links max)
   const PROTOCOL_HUB_VIEWS: AppView[] = ['protocol', 'simulator', 'checker', 'compare', 'soc-map', 'uvm'];
   const IP_HUB_VIEWS: AppView[] = ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare'];
-  const SOC_LAB_VIEWS: AppView[] = ['soc-explorer', 'rtl-explorer', 'cdc-analyzer', 'aes-deep-dive', 'verification-hub', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'];
+  const SOC_LAB_VIEWS: AppView[] = ['master-architecture', 'soc-explorer', 'rtl-explorer', 'cdc-analyzer', 'aes-deep-dive', 'verification-hub', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'];
 
   const subBarLinks: Array<{ id: AppView; label: string }> = PROTOCOL_HUB_VIEWS.includes(view)
     ? [
@@ -216,6 +217,7 @@ export default function App() {
       ]
     : SOC_LAB_VIEWS.includes(view)
     ? [
+        { id: 'master-architecture', label: '16-Domain Atlas' },
         { id: 'soc-explorer', label: 'SoC Explorer' },
         { id: 'rtl-explorer', label: 'RTL Explorer' },
         { id: 'cdc-analyzer', label: 'Clock Domains (CDC)' },
@@ -223,7 +225,6 @@ export default function App() {
         { id: 'verification-hub', label: 'Verification Hub' },
         { id: 'knowledge-graph', label: 'Knowledge Graph' },
         { id: 'completeness-dashboard', label: 'Completeness Audit' },
-        { id: 'repo-ingestion', label: 'Repo Ingestion' },
       ]
     : [];
 
@@ -543,6 +544,14 @@ export default function App() {
             onSelectIp={openIp}
           />
         )}
+
+        {view === 'master-architecture' && (
+          <MasterArchitectureView
+            onSelectProtocol={openProtocol}
+            onSelectIp={openIp}
+            onNavigate={navigate}
+          />
+        )}
       </main>
 
       {/* Quiet Engineering Footer */}
@@ -557,6 +566,9 @@ export default function App() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
+            <button type="button" onClick={() => navigate('master-architecture')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
+              16-Domain Atlas
+            </button>
             <button type="button" onClick={() => navigate('ip-universe')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
               IP Universe
             </button>
@@ -571,9 +583,6 @@ export default function App() {
             </button>
             <button type="button" onClick={() => navigate('glossary')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
               Glossary
-            </button>
-            <button type="button" onClick={() => navigate('uvm')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              UVM Generator
             </button>
           </div>
         </div>

@@ -164,6 +164,31 @@ const DOMAIN_SIGNAL_TEMPLATES: Record<CategoryId, Array<{ name: string; channel:
     { name: 'FORMAT / SPEC_ID', channel: 'Specification', width: '32..64', dir: 'System / Global', rst: '0', desc: 'Canonical encoding, arithmetic, or metadata schema representation.' },
     { name: 'COMPLIANCE_CHK', channel: 'Validation', width: '1', dir: 'System / Global', rst: '1', desc: 'Formal compliance rule / standard assertion gate.' },
   ],
+  'dft-test': [
+    { name: 'TCK / SCAN_CLK', channel: 'Test Clock', width: '1', dir: 'System / Global', rst: '0', desc: 'Dedicated scan shift or IEEE TAP test clock.' },
+    { name: 'TDI / SCAN_IN', channel: 'Test Shift In', width: '1..N', dir: 'Manager -> Subordinate', rst: '0', desc: 'Serialized structural test or MBIST configuration input.' },
+    { name: 'TDO / SCAN_OUT', channel: 'Test Shift Out', width: '1..N', dir: 'Subordinate -> Manager', rst: '0', desc: 'Captured signature / pass-fail repair vector output.' },
+  ],
+  'clock-cdc': [
+    { name: 'SRC_CLK / DST_CLK', channel: 'Clock Domains', width: '1', dir: 'System / Global', rst: '0', desc: 'Independent or ratioed clock domain boundaries.' },
+    { name: 'SYNC_REQ / ACK', channel: 'CDC / Control', width: '1', dir: 'Bidirectional', rst: '0', desc: 'Multi-flop synchronized handshake or isolation control.' },
+  ],
+  'verif-eda': [
+    { name: 'SPEC_CONTRACT', channel: 'Language / Standard', width: 'N/A', dir: 'System / Global', rst: '0', desc: 'Normative HDL, UVM, assertion, or EDA verification semantics.' },
+  ],
+  'proc-arch': [
+    { name: 'PC / INST_WORD', channel: 'Fetch / Decode', width: '32..64', dir: 'Manager -> Subordinate', rst: '0', desc: 'Program counter and ISA instruction opcode stream.' },
+    { name: 'WB_COMMIT', channel: 'Retire / ROB', width: '64', dir: 'Subordinate -> Manager', rst: '0', desc: 'In-order architectural register writeback and trap status.' },
+  ],
+  'phys-design': [
+    { name: 'TIMING_SLACK', channel: 'MMMC Signoff', width: 'Float', dir: 'System / Global', rst: '0', desc: 'Static Timing Analysis required-minus-arrival path margin.' },
+  ],
+  safety: [
+    { name: 'LOCKSTEP_ERR', channel: 'Safety Island', width: '1', dir: 'Subordinate -> Manager', rst: '0', desc: 'Cycle-by-cycle dual-core redundant comparator mismatch fault.' },
+  ],
+  packaging: [
+    { name: 'uBUMP / TSV_IO', channel: '2.5D / 3D Interconnect', width: 'N', dir: 'Bidirectional', rst: '0', desc: 'Fine-pitch interposer microbump or vertical TSV die stack.' },
+  ],
 };
 
 function makeSignalsForTuple(t: CatalogTuple): SignalDefinition[] {

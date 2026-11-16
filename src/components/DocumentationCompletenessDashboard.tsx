@@ -23,6 +23,11 @@ import {
   CompletenessReport,
   CompletenessStatus,
 } from '../utils/completenessTracker';
+import {
+  ENTITY_CLASSIFICATIONS,
+  getEntityClassification,
+  getLifecycleStatus,
+} from '../utils/entityTaxonomy';
 
 interface DocumentationCompletenessDashboardProps {
   onSelectProtocol: (protocolId: string) => void;
@@ -35,6 +40,8 @@ interface AuditedEntity {
   key: string;
   id: string;
   kind: EntityKind;
+  entityType: string;
+  lifecycleStatus: string;
   name: string;
   subtitle: string;
   domain: string;
@@ -119,6 +126,7 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
   onSelectIp,
 }) => {
   const [kindFilter, setKindFilter] = useState<'ALL' | EntityKind>('ALL');
+  const [entityTypeFilter, setEntityTypeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETE' | 'INCOMPLETE' | 'VERIFY'>('ALL');
   const [selectedTopic, setSelectedTopic] = useState<string>('ALL');
   const [topicStatusFilter, setTopicStatusFilter] = useState<'ALL' | CompletenessStatus>('ALL');
@@ -139,6 +147,8 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
       key: `proto:${p.id}`,
       id: p.id,
       kind: 'Protocol',
+      entityType: getEntityClassification(p),
+      lifecycleStatus: getLifecycleStatus(p),
       name: p.name,
       subtitle: p.fullName,
       domain: categoryNameMap[p.categoryId] || p.categoryId,
@@ -150,6 +160,8 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
       key: `ip:${ip.id}`,
       id: ip.id,
       kind: 'Open-Source IP',
+      entityType: 'Open-Source Silicon IP',
+      lifecycleStatus: ip.confidence,
       name: ip.name,
       subtitle: `${getProjectById(ip.projectId).name} · ${ip.rtlLanguage}`,
       domain: ip.category,
@@ -239,6 +251,7 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
   const filteredEntities = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = scopedBase.filter((ent) => {
+      if (entityTypeFilter !== 'ALL' && ent.entityType !== entityTypeFilter) return false;
       if (statusFilter === 'COMPLETE' && ent.report.percentComplete < 100) return false;
       if (statusFilter === 'INCOMPLETE' && ent.report.percentComplete === 100) return false;
       if (
@@ -261,6 +274,8 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
           ent.name.toLowerCase().includes(q) ||
           ent.subtitle.toLowerCase().includes(q) ||
           ent.domain.toLowerCase().includes(q) ||
+          ent.entityType.toLowerCase().includes(q) ||
+          ent.lifecycleStatus.toLowerCase().includes(q) ||
           ent.id.toLowerCase().includes(q);
         if (!match) return false;
       }
@@ -277,7 +292,7 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
       sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
     return sorted;
-  }, [scopedBase, statusFilter, selectedTopic, topicStatusFilter, query, sortBy]);
+  }, [scopedBase, entityTypeFilter, statusFilter, selectedTopic, topicStatusFilter, query, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredEntities.length / pageSize));
   const clampedPage = Math.min(page, totalPages - 1);
@@ -492,7 +507,7 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
       {/* Filter Bar + Entity Checklist Matrix */}
       <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 text-xs items-center">
-          <div className="lg:col-span-4 relative">
+          <div className="lg:col-span-3 relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -501,9 +516,28 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
                 setQuery(e.target.value);
                 setPage(0);
               }}
-              placeholder="Filter protocols, IPs, standards, or projects..."
+              placeholder="Filter protocols, standards, IPs..."
               className="w-full pl-8 pr-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500"
             />
+          </div>
+
+          <div className="lg:col-span-3">
+            <select
+              value={entityTypeFilter}
+              onChange={(e) => {
+                setEntityTypeFilter(e.target.value);
+                setPage(0);
+              }}
+              className="w-full px-2.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+            >
+              <option value="ALL">All Entity Types</option>
+              <option value="Open-Source Silicon IP">Open-Source Silicon IP</option>
+              {ENTITY_CLASSIFICATIONS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.id}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="lg:col-span-2">
@@ -540,33 +574,30 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
             </select>
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 flex gap-2">
             <select
               value={topicStatusFilter}
               onChange={(e) => {
                 setTopicStatusFilter(e.target.value as typeof topicStatusFilter);
                 setPage(0);
               }}
-              className="w-full px-2.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+              className="w-1/2 px-2 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100"
             >
-              <option value="ALL">Any Checkpoint Status</option>
-              <option value="Documented">Documented</option>
-              <option value="Partially documented">Partially documented</option>
-              <option value="Requires source verification">Requires source verification</option>
-              <option value="Not yet documented">Not yet documented</option>
-              <option value="Not applicable">Not applicable</option>
+              <option value="ALL">Any Status</option>
+              <option value="Documented">Doc</option>
+              <option value="Partially documented">Partial</option>
+              <option value="Requires source verification">Verify</option>
+              <option value="Not yet documented">Missing</option>
+              <option value="Not applicable">N/A</option>
             </select>
-          </div>
-
-          <div className="lg:col-span-2">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="w-full px-2.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+              className="w-1/2 px-2 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100"
             >
-              <option value="high-first">Sort: Highest %</option>
-              <option value="gap-first">Sort: Gaps First</option>
-              <option value="name">Sort: A → Z</option>
+              <option value="high-first">High %</option>
+              <option value="gap-first">Gaps 1st</option>
+              <option value="name">A → Z</option>
             </select>
           </div>
         </div>
@@ -620,11 +651,11 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
                     {/* Left Identity */}
                     <div className="min-w-0 lg:w-1/3">
                       <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                        <span className="font-semibold text-cyan-700 dark:text-cyan-400">{ent.kind}</span>
+                        <span className="font-semibold text-cyan-700 dark:text-cyan-400">{ent.entityType}</span>
                         <span aria-hidden="true">·</span>
                         <span>{ent.domain}</span>
                         <span aria-hidden="true">·</span>
-                        <span>{ent.depthOrConfidence}</span>
+                        <span>{ent.lifecycleStatus}</span>
                       </div>
                       <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 mt-0.5 truncate">
                         {ent.name}{' '}

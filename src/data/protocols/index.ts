@@ -6,6 +6,9 @@ import { apbProtocol } from './apb';
 import { pcieGen5Protocol } from './pcieGen5';
 import { ADDITIONAL_PROTOCOLS } from './additionalProtocols';
 import { COMPREHENSIVE_CATALOG_PROTOCOLS } from './comprehensiveCatalog';
+import { EXPANDED_PART1_PROTOCOLS } from './expandedProtocolPart1';
+import { EXPANDED_PART2_PROTOCOLS } from './expandedProtocolPart2';
+import { EXPANDED_PART3_PROTOCOLS } from './expandedProtocolPart3';
 
 const RAW_PROTOCOLS: ProtocolDocument[] = [
   axi4Protocol,
@@ -15,6 +18,9 @@ const RAW_PROTOCOLS: ProtocolDocument[] = [
   pcieGen5Protocol,
   ...ADDITIONAL_PROTOCOLS,
   ...COMPREHENSIVE_CATALOG_PROTOCOLS,
+  ...EXPANDED_PART1_PROTOCOLS,
+  ...EXPANDED_PART2_PROTOCOLS,
+  ...EXPANDED_PART3_PROTOCOLS,
 ];
 
 const seenIds = new Set<string>();

@@ -19,15 +19,22 @@ import {
   Dices,
   BarChart3,
 } from 'lucide-react';
-import { CategoryId } from '../types/protocol';
+import { CategoryId, EntityClassification, LifecycleStatus } from '../types/protocol';
 import { LEARNING_PATHS, PROTOCOL_CATEGORIES } from '../data/categories';
 import { ALL_PROTOCOLS, getProtocolById } from '../data/protocols';
 import { ALL_IPS, PROJECTS, getIpById, getProjectById } from '../data/ips';
 import { ALL_SOCS } from '../data/socs';
 import { GLOSSARY_TERMS } from '../data/glossary';
+import {
+  ENTITY_CLASSIFICATIONS,
+  LIFECYCLE_STATUSES,
+  getEntityClassification,
+  getLifecycleStatus,
+} from '../utils/entityTaxonomy';
 
 export type AppView =
   | 'home'
+  | 'master-architecture'
   | 'protocol-atlas'
   | 'protocol'
   | 'ip-universe'
@@ -69,6 +76,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onFeelingLucky,
 }) => {
   const [activeCategory, setActiveCategory] = useState<CategoryId | 'all'>('all');
+  const [entityFilter, setEntityFilter] = useState<EntityClassification | 'ALL'>('ALL');
+  const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleStatus | 'ALL'>('ALL');
   const [inlineFilter, setInlineFilter] = useState('');
   const [showAllDirectory, setShowAllDirectory] = useState(false);
 
@@ -84,22 +93,30 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         activeCategory === 'all' ||
         p.categoryId === activeCategory ||
         Boolean(activeCategoryObj?.protocolIds.includes(p.id));
+      const entMatch = entityFilter === 'ALL' || getEntityClassification(p) === entityFilter;
+      const lcMatch = lifecycleFilter === 'ALL' || getLifecycleStatus(p) === lifecycleFilter;
       const qMatch =
         !q ||
         p.name.toLowerCase().includes(q) ||
         p.fullName.toLowerCase().includes(q) ||
         p.tagline.toLowerCase().includes(q) ||
         p.standardBody.toLowerCase().includes(q);
-      return catMatch && qMatch;
+      return catMatch && entMatch && lcMatch && qMatch;
     });
-  }, [activeCategory, activeCategoryObj, inlineFilter]);
+  }, [activeCategory, activeCategoryObj, entityFilter, lifecycleFilter, inlineFilter]);
 
   const visibleDirectoryProtocols = useMemo(() => {
-    if (activeCategory !== 'all' || inlineFilter.trim().length > 0 || showAllDirectory) {
+    if (
+      activeCategory !== 'all' ||
+      entityFilter !== 'ALL' ||
+      lifecycleFilter !== 'ALL' ||
+      inlineFilter.trim().length > 0 ||
+      showAllDirectory
+    ) {
       return filteredProtocols;
     }
     return filteredProtocols.slice(0, 24);
-  }, [activeCategory, inlineFilter, showAllDirectory, filteredProtocols]);
+  }, [activeCategory, entityFilter, lifecycleFilter, inlineFilter, showAllDirectory, filteredProtocols]);
 
   const primaryFiveIds = ['axi4', 'axi4-lite', 'axi4-stream', 'apb', 'pcie-gen5'];
   const spotlightIpIds = ['ibex', 'opentitan-aes', 'cva6', 'vortex-gpu', 'gemmini'];
@@ -124,14 +141,24 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <span className="tabular-nums">{GLOSSARY_TERMS.length} Glossary Terms</span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onNavigate('completeness-dashboard')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap font-medium"
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          Completeness Dashboard
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onNavigate('master-architecture')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            16-Domain Knowledge Architecture
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('completeness-dashboard')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            Completeness Dashboard
+          </button>
+        </div>
       </div>
 
       {/* Hero Split — Blueprint Engineering Showcase */}
@@ -359,14 +386,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
+            { view: 'master-architecture' as AppView, title: '16-Domain Architecture', desc: 'Explore CPU ISA, Packaging, Physical Design, FuSa, DFT & Taxonomy', icon: Layers },
+            { view: 'completeness-dashboard' as AppView, title: 'Completeness Dashboard', desc: '16-topic MASTER INSTRUCTION checklist & coverage gaps', icon: BarChart3 },
             { view: 'simulator' as AppView, title: 'Waveform Studio', desc: 'Simulate AXI4, Lite, Stream, APB, SPI, I2C & UART', icon: Activity },
             { view: 'checker' as AppView, title: 'Compliance Checker', desc: 'Validate traces against AMBA & TL-UL rules', icon: CheckSquare },
             { view: 'compare' as AppView, title: 'Protocol Compare', desc: 'Compare AXI4, AHB, TileLink, PCIe Gen5/6 & DDR', icon: GitCompare },
             { view: 'soc-map' as AppView, title: 'Bus Fabric Map', desc: 'Trace CPU, DMA, NoC, DDR5, PCIe & RoT links', icon: Network },
             { view: 'uvm' as AppView, title: 'UVM & SVA Gen', desc: 'Generate parameterized SV interfaces & agents', icon: Code2 },
             { view: 'glossary' as AppView, title: 'Silicon Glossary', desc: `${GLOSSARY_TERMS.length} linked protocol, RTL & DV terms`, icon: BookOpen },
-            { view: 'completeness-dashboard' as AppView, title: 'Completeness Dashboard', desc: '16-topic MASTER INSTRUCTION checklist & coverage gaps', icon: BarChart3 },
-            { view: 'repo-ingestion' as AppView, title: 'Repo Ingestion Pipeline', desc: 'Inspect automated RTL, CSR & verification extraction rules', icon: FolderTree },
           ].map((tool) => {
             const Icon = tool.icon;
             return (
@@ -462,24 +489,50 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </div>
       </section>
 
-      {/* Complete 23-Domain Protocol & Standards Ecosystem Directory */}
+      {/* Complete 30-Domain Semiconductor Ecosystem Directory */}
       <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              Complete 23-Domain Protocol & Standards Ecosystem Directory
+              Complete {PROTOCOL_CATEGORIES.length}-Domain Semiconductor Protocol, Architecture &amp; Standards Directory
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Browse all {PROTOCOL_CATEGORIES.length} semiconductor communication & interface domains covering {ALL_PROTOCOLS.length}+ protocols, buses, PHYs, and reference standards.
+              Browse all {PROTOCOL_CATEGORIES.length} specialized domains covering {ALL_PROTOCOLS.length} protocols, PHYs, ISA architectures, CDC/reset mechanisms, DFT, verification standards, and packaging flows.
             </p>
           </div>
-          <input
-            type="text"
-            value={inlineFilter}
-            onChange={(e) => setInlineFilter(e.target.value)}
-            placeholder="Filter protocols, standards, or buses..."
-            className="px-3 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-64 focus:outline-none focus:border-cyan-500"
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={entityFilter}
+              onChange={(e) => setEntityFilter(e.target.value as EntityClassification | 'ALL')}
+              className="px-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            >
+              <option value="ALL">All Entity Types</option>
+              {ENTITY_CLASSIFICATIONS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.id}
+                </option>
+              ))}
+            </select>
+            <select
+              value={lifecycleFilter}
+              onChange={(e) => setLifecycleFilter(e.target.value as LifecycleStatus | 'ALL')}
+              className="px-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            >
+              <option value="ALL">All Lifecycles</option>
+              {LIFECYCLE_STATUSES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={inlineFilter}
+              onChange={(e) => setInlineFilter(e.target.value)}
+              placeholder="Filter protocols, standards, or buses..."
+              className="px-3 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-56 focus:outline-none focus:border-cyan-500"
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
@@ -529,50 +582,70 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {visibleDirectoryProtocols.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => onSelectProtocol(p.id)}
-              className="p-4 text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500/60 transition-colors cursor-pointer flex flex-col justify-between gap-3"
-            >
-              <div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {p.standardBody} · {p.depth}
+          {visibleDirectoryProtocols.map((p) => {
+            const entityCls = getEntityClassification(p);
+            const lifecycle = getLifecycleStatus(p);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onSelectProtocol(p.id)}
+                className="p-4 text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500/60 transition-colors cursor-pointer flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="font-semibold text-cyan-700 dark:text-cyan-400">{entityCls}</span>
+                    <span aria-hidden="true"> · </span>
+                    <span
+                      className={
+                        lifecycle === 'Superseded / Merged'
+                          ? 'text-amber-700 dark:text-amber-400 font-medium'
+                          : lifecycle === 'Deprecated / Historical'
+                          ? 'text-rose-700 dark:text-rose-400 font-medium'
+                          : ''
+                      }
+                    >
+                      {lifecycle}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+                    {p.name}
+                    <span className="font-normal text-xs text-slate-500 dark:text-slate-400 ml-2">
+                      {p.fullName}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                    {p.tagline}
+                  </p>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
-                  {p.name}
-                  <span className="font-normal text-xs text-slate-500 dark:text-slate-400 ml-2">
-                    {p.fullName}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                  <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                    {p.standardBody} · {p.signals.length} signals
                   </span>
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
-                  {p.tagline}
-                </p>
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums">
-                  {p.signals.length} signals · {p.waveforms.length} waveform{p.waveforms.length > 1 ? 's' : ''}
-                </span>
-                <span className="font-medium text-cyan-700 dark:text-cyan-400">Explore Spec →</span>
-              </div>
-            </button>
-          ))}
+                  <span className="font-medium text-cyan-700 dark:text-cyan-400">Explore Spec →</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {activeCategory === 'all' && !inlineFilter.trim() && filteredProtocols.length > 24 && (
-          <div className="flex justify-center pt-2">
-            <button
-              type="button"
-              onClick={() => setShowAllDirectory((prev) => !prev)}
-              className="px-4 py-2 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer"
-            >
-              {showAllDirectory
-                ? 'Show Top 24 Featured Protocols Only'
-                : `Show All ${filteredProtocols.length} Protocols & Standards Across 23 Domains`}
-            </button>
-          </div>
-        )}
+        {activeCategory === 'all' &&
+          entityFilter === 'ALL' &&
+          lifecycleFilter === 'ALL' &&
+          !inlineFilter.trim() &&
+          filteredProtocols.length > 24 && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAllDirectory((prev) => !prev)}
+                className="px-4 py-2 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer"
+              >
+                {showAllDirectory
+                  ? 'Show Top 24 Featured Entries Only'
+                  : `Show All ${filteredProtocols.length} Entries Across ${PROTOCOL_CATEGORIES.length} Domains`}
+              </button>
+            </div>
+          )}
       </section>
 
       {/* Authoritative Specification Sources & Open-Source Silicon Repositories */}

@@ -1,5 +1,6 @@
 import { IpEntity } from '../types/ipUniverse';
 import { ProtocolDocument } from '../types/protocol';
+import { getEntityClassification, getLifecycleStatus } from './entityTaxonomy';
 
 export type CompletenessStatus =
   | 'Documented'
@@ -23,6 +24,19 @@ export interface CompletenessReport {
 }
 
 export function auditProtocolCompleteness(p: ProtocolDocument): CompletenessReport {
+  const entityCls = getEntityClassification(p);
+  const lifecycle = getLifecycleStatus(p);
+  const isWireOrPhy =
+    entityCls === 'Communication Protocol' ||
+    entityCls === 'Electrical & PHY Interface' ||
+    entityCls === 'Manufacturing & Test Standard';
+  const nonBusEntity =
+    entityCls === 'Design & Verification Standard' ||
+    entityCls === 'EDA Format & Methodology' ||
+    entityCls === 'Security Algorithm' ||
+    entityCls === 'Functional Safety Standard' ||
+    entityCls === 'Hardware Architecture';
+
   const items: CompletenessTopicItem[] = [
     {
       topic: 'Fundamentals',
@@ -32,7 +46,7 @@ export function auditProtocolCompleteness(p: ProtocolDocument): CompletenessRepo
     {
       topic: 'Architecture',
       status: p.architecture.nodes.length >= 2 && p.architecture.links.length >= 1 ? 'Documented' : 'Partially documented',
-      detail: `${p.architecture.nodes.length} blocks and ${p.architecture.links.length} bus/data paths.`,
+      detail: `${p.architecture.nodes.length} blocks and ${p.architecture.links.length} structural/data paths (${entityCls}).`,
     },
     {
       topic: 'Specifications',
@@ -41,13 +55,18 @@ export function auditProtocolCompleteness(p: ProtocolDocument): CompletenessRepo
     },
     {
       topic: 'Signals',
-      status:
-        p.signals.length >= 5 && p.signals.every((s) => s.timingRules && s.legalConditions)
-          ? 'Documented'
-          : p.signals.length > 0
+      status: nonBusEntity
+        ? p.signals.length >= 1
           ? 'Partially documented'
-          : 'Not yet documented',
-      detail: `${p.signals.length} signals documented across ${p.channels.length} channels.`,
+          : 'Not applicable'
+        : p.signals.length >= 5 && p.signals.every((s) => s.timingRules && s.legalConditions)
+        ? 'Documented'
+        : p.signals.length > 0
+        ? 'Partially documented'
+        : 'Not yet documented',
+      detail: nonBusEntity
+        ? `${entityCls}: tracks key architectural/standard indicators (${p.signals.length}) rather than wire-level bus pins.`
+        : `${p.signals.length} signals documented across ${p.channels.length} channels.`,
     },
     {
       topic: 'Transactions',
@@ -56,40 +75,47 @@ export function auditProtocolCompleteness(p: ProtocolDocument): CompletenessRepo
     },
     {
       topic: 'Timing',
-      status: p.waveforms.length >= 2 ? 'Documented' : p.waveforms.length === 1 ? 'Partially documented' : 'Not yet documented',
+      status:
+        !isWireOrPhy && p.waveforms.length === 0
+          ? 'Not applicable'
+          : p.waveforms.length >= 2
+          ? 'Documented'
+          : p.waveforms.length === 1
+          ? 'Partially documented'
+          : 'Not yet documented',
       detail: `${p.waveforms.length} cycle-by-cycle interactive waveform scenario(s).`,
     },
     {
       topic: 'RTL hierarchy',
       status: 'Not applicable',
-      detail: 'Bus protocol specification; RTL module trees live inside concrete Open-Source IP pages implementing this bus.',
+      detail: `${entityCls}; full RTL module hierarchies reside inside concrete Open-Source IP pages.`,
     },
     {
       topic: 'Internal modules',
       status: p.rtl.codeSnippet ? 'Partially documented' : 'Not applicable',
-      detail: 'Includes reference RTL behavioral snippet; full submodule synthesis lives in IP Explorer.',
+      detail: 'Includes reference RTL/methodology snippet; full submodule synthesis lives in IP Explorer.',
     },
     {
       topic: 'Registers',
       status: 'Not applicable',
-      detail: 'Wire-level bus/link protocol (CSR maps depend on the attached peripheral or host controller IP).',
+      detail: 'Architectural / standard specification (MMIO CSR maps belong to specific peripheral/controller IPs).',
     },
     {
       topic: 'Parameters',
       status: p.specifications.some((s) => s.classification === 'Configurable Parameter')
         ? 'Documented'
         : 'Partially documented',
-      detail: 'Width, ID, burst, and frequency parameterization tracked in Specification table.',
+      detail: 'Width, ID, timing, or standard profile parameterization tracked in Specification table.',
     },
     {
       topic: 'Verification',
       status: p.verification.uvmArchitecture && p.verification.uvmSnippet ? 'Documented' : 'Partially documented',
-      detail: 'UVM driver, monitor, scoreboard architecture and verification plan.',
+      detail: 'UVM/formal verification methodology and reference check plan.',
     },
     {
       topic: 'Assertions',
       status: p.verification.svaSnippet || p.signals.some((s) => s.svaAssertion) ? 'Documented' : 'Not yet documented',
-      detail: 'SystemVerilog Assertions (SVA) on signal handshakes and protocol invariants.',
+      detail: 'SystemVerilog Assertions (SVA) and formal invariants.',
     },
     {
       topic: 'Coverage',
@@ -99,17 +125,17 @@ export function auditProtocolCompleteness(p: ProtocolDocument): CompletenessRepo
     {
       topic: 'Debugging',
       status: p.debuggingLab.length >= 2 ? 'Documented' : p.debuggingLab.length === 1 ? 'Partially documented' : 'Not yet documented',
-      detail: `${p.debuggingLab.length} interactive broken-vs-expected waveform debugging scenario(s).`,
+      detail: `${p.debuggingLab.length} interactive broken-vs-expected failure scenario(s).`,
     },
     {
       topic: 'Corner cases',
       status: p.verification.cornerCases.length >= 3 ? 'Documented' : p.verification.cornerCases.length > 0 ? 'Partially documented' : 'Not yet documented',
-      detail: `${p.verification.cornerCases.length} corner-case & deadlock failure analyses.`,
+      detail: `${p.verification.cornerCases.length} corner-case & failure mode analyses.`,
     },
     {
       topic: 'References',
       status: p.sources.length > 0 ? 'Documented' : 'Requires source verification',
-      detail: `${p.sources.length} primary specification source citation(s).`,
+      detail: `${p.sources.length} primary specification source citation(s) · Lifecycle: ${lifecycle}.`,
     },
   ];
 
@@ -120,7 +146,7 @@ export function auditProtocolCompleteness(p: ProtocolDocument): CompletenessRepo
     documentedCount: documented,
     applicableCount: applicable.length,
     percentComplete: Math.round((documented / Math.max(1, applicable.length)) * 100),
-    note: `Strict audit across ${applicable.length} protocol-applicable checklists (${items.length - applicable.length} RTL/CSR items marked Not applicable).`,
+    note: `${entityCls} (${lifecycle}) — ${applicable.length} applicable checklists (${items.length - applicable.length} RTL/CSR/bus-specific items marked N/A).`,
   };
 }
 

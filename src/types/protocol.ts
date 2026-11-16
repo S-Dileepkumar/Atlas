@@ -116,11 +116,33 @@ export interface BlockDiagramLink {
   bidirectional?: boolean;
 }
 
+export type EntityClassification =
+  | 'Communication Protocol'
+  | 'Electrical & PHY Interface'
+  | 'Hardware Architecture'
+  | 'Microarchitectural Mechanism'
+  | 'Design & Verification Standard'
+  | 'Manufacturing & Test Standard'
+  | 'EDA Format & Methodology'
+  | 'Security Algorithm'
+  | 'Functional Safety Standard';
+
+export type LifecycleStatus =
+  | 'Currently Maintained'
+  | 'Superseded / Merged'
+  | 'Deprecated / Historical'
+  | 'Proprietary'
+  | 'Research / Emerging';
+
 export interface ProtocolDocument {
   id: string;
   name: string;
   fullName: string;
   categoryId: CategoryId;
+  entityType?: EntityClassification;
+  lifecycleStatus?: LifecycleStatus;
+  lifecycleNote?: string;
+  relationships?: string[];
   standardBody: string;
   specVersion: string;
   year: string;
@@ -195,14 +217,21 @@ export type CategoryId =
   | 'chip-to-chip'
   | 'automotive'
   | 'debug'
+  | 'dft-test'
   | 'security'
   | 'noc'
   | 'accelerator'
   | 'phy-serdes'
   | 'power-mgmt'
+  | 'clock-cdc'
   | 'wireless'
   | 'industrial'
-  | 'standards';
+  | 'standards'
+  | 'verif-eda'
+  | 'proc-arch'
+  | 'phys-design'
+  | 'safety'
+  | 'packaging';
 
 export interface ProtocolCategory {
   id: CategoryId;
