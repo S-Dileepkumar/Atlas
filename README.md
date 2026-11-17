@@ -88,6 +88,7 @@ You can open the interactive **How to Use & Guide** page directly inside the web
 - **Built-In Schema Validator & Authoring Guide:** Runtime `validateTopic()` verification enforces citations, accessibility `ariaDescription`, 3 depth layers, and 3-question self-checks on every topic.
 
 ### 2. Protocol Atlas (498 Protocols & Standards Across 30 Domains)
+- **Version & Specification Inspector:** Mandatory `revision` and `officialSpecificationUrl` metadata rendered directly in the right-hand sticky metadata inspector (`Version & Specification`) with verified external specification links.
 - **Protocol-to-RTL Signal Inspector:** Click any signal row or right-rail pinout chip to scroll smoothly to the Signal Inspector drawer and review width, direction, polarity, reset value, timing rules, legal/illegal handshake conditions, synthesizable SystemVerilog snippets, SVA properties, and UVM driver notes.
 - **Interactive Waveform Studio:** Step cycle-by-cycle through live bus handshakes (`AXI4`, `AXI4-Lite`, `AXI4-Stream`, `APB`, `SPI`, `I2C`, `UART`), inject backpressure stalls, track hovered cycle coordinates accurately, and inspect handshake violations (including TileLink `a_valid`/`a_ready` & `d_valid`/`d_ready`).
 - **Compliance Checker:** Validate transaction traces against AMBA and TileLink integrity invariants with proper 1-bit binary flag rendering (`PWRITE`, `PSLVERR`) and bus waveforms.
@@ -184,7 +185,7 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 │   │   └── ...
 │   ├── data/
 │   │   ├── explainers/                # 544 explainer topics + TOPIC_TEMPLATE
-│   │   ├── protocols/                 # 498 protocols & standards across 30 categories
+│   │   ├── protocols/                 # 498 protocols & standards + specificationMetadata.ts
 │   │   ├── ips/                       # 37 open-source silicon IP profiles
 │   │   ├── socs/                      # 6 SoC integration topologies
 │   │   ├── rtlSvUvmCurriculum.ts      # 42 structured RTL Design, SystemVerilog & UVM modules
@@ -237,11 +238,56 @@ npm run preview
 
 ## GitHub Pages Deployment
 
-This repository includes a zero-config GitHub Actions workflow at `.github/workflows/deploy-pages.yml`:
+This project is a Vite + TypeScript React SPA, so **raw repository source (`index.html` referencing `/src/main.tsx`) cannot be served directly by GitHub Pages**—GitHub Pages must serve the **compiled `./dist` bundle**.
 
-1. Push to `main` or `master` (or trigger manually via **Actions → Deploy to GitHub Pages → Run workflow**).
-2. In your GitHub repository, navigate to **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**.
-3. The workflow installs dependencies, executes `npm run lint` (`tsc --noEmit`), resolves the repository `VITE_BASE_PATH`, runs `npm run build`, generates `.nojekyll` + `404.html`, and publishes `./dist` to GitHub Pages.
+### Option A: Automated GitHub Actions Deployment (Recommended)
+
+This repository includes `.github/workflows/deploy-pages.yml` configured with `enablement: true` and fallback relative asset paths (`./`).
+
+1. **Set GitHub Pages Source to GitHub Actions:**
+   - Open your GitHub repository → **Settings → Pages → Build and deployment → Source**
+   - Select **GitHub Actions** (do **NOT** select *Deploy from a branch -> main*, or browsers will 404 on `/src/main.tsx`).
+2. **Allow Workflow Permissions:**
+   - Go to **Settings → Actions → General → Workflow permissions**
+   - Select **Read and write permissions** and click **Save**.
+3. **Trigger the Deployment:**
+   - Push to `main` or `master`, **or** go to **Actions → Deploy to GitHub Pages → Run workflow**.
+   - Wait for both **Build Static Bundle** and **Deploy to GitHub Pages** jobs to finish green. Your live URL will appear inside the **Deploy to GitHub Pages** job summary (`https://<username>.github.io/<repo-name>/`).
+
+### Option B: Manual Branch Deploy (`gh-pages` branch)
+
+If you prefer deploying without GitHub Actions:
+
+```bash
+# Build production output with subpath (replace <repo-name> with your GitHub repo name)
+VITE_BASE_PATH=/<repo-name>/ npm run build
+touch dist/.nojekyll
+cp dist/index.html dist/404.html
+
+# Publish dist/ to the gh-pages branch
+npx gh-pages -d dist
+```
+
+Then go to **Settings → Pages → Build and deployment → Source → Deploy from a branch**, select **`gh-pages`** and **`/ (root)`**, and click **Save**.
+
+### Local Subpath Verification Before Pushing
+
+Test the exact GitHub Pages subpath locally before pushing:
+
+```bash
+VITE_BASE_PATH=/vlsi-protocol-atlas/ npm run build
+npx vite preview --port 4173 --base /vlsi-protocol-atlas/
+# Open http://localhost:4173/vlsi-protocol-atlas/
+```
+
+### Troubleshooting GitHub Pages
+
+| Symptom | Root Cause | Fix |
+|---|---|---|
+| **Blank white page & 404 on `/src/main.tsx`** | GitHub Pages is set to *Deploy from a branch -> `main`* instead of the compiled bundle. | Switch **Settings → Pages → Source** to **GitHub Actions** (or deploy `dist/` to `gh-pages`). |
+| **Blank page & 404 on `/assets/*.js`** | Asset base path mismatch on project subpath (`/<repo-name>/`). | Pull latest `vite.config.ts` (defaults production builds to `./`) and `.github/workflows/deploy-pages.yml` (`VITE_BASE_PATH`). |
+| **`actions/configure-pages` fails (404 / Not Found)** | GitHub Pages was never enabled or workflow lacks permissions. | Enable **Read and write permissions** under **Settings → Actions → General** and set **Settings → Pages → Source** to **GitHub Actions**. |
+| **Workflow never runs on push** | Default branch is neither `main` nor `master`. | Add your branch under `on.push.branches` in `.github/workflows/deploy-pages.yml` or trigger manually via **Run workflow**. |
 
 ---
 

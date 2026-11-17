@@ -7,6 +7,8 @@ export const axi4LiteProtocol: ProtocolDocument = {
   categoryId: 'amba',
   standardBody: 'ARM Ltd.',
   specVersion: 'ARM IHI 0022E Section B1 (AXI4-Lite)',
+  revision: 'Rev H Section B1 (ARM IHI 0022H)',
+  officialSpecificationUrl: 'https://developer.arm.com/documentation/ihi0022/latest/',
   year: '2010',
   tagline: 'Lightweight, single-beat subset of AXI4 optimized for memory-mapped control/status registers (CSRs).',
   depth: 'Full Reference',

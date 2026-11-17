@@ -1,4 +1,5 @@
 import { ProtocolDocument, CategoryId, SpecRow, SignalDefinition, WaveformScenario, InterviewQuestion } from '../../types/protocol';
+import { resolveOfficialSpecificationMetadata } from './specificationMetadata';
 
 interface BriefSeed {
   id: string;
@@ -60,6 +61,15 @@ function makeSig(
 }
 
 function buildBriefDoc(seed: BriefSeed): ProtocolDocument {
+  const specMeta = resolveOfficialSpecificationMetadata({
+    id: seed.id,
+    name: seed.name,
+    standardBody: seed.standardBody,
+    specVersion: seed.specVersion,
+    year: seed.year,
+    categoryId: seed.categoryId,
+  });
+
   return {
     id: seed.id,
     name: seed.name,
@@ -67,6 +77,8 @@ function buildBriefDoc(seed: BriefSeed): ProtocolDocument {
     categoryId: seed.categoryId,
     standardBody: seed.standardBody,
     specVersion: seed.specVersion,
+    revision: specMeta.revision,
+    officialSpecificationUrl: specMeta.officialSpecificationUrl,
     year: seed.year,
     tagline: seed.tagline,
     depth: 'Engineering Brief',

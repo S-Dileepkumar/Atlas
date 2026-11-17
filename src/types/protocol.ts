@@ -145,6 +145,8 @@ export interface ProtocolDocument {
   relationships?: string[];
   standardBody: string;
   specVersion: string;
+  revision: string;
+  officialSpecificationUrl: string;
   year: string;
   tagline: string;
   depth: 'Full Reference' | 'Engineering Brief';

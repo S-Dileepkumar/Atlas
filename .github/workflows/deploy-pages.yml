@@ -32,19 +32,24 @@ jobs:
       - name: Setup GitHub Pages
         id: pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
       - name: Typecheck
         run: npm run lint
 
       - name: Build production bundle
         env:
-          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          RAW_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: |
-          # Normalize double slashes if base_path is empty or '/'
-          export VITE_BASE_PATH=$(echo "$VITE_BASE_PATH" | sed 's://*:/:g')
+          if [ -n "$RAW_BASE_PATH" ]; then
+            export VITE_BASE_PATH=$(echo "${RAW_BASE_PATH}/" | sed 's://*:/:g')
+          else
+            export VITE_BASE_PATH="./"
+          fi
           echo "Building with VITE_BASE_PATH=$VITE_BASE_PATH"
           npm run build
           touch dist/.nojekyll

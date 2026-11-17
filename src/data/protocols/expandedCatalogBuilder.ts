@@ -7,6 +7,7 @@ import {
   SignalDefinition,
   SpecRow,
 } from '../../types/protocol';
+import { resolveOfficialSpecificationMetadata } from './specificationMetadata';
 
 export interface ExpandedSignalTuple {
   name: string;
@@ -79,6 +80,15 @@ export function buildExpandedDoc(e: ExpandedEntryTuple, idx: number): ProtocolDo
   const sig2 = signals[2]?.name || 'ACK';
   const sig3 = signals[3]?.name || 'DATA';
 
+  const specMeta = resolveOfficialSpecificationMetadata({
+    id: e.id,
+    name: e.name,
+    standardBody: e.std,
+    specVersion: e.std,
+    year: e.year,
+    categoryId: e.categoryId,
+  });
+
   return {
     id: e.id,
     name: e.name,
@@ -90,6 +100,8 @@ export function buildExpandedDoc(e: ExpandedEntryTuple, idx: number): ProtocolDo
     relationships: e.relationships,
     standardBody: e.std,
     specVersion: e.std,
+    revision: specMeta.revision,
+    officialSpecificationUrl: specMeta.officialSpecificationUrl,
     year: e.year,
     tagline: e.tagline,
     depth: 'Full Reference',

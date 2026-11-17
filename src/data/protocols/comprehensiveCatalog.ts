@@ -6,6 +6,7 @@ import {
   SpecRow,
   InterviewQuestion,
 } from '../../types/protocol';
+import { resolveOfficialSpecificationMetadata } from './specificationMetadata';
 
 interface CatalogTuple {
   id: string;
@@ -298,6 +299,15 @@ function buildCatalogDoc(t: CatalogTuple, idx: number): ProtocolDocument {
     },
   ];
 
+  const specMeta = resolveOfficialSpecificationMetadata({
+    id: t.id,
+    name: t.name,
+    standardBody: t.std,
+    specVersion: t.std,
+    year: t.year,
+    categoryId: t.categoryId,
+  });
+
   return {
     id: t.id,
     name: t.name,
@@ -305,6 +315,8 @@ function buildCatalogDoc(t: CatalogTuple, idx: number): ProtocolDocument {
     categoryId: t.categoryId,
     standardBody: t.std,
     specVersion: t.std,
+    revision: specMeta.revision,
+    officialSpecificationUrl: specMeta.officialSpecificationUrl,
     year: t.year,
     tagline: t.tagline,
     depth: 'Engineering Brief',

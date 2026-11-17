@@ -3,6 +3,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowLeft,
+  BookOpen,
   Bug,
   CheckCircle2,
   ChevronDown,
@@ -231,6 +232,13 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
   );
 
   const officialLinks = useMemo(() => getProtocolOfficialLinks(protocol), [protocol]);
+  const officialSpecHost = useMemo(() => {
+    try {
+      return new URL(protocol.officialSpecificationUrl).hostname.replace(/^www\./, '');
+    } catch {
+      return protocol.standardBody;
+    }
+  }, [protocol.officialSpecificationUrl, protocol.standardBody]);
   const layeredExplanation = useMemo(() => getProtocolLayeredExplanation(protocol), [protocol]);
   const entityCls = useMemo(() => getEntityClassification(protocol), [protocol]);
   const lifecycleStatus = useMemo(() => getLifecycleStatus(protocol), [protocol]);
@@ -786,6 +794,40 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
           {/* ANCHOR 1: OVERVIEW & SPECIFICATIONS                              */}
           {/* ================================================================ */}
           <section id="sec-overview" className={`scroll-mt-[84px] space-y-8 ${sectionEmphasisClass('sec-overview')}`}>
+            {!isDesktopXl && (
+              <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-3">
+                <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[var(--border-subtle)]">
+                  <span className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-[var(--sem-control)]" />
+                    Version &amp; Specification
+                  </span>
+                  <span className="text-[11px] font-mono tabular-nums text-[var(--sem-high)]">Verified Source</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <div className="text-[11px] text-[var(--text-secondary)]">Revision</div>
+                    <div className="font-mono tabular-nums font-semibold text-[var(--text-primary)] mt-0.5">{protocol.revision}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-[var(--text-secondary)]">Standard Authority</div>
+                    <div className="font-medium text-[var(--text-primary)] mt-0.5">{protocol.standardBody} · {lifecycleStatus}</div>
+                  </div>
+                </div>
+                <a
+                  href={protocol.officialSpecificationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--sem-control)] transition-colors text-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="font-semibold text-[var(--sem-control)] truncate">Official Specification ({officialSpecHost})</div>
+                    <div className="text-[11px] text-[var(--text-secondary)] truncate">{protocol.specVersion}</div>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-[var(--sem-control)] shrink-0" />
+                </a>
+              </div>
+            )}
+
             {(lifecycleNote ||
               relationships.length > 0 ||
               lifecycleStatus === 'Superseded / Merged' ||
@@ -1572,9 +1614,74 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
           </section>
         </div>
 
-        {/* Column 3: Sticky Right Interactive Sandbox (Pinned >= 1280px xl) */}
+        {/* Column 3: Sticky Right Metadata Inspector & Interactive Sandbox (Pinned >= 1280px xl) */}
         {isDesktopXl && (
           <aside className="w-[392px] 2xl:w-[450px] shrink-0 sticky top-[76px] max-h-[calc(100vh-92px)] overflow-y-auto space-y-4">
+            {/* Version & Specification Metadata Inspector */}
+            <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[var(--border-subtle)]">
+                <span className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-[var(--sem-control)]" />
+                  <span>Version &amp; Specification</span>
+                </span>
+                <span className="text-[11px] font-mono text-[var(--sem-high)]">Verified Links</span>
+              </div>
+
+              <dl className="grid grid-cols-1 gap-2 text-xs">
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-[11px] text-[var(--text-secondary)] shrink-0">Revision</dt>
+                  <dd className="font-mono tabular-nums font-semibold text-[var(--text-primary)] text-right">
+                    {protocol.revision}
+                  </dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-[11px] text-[var(--text-secondary)] shrink-0">Authority</dt>
+                  <dd className="text-[var(--text-primary)] text-right truncate">{protocol.standardBody}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="text-[11px] text-[var(--text-secondary)] shrink-0">Release / Status</dt>
+                  <dd className="font-mono tabular-nums text-[var(--text-secondary)] text-right">
+                    {protocol.year} · {lifecycleStatus}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="pt-2 border-t border-[var(--border-subtle)] space-y-1.5">
+                <a
+                  href={protocol.officialSpecificationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-2.5 px-3 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--sem-control)] transition-colors text-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="font-semibold text-[var(--sem-control)] truncate">
+                      Official Specification · {officialSpecHost}
+                    </div>
+                    <div className="text-[11px] text-[var(--text-secondary)] truncate">{protocol.specVersion}</div>
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-[var(--sem-control)] shrink-0" />
+                </a>
+
+                {officialLinks
+                  .filter((lnk) => lnk.url !== protocol.officialSpecificationUrl)
+                  .slice(0, 3)
+                  .map((lnk) => (
+                    <a
+                      key={lnk.url}
+                      href={lnk.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)]/60 hover:border-[var(--sem-control)] transition-colors text-[11px]"
+                    >
+                      <span className="text-[var(--text-primary)] truncate">
+                        {lnk.label} <span className="text-[var(--text-secondary)]">({lnk.authority})</span>
+                      </span>
+                      <ExternalLink className="w-3 h-3 text-[var(--text-secondary)] shrink-0" />
+                    </a>
+                  ))}
+              </div>
+            </div>
+
             <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
               {/* Sandbox Header Bar */}
               <div className="px-5 py-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3">

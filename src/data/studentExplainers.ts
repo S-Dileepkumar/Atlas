@@ -222,44 +222,62 @@ export const PROTOCOL_OFFICIAL_LINKS: Record<string, OfficialExternalLink[]> = {
 };
 
 export function getProtocolOfficialLinks(protocol: ProtocolDocument): OfficialExternalLink[] {
-  if (PROTOCOL_OFFICIAL_LINKS[protocol.id]) return PROTOCOL_OFFICIAL_LINKS[protocol.id];
+  const baseLinks: OfficialExternalLink[] = [];
+  if (protocol.officialSpecificationUrl) {
+    baseLinks.push({
+      label: `${protocol.name} Official Specification (${protocol.revision || protocol.specVersion})`,
+      authority: protocol.standardBody,
+      url: protocol.officialSpecificationUrl,
+    });
+  }
+
+  const pushUnique = (links: OfficialExternalLink[]) => {
+    for (const lnk of links) {
+      if (!baseLinks.some((b) => b.url === lnk.url)) {
+        baseLinks.push(lnk);
+      }
+    }
+    return baseLinks;
+  };
+
+  if (PROTOCOL_OFFICIAL_LINKS[protocol.id]) return pushUnique(PROTOCOL_OFFICIAL_LINKS[protocol.id]);
   const body = protocol.standardBody.toLowerCase();
   if (body.includes('arm') || body.includes('amba')) {
-    return [{ label: 'Arm AMBA Architecture Specifications', authority: 'Arm Developer', url: 'https://developer.arm.com/Architectures/AMBA' }];
+    return pushUnique([{ label: 'Arm AMBA Architecture Specifications', authority: 'Arm Developer', url: 'https://developer.arm.com/Architectures/AMBA' }]);
   }
   if (body.includes('pci-sig') || body.includes('pcisig')) {
-    return [{ label: 'PCI-SIG Specifications Library', authority: 'PCI-SIG', url: 'https://pcisig.com/specifications' }];
+    return pushUnique([{ label: 'PCI-SIG Specifications Library', authority: 'PCI-SIG', url: 'https://pcisig.com/specifications' }]);
   }
   if (body.includes('jedec')) {
-    return [{ label: 'JEDEC Memory & Flash Standards Catalog', authority: 'JEDEC', url: 'https://www.jedec.org/standards-documents' }];
+    return pushUnique([{ label: 'JEDEC Memory & Flash Standards Catalog', authority: 'JEDEC', url: 'https://www.jedec.org/standards-documents' }]);
   }
   if (body.includes('mipi')) {
-    return [{ label: 'MIPI Alliance Specifications', authority: 'MIPI Alliance', url: 'https://www.mipi.org/specifications' }];
+    return pushUnique([{ label: 'MIPI Alliance Specifications', authority: 'MIPI Alliance', url: 'https://www.mipi.org/specifications' }]);
   }
   if (body.includes('usb')) {
-    return [{ label: 'USB-IF Document Library', authority: 'USB Implementers Forum', url: 'https://www.usb.org/documents' }];
+    return pushUnique([{ label: 'USB-IF Document Library', authority: 'USB Implementers Forum', url: 'https://www.usb.org/documents' }]);
   }
   if (body.includes('risc-v')) {
-    return [{ label: 'RISC-V International Specifications', authority: 'RISC-V International', url: 'https://riscv.org/technical/specifications/' }];
+    return pushUnique([{ label: 'RISC-V International Specifications', authority: 'RISC-V International', url: 'https://riscv.org/technical/specifications/' }]);
   }
   if (body.includes('ocp') || body.includes('open compute') || body.includes('bow')) {
-    return [{ label: 'Open Compute Project Specifications & Contributions', authority: 'Open Compute Project', url: 'https://www.opencompute.org/contributions' }];
+    return pushUnique([{ label: 'Open Compute Project Specifications & Contributions', authority: 'Open Compute Project', url: 'https://www.opencompute.org/contributions' }]);
   }
   if (body.includes('ieee')) {
-    return [{ label: 'IEEE Standards Association Catalog', authority: 'IEEE SA', url: 'https://standards.ieee.org/' }];
+    return pushUnique([{ label: 'IEEE Standards Association Catalog', authority: 'IEEE SA', url: 'https://standards.ieee.org/' }]);
   }
   if (body.includes('opentitan')) {
-    return [{ label: 'OpenTitan Hardware Documentation', authority: 'OpenTitan', url: 'https://opentitan.org/book/hw/index.html' }];
+    return pushUnique([{ label: 'OpenTitan Hardware Documentation', authority: 'OpenTitan', url: 'https://opentitan.org/book/hw/index.html' }]);
   }
   if (body.includes('cxl')) {
-    return [{ label: 'Compute Express Link Specifications', authority: 'CXL Consortium', url: 'https://www.computeexpresslink.org/download-the-specification' }];
+    return pushUnique([{ label: 'Compute Express Link Specifications', authority: 'CXL Consortium', url: 'https://www.computeexpresslink.org/download-the-specification' }]);
   }
   if (body.includes('ucie')) {
-    return [{ label: 'UCIe Specifications Library', authority: 'UCIe Consortium', url: 'https://www.uciexpress.org/specifications' }];
+    return pushUnique([{ label: 'UCIe Specifications Library', authority: 'UCIe Consortium', url: 'https://www.uciexpress.org/specifications' }]);
   }
-  return [
-    { label: `${protocol.standardBody} · ${protocol.sources[0]?.title || protocol.name}`, authority: protocol.standardBody, url: 'https://standards.ieee.org/' },
-  ];
+  return pushUnique([
+    { label: `${protocol.standardBody} · ${protocol.sources[0]?.title || protocol.name}`, authority: protocol.standardBody, url: protocol.officialSpecificationUrl || 'https://standards.ieee.org/' },
+  ]);
 }
 
 const PROTOCOL_EXPLAINERS: Record<string, StudentExplainerData> = {

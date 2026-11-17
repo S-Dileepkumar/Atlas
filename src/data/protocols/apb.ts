@@ -7,6 +7,8 @@ export const apbProtocol: ProtocolDocument = {
   categoryId: 'amba',
   standardBody: 'ARM Ltd.',
   specVersion: 'ARM IHI 0024C / IHI 0024E (AMBA APB Protocol Specification)',
+  revision: 'Rev E / APB5 (ARM IHI 0024E, 2023)',
+  officialSpecificationUrl: 'https://developer.arm.com/documentation/ihi0024/latest/',
   year: '2003–2023',
   tagline: 'Low-power, low-gate-count, non-pipelined peripheral bus for slow configuration registers and I/O blocks.',
   depth: 'Full Reference',

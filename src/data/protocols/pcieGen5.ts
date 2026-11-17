@@ -7,6 +7,8 @@ export const pcieGen5Protocol: ProtocolDocument = {
   categoryId: 'high-speed',
   standardBody: 'PCI-SIG',
   specVersion: 'PCI Express Base Specification Rev 5.0 (32.0 GT/s)',
+  revision: 'Rev 5.0 (32.0 GT/s, 2019)',
+  officialSpecificationUrl: 'https://pcisig.com/specifications',
   year: '2019',
   tagline: '32.0 GT/s per-lane full-duplex differential serial interconnect using 128b/130b NRZ encoding and credit-based TLP flow control.',
   depth: 'Full Reference',

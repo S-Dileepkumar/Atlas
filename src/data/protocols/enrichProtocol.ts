@@ -6,6 +6,7 @@ import {
   WaveformScenario,
 } from '../../types/protocol';
 import { getEntityClassification } from '../../utils/entityTaxonomy';
+import { resolveOfficialSpecificationMetadata } from './specificationMetadata';
 
 /**
  * Ensures every ProtocolDocument in ALL_PROTOCOLS contains complete, specification-grounded
@@ -251,8 +252,19 @@ export function enrichProtocolDocument(p: ProtocolDocument): ProtocolDocument {
     );
   }
 
+  const resolvedMeta = resolveOfficialSpecificationMetadata({
+    id: p.id,
+    name: p.name,
+    standardBody: p.standardBody,
+    specVersion: p.specVersion,
+    year: p.year,
+    categoryId: p.categoryId,
+  });
+
   return {
     ...p,
+    revision: p.revision?.trim() || resolvedMeta.revision,
+    officialSpecificationUrl: p.officialSpecificationUrl?.trim() || resolvedMeta.officialSpecificationUrl,
     specifications,
     channels: Array.from(new Set(signals.map((s) => s.channel))),
     signals,

@@ -7,6 +7,8 @@ export const axi4StreamProtocol: ProtocolDocument = {
   categoryId: 'amba',
   standardBody: 'ARM Ltd.',
   specVersion: 'ARM IHI 0051A / IHI 0051B (AMBA AXI-Stream Protocol Specification)',
+  revision: 'Rev B (ARM IHI 0051B, 2021)',
+  officialSpecificationUrl: 'https://developer.arm.com/documentation/ihi0051/latest/',
   year: '2010 (Rev B 2021)',
   tagline: 'Unidirectional, address-free high-speed data streaming protocol with packet framing and zero-overhead backpressure.',
   depth: 'Full Reference',

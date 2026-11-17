@@ -7,6 +7,8 @@ export const axi4Protocol: ProtocolDocument = {
   categoryId: 'amba',
   standardBody: 'ARM Ltd.',
   specVersion: 'ARM IHI 0022E / IHI 0022H (AMBA AXI and ACE Protocol Specification)',
+  revision: 'Rev H (ARM IHI 0022H, 2021)',
+  officialSpecificationUrl: 'https://developer.arm.com/documentation/ihi0022/latest/',
   year: '2010 (Rev H 2021)',
   tagline: 'High-performance, five-channel memory-mapped SoC interconnect supporting out-of-order completion and burst transfers.',
   depth: 'Full Reference',
