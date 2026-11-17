@@ -91,12 +91,13 @@ function runComplianceCheck(proto: CheckerProtocol, rawJson: string): CheckResul
       }
 
       if (r.AWVALID === 1) {
-        const addrNum = parseInt(String(r.AWADDR), 16) || 0;
+        const rawAddr = String(r.AWADDR).replace(/^0x/i, '');
+        const addrNum = parseInt(rawAddr, 16) || 0;
         const len = Number(r.AWLEN || 0);
         const size = Number(r.AWSIZE ?? 2);
         const span = (len + 1) * (1 << size);
         if ((addrNum & 0xfff) + span > 4096) {
-          findings.push({ cycle: i, rule: 'ARM IHI 0022E A3.4.1', detail: `4KB boundary crossed: 0x${r.AWADDR} + ${span}B exceeds 4KB page.`, severity: 'error' });
+          findings.push({ cycle: i, rule: 'ARM IHI 0022E A3.4.1', detail: `4KB boundary crossed: 0x${rawAddr} + ${span}B exceeds 4KB page.`, severity: 'error' });
         }
       }
 
@@ -155,13 +156,15 @@ function runComplianceCheck(proto: CheckerProtocol, rawJson: string): CheckResul
   }
 
   const keys = Object.keys(rows[0]).filter((k) => k !== 'cycle');
-  const signals = keys.map((k) => ({
-    name: k,
-    type: (typeof rows[0][k] === 'number' && (k.includes('VALID') || k.includes('READY') || k.includes('LAST') || k.startsWith('PSEL') || k.startsWith('PENABLE')))
-      ? ('bit' as const)
-      : ('bus' as const),
-    values: rows.map((r) => r[k] ?? '-'),
-  }));
+  const signals = keys.map((k) => {
+    const isNamedBus = k.includes('ADDR') || k.includes('DATA') || k.includes('LEN') || k.includes('SIZE') || k.includes('KEEP') || k.includes('STRB');
+    const isBinaryNumeric = !isNamedBus && rows.every((r) => r[k] === 0 || r[k] === 1);
+    return {
+      name: k,
+      type: isBinaryNumeric ? ('bit' as const) : ('bus' as const),
+      values: rows.map((r) => r[k] ?? '-'),
+    };
+  });
 
   const waveform: WaveformScenario = {
     id: 'checker-trace',

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { WaveformScenario } from '../types/protocol';
 import { WaveformViewer } from './WaveformViewer';
 
@@ -24,6 +24,12 @@ export const SimulatorLab: React.FC<SimulatorLabProps> = ({ initialProtocol }) =
     : 'axi4';
 
   const [simProto, setSimProto] = useState<SimProtocolId>(validInitial);
+
+  useEffect(() => {
+    if (SIM_PROTOCOLS.some((p) => p.id === initialProtocol)) {
+      setSimProto(initialProtocol as SimProtocolId);
+    }
+  }, [initialProtocol]);
   const [opType, setOpType] = useState<'write' | 'read'>('write');
   const [addrHex, setAddrHex] = useState('1000');
   const [dataHex, setDataHex] = useState('A5');
@@ -42,7 +48,8 @@ export const SimulatorLab: React.FC<SimulatorLabProps> = ({ initialProtocol }) =
       const beats = Math.max(1, Math.min(6, burstBeats));
       const stall = Math.max(0, Math.min(3, waitStates));
       if (opType === 'write') {
-        const cycles = 4 + beats + stall + 2;
+        const wStart = 2 + awSkew;
+        const cycles = Math.max(8, wStart + beats + stall + 2);
         const clk = Array.from({ length: cycles }, (_, i) => (i % 2 === 1 ? 1 : 0));
         const awv = Array(cycles).fill(0);
         const awr = Array(cycles).fill(1);
@@ -57,7 +64,6 @@ export const SimulatorLab: React.FC<SimulatorLabProps> = ({ initialProtocol }) =
 
         awv[1] = 1;
         awaddr[1] = cleanAddr;
-        const wStart = 2 + awSkew;
         let idx = wStart;
         const annotations: WaveformScenario['annotations'] = [
           { cycle: 1, label: `AW handshake: Addr 0x${cleanAddr}, AWLEN=${beats - 1}`, severity: 'info' },
@@ -67,10 +73,12 @@ export const SimulatorLab: React.FC<SimulatorLabProps> = ({ initialProtocol }) =
           const valHex = `D${b}_${((baseByte + b) & 0xff).toString(16).toUpperCase().padStart(2, '0')}`;
           if (b === 1 && stall > 0) {
             for (let s = 0; s < stall; s++) {
-              wv[idx] = 1;
-              wr[idx] = 0;
-              wdata[idx] = valHex;
-              annotations.push({ cycle: idx, label: 'Backpressure: WREADY=0 holds WDATA stable', severity: 'warn' });
+              if (idx < cycles) {
+                wv[idx] = 1;
+                wr[idx] = 0;
+                wdata[idx] = valHex;
+                annotations.push({ cycle: idx, label: 'Backpressure: WREADY=0 holds WDATA stable', severity: 'warn' });
+              }
               idx++;
             }
           }
@@ -230,21 +238,25 @@ export const SimulatorLab: React.FC<SimulatorLabProps> = ({ initialProtocol }) =
         const label = `P${b}_${((baseByte + b) & 0xff).toString(16).toUpperCase().padStart(2, '0')}`;
         if (b === 1 && stall > 0) {
           for (let s = 0; s < stall; s++) {
-            tv[idx] = 1;
-            tr[idx] = 0;
-            td[idx] = label;
-            annotations.push({ cycle: idx, label: 'Receiver TREADY=0 stalls stream', severity: 'warn' });
+            if (idx < cycles) {
+              tv[idx] = 1;
+              tr[idx] = 0;
+              td[idx] = label;
+              annotations.push({ cycle: idx, label: 'Receiver TREADY=0 stalls stream', severity: 'warn' });
+            }
             idx++;
           }
         }
-        tv[idx] = 1;
-        tr[idx] = 1;
-        td[idx] = label;
-        if (b === beats - 1) {
-          tl[idx] = 1;
-          annotations.push({ cycle: idx, label: 'TLAST=1 marks packet boundary', severity: 'info' });
+        if (idx < cycles) {
+          tv[idx] = 1;
+          tr[idx] = 1;
+          td[idx] = label;
+          if (b === beats - 1) {
+            tl[idx] = 1;
+            annotations.push({ cycle: idx, label: 'TLAST=1 marks packet boundary', severity: 'info' });
+          }
+          idx++;
         }
-        idx++;
       }
 
       return {

@@ -440,6 +440,13 @@ export const WaveformTimelineRenderer: React.FC<RendererProps> = ({
   const cycles = Math.max(totalSteps, signals[0]?.values?.length ?? 6);
   const backpressure = Boolean(tryItValues.backpressure);
   const injectError = Boolean(tryItValues.injectError);
+  const [hoverInfo, setHoverInfo] = useState<{
+    sigName: string;
+    cycle: number;
+    value: string;
+    xPct: number;
+    yPx: number;
+  } | null>(null);
 
   const labelW = 148;
   const colW = 64;
@@ -451,51 +458,85 @@ export const WaveformTimelineRenderer: React.FC<RendererProps> = ({
   const isBinary = (v: string) => v === '0' || v === '1' || v === 'L' || v === 'H';
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/90 p-3">
-      <svg
-        viewBox={`0 0 ${svgW} ${svgH}`}
-        className="w-full min-w-[580px] h-auto select-none"
-        role="img"
-        aria-label="Cycle-accurate digital timing waveform with interactive clock cursor"
-      >
-        {/* Scrubbable cycle column headers */}
-        {Array.from({ length: cycles }).map((_, c) => {
-          const x = labelW + c * colW;
-          const active = c === currentStep;
-          return (
-            <g key={c} onClick={() => onJumpToStep?.(c)} className="cursor-pointer">
-              <rect
-                x={x}
-                y={2}
-                width={colW}
-                height={svgH - 6}
-                fill={active ? 'var(--sem-active)' : 'transparent'}
-                fillOpacity={active ? 0.1 : 0}
-              />
-              <line
-                x1={x}
-                y1={topH}
-                x2={x}
-                y2={svgH - 8}
-                stroke={active ? 'var(--sem-active)' : 'var(--sem-border)'}
-                strokeWidth={active ? 1.8 : 0.75}
-                strokeDasharray={active ? undefined : '2 3'}
-              />
-              <text
-                x={x + colW / 2}
-                y={17}
-                textAnchor="middle"
-                fontSize="10"
-                fontWeight={active ? '700' : '500'}
-                fontFamily="var(--font-mono)"
-                fill={active ? 'var(--sem-active)' : 'currentColor'}
-                className={active ? '' : 'text-slate-500 dark:text-slate-400'}
-              >
-                T{c}
-              </text>
-            </g>
-          );
-        })}
+    <div className="relative overflow-visible rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4">
+      {hoverInfo && (
+        <div
+          className="waveform-tooltip pointer-events-none absolute z-30 px-3 py-2 text-xs min-w-[155px] -translate-x-1/2 -translate-y-full transition-all duration-150"
+          style={{
+            left: `${Math.min(92, Math.max(12, hoverInfo.xPct))}%`,
+            top: `${Math.max(8, hoverInfo.yPx)}px`,
+          }}
+        >
+          <div className="flex items-center justify-between gap-3 font-mono font-semibold text-[var(--text-primary)]">
+            <span>{hoverInfo.sigName}</span>
+            <span className="text-[var(--sem-control)] tabular-nums">T{hoverInfo.cycle}</span>
+          </div>
+          <div className="font-mono tabular-nums text-[11px] text-[var(--text-secondary)] mt-0.5">
+            Value: <strong className="text-[var(--text-primary)]">{hoverInfo.value}</strong>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto" onMouseLeave={() => setHoverInfo(null)}>
+        <svg
+          viewBox={`0 0 ${svgW} ${svgH}`}
+          className="w-full min-w-[580px] h-auto select-none"
+          role="img"
+          aria-label="Cycle-accurate digital timing waveform with interactive clock cursor"
+        >
+          {/* Scrubbable cycle column headers */}
+          {Array.from({ length: cycles }).map((_, c) => {
+            const x = labelW + c * colW;
+            const active = c === currentStep;
+            return (
+              <g key={c} onClick={() => onJumpToStep?.(c)} className="cursor-pointer">
+                <line
+                  x1={x}
+                  y1={topH}
+                  x2={x}
+                  y2={svgH - 8}
+                  stroke="var(--border-subtle)"
+                  strokeWidth={0.75}
+                  strokeDasharray="2 3"
+                />
+                <text
+                  x={x + colW / 2}
+                  y={17}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight={active ? '700' : '500'}
+                  fontFamily="var(--font-mono)"
+                  fill={active ? 'var(--sem-active)' : 'var(--text-secondary)'}
+                  className="tabular-nums svg-glide"
+                >
+                  T{c}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Gliding 180ms Cycle Cursor Bar */}
+          <g
+            className="svg-glide pointer-events-none"
+            style={{ transform: `translateX(${labelW + Math.min(currentStep, cycles - 1) * colW}px)` }}
+          >
+            <rect
+              x={0}
+              y={2}
+              width={colW}
+              height={svgH - 6}
+              fill="var(--sem-active)"
+              fillOpacity={0.11}
+            />
+            <line
+              x1={0}
+              y1={topH}
+              x2={0}
+              y2={svgH - 8}
+              stroke="var(--sem-active)"
+              strokeWidth={1.8}
+            />
+          </g>
 
         {/* Clock row */}
         <g>
@@ -552,7 +593,20 @@ export const WaveformTimelineRenderer: React.FC<RendererProps> = ({
                   const yPrev = prevHigh ? yTop : yBot;
                   const edge = c > 0 && high !== prevHigh ? `M ${x} ${yPrev} L ${x} ${yCur}` : `M ${x} ${yCur}`;
                   return (
-                    <g key={c}>
+                    <g
+                      key={c}
+                      onClick={() => onJumpToStep?.(c)}
+                      onMouseEnter={() =>
+                        setHoverInfo({
+                          sigName: sig.name,
+                          cycle: c,
+                          value: v,
+                          xPct: ((x + colW / 2) / svgW) * 100,
+                          yPx: Math.max(8, yTop),
+                        })
+                      }
+                      className="cursor-pointer"
+                    >
                       <path d={`${edge} L ${x + colW} ${yCur}`} fill="none" stroke={stroke} strokeWidth={2} />
                       <text
                         x={x + colW / 2}
@@ -562,7 +616,7 @@ export const WaveformTimelineRenderer: React.FC<RendererProps> = ({
                         fontFamily="var(--font-mono)"
                         fill="currentColor"
                         opacity={0.65}
-                        className="text-slate-600 dark:text-slate-400"
+                        className="text-slate-600 dark:text-slate-400 tabular-nums"
                       >
                         {v}
                       </text>
@@ -573,7 +627,20 @@ export const WaveformTimelineRenderer: React.FC<RendererProps> = ({
                 // Multi-bit vector bus envelope
                 const isIdle = v === '-' || v === 'IDLE' || v === 'Z';
                 return (
-                  <g key={c}>
+                  <g
+                    key={c}
+                    onClick={() => onJumpToStep?.(c)}
+                    onMouseEnter={() =>
+                      setHoverInfo({
+                        sigName: sig.name,
+                        cycle: c,
+                        value: v,
+                        xPct: ((x + colW / 2) / svgW) * 100,
+                        yPx: Math.max(8, yTop),
+                      })
+                    }
+                    className="cursor-pointer"
+                  >
                     <polygon
                       points={`${x + 4},${yTop} ${x + colW - 4},${yTop} ${x + colW},${yMid} ${x + colW - 4},${yBot} ${x + 4},${yBot} ${x},${yMid}`}
                       fill={isIdle ? 'transparent' : stroke}
@@ -589,7 +656,7 @@ export const WaveformTimelineRenderer: React.FC<RendererProps> = ({
                       fontWeight="600"
                       fontFamily="var(--font-mono)"
                       fill="currentColor"
-                      className="text-slate-900 dark:text-slate-100"
+                      className="text-slate-900 dark:text-slate-100 tabular-nums"
                     >
                       {v}
                     </text>
@@ -599,7 +666,8 @@ export const WaveformTimelineRenderer: React.FC<RendererProps> = ({
             </g>
           );
         })}
-      </svg>
+        </svg>
+      </div>
     </div>
   );
 };
@@ -642,8 +710,8 @@ export const FsmStateRenderer: React.FC<RendererProps> = ({
   const svgH = (config.height as number) ?? 230;
 
   return (
-    <div className="space-y-2.5">
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 p-3 bg-engineering-grid">
+    <div className="space-y-3">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 bg-engineering-grid">
         <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full min-w-[540px] h-auto select-none" role="img" aria-label="Finite state machine diagram">
           <defs>
             <marker id="fsm-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
@@ -676,10 +744,10 @@ export const FsmStateRenderer: React.FC<RendererProps> = ({
                 : `M ${s1.x} ${s1.y} Q ${mx} ${my} ${s2.x} ${s2.y}`;
 
             return (
-              <g key={`${tr.from}-${tr.to}-${i}`} opacity={isActive ? 1 : 0.48}>
-                <path d={pathD} fill="none" stroke={color} strokeWidth={isActive ? 2.5 : 1.4} markerEnd={marker} />
-                <rect x={mx - 52} y={my - 10} width={104} height={18} rx={3} fill="var(--sem-surface)" stroke={color} strokeWidth={0.8} />
-                <text x={mx} y={my + 2} textAnchor="middle" fontSize="9" fontFamily="var(--font-mono)" fill="currentColor" className="text-slate-800 dark:text-slate-200">
+              <g key={`${tr.from}-${tr.to}-${i}`} opacity={isActive ? 1 : 0.45} className="svg-glide">
+                <path d={pathD} fill="none" stroke={color} strokeWidth={isActive ? 2.4 : 1.4} markerEnd={marker} className="svg-glide" />
+                <rect x={mx - 52} y={my - 10} width={104} height={18} rx={3} fill="var(--bg-surface)" stroke={color} strokeWidth={0.8} />
+                <text x={mx} y={my + 2} textAnchor="middle" fontSize="9" fontFamily="var(--font-mono)" fill="var(--text-primary)">
                   {tr.guard}
                 </text>
               </g>
@@ -690,15 +758,16 @@ export const FsmStateRenderer: React.FC<RendererProps> = ({
             const isCur = st.id === activeStateId;
             const stroke = st.kind === 'error' ? 'var(--sem-error)' : isCur ? 'var(--sem-active)' : 'var(--sem-control)';
             return (
-              <g key={st.id}>
+              <g key={st.id} className="svg-glide">
                 <circle
                   cx={st.x}
                   cy={st.y}
                   r={isCur ? 30 : 26}
-                  fill={isCur ? stroke : 'var(--sem-surface)'}
+                  fill={isCur ? stroke : 'var(--bg-surface)'}
                   fillOpacity={isCur ? 0.18 : 1}
                   stroke={stroke}
-                  strokeWidth={isCur ? 3 : 1.5}
+                  strokeWidth={isCur ? 2.8 : 1.5}
+                  className="svg-glide"
                 />
                 <text
                   x={st.x}
@@ -707,8 +776,7 @@ export const FsmStateRenderer: React.FC<RendererProps> = ({
                   fontSize="11"
                   fontWeight="700"
                   fontFamily="var(--font-mono)"
-                  fill="currentColor"
-                  className="text-slate-900 dark:text-slate-100"
+                  fill="var(--text-primary)"
                 >
                   {st.label}
                 </text>

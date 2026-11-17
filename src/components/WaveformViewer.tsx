@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Pause, SkipBack, SkipForward, RotateCcw, ZoomIn, ZoomOut, AlertTriangle, CheckCircle2, SlidersHorizontal } from 'lucide-react';
 import { WaveformScenario, WaveformSignalTrace } from '../types/protocol';
 
@@ -27,6 +27,8 @@ function detectHandshakeViolations(signals: WaveformSignalTrace[], cycles: numbe
     { valid: 'RVALID', ready: 'RREADY', payloads: ['RDATA', 'RLAST', 'RRESP'] },
     { valid: 'TVALID', ready: 'TREADY', payloads: ['TDATA', 'TKEEP', 'TLAST'] },
     { valid: 'VALID', ready: 'READY', payloads: ['PAYLOAD'] },
+    { valid: 'a_valid', ready: 'a_ready', payloads: ['a_opcode', 'a_address', 'a_data'] },
+    { valid: 'd_valid', ready: 'd_ready', payloads: ['d_opcode', 'd_data'] },
   ];
 
   for (const pair of pairs) {
@@ -102,12 +104,39 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
   const [cellWidth, setCellWidth] = useState<number>(62);
   const [hiddenSignals, setHiddenSignals] = useState<Record<string, boolean>>({});
   const [editMode, setEditMode] = useState<boolean>(false);
+  const [hoveredCell, setHoveredCell] = useState<{
+    sigName: string;
+    cycle: number;
+    value: string | number;
+    type: WaveformSignalTrace['type'];
+    xPx: number;
+    yPx: number;
+  } | null>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const showHoverTooltip = (
+    target: SVGGElement | SVGRectElement,
+    sigName: string,
+    cycle: number,
+    value: string | number,
+    type: WaveformSignalTrace['type']
+  ) => {
+    const wrapper = canvasWrapperRef.current;
+    if (!wrapper) return;
+    const wRect = wrapper.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    const rawCenter = tRect.left - wRect.left + tRect.width / 2;
+    const clampedX = Math.max(88, Math.min(Math.max(88, wRect.width - 88), rawCenter));
+    const yPx = Math.max(8, tRect.top - wRect.top - 4);
+    setHoveredCell({ sigName, cycle, value, type, xPx: clampedX, yPx });
+  };
 
   useEffect(() => {
     setSignals(scenario.signals.map((s) => ({ ...s, values: [...s.values] })));
     setCursorCycle(0);
     setIsPlaying(false);
     setHiddenSignals({});
+    setHoveredCell(null);
   }, [scenario]);
 
   useEffect(() => {
@@ -178,14 +207,14 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
   const activeViolations = violations.filter((v) => v.cycle === cursorCycle);
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 overflow-hidden">
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] rounded-t-lg">
         <div className="min-w-0">
-          <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)] truncate">
             {title || scenario.name}
           </h4>
-          <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{scenario.description}</p>
+          <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">{scenario.description}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
@@ -194,52 +223,52 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
             onClick={() => setIsPlaying((p) => !p)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-500 text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             {isPlaying ? 'Pause' : 'Play'}
           </button>
 
           <button
             type="button"
             onClick={() => { setIsPlaying(false); setCursorCycle((c) => (c - 1 + scenario.cycles) % scenario.cycles); }}
-            className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Step Back"
+            className="p-1.5 rounded-md border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-canvas)] transition-colors cursor-pointer"
+            title="Prev Clock Edge"
           >
-            <SkipBack className="w-3.5 h-3.5" />
+            <SkipBack className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={() => { setIsPlaying(false); setCursorCycle((c) => (c + 1) % scenario.cycles); }}
-            className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="Step Forward"
+            className="p-1.5 rounded-md border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-canvas)] transition-colors cursor-pointer"
+            title="Next Clock Edge"
           >
-            <SkipForward className="w-3.5 h-3.5" />
+            <SkipForward className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={resetTrace}
-            className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-canvas)] transition-colors cursor-pointer"
             title="Reset Waveform"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4" />
           </button>
 
-          <span className="h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1" aria-hidden="true" />
+          <span className="h-4 w-px bg-[var(--border-subtle)] mx-1" aria-hidden="true" />
 
           <button
             type="button"
             onClick={() => setCellWidth((w) => Math.max(40, w - 10))}
-            className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-canvas)] transition-colors cursor-pointer"
             title="Zoom Out"
           >
-            <ZoomOut className="w-3.5 h-3.5" />
+            <ZoomOut className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={() => setCellWidth((w) => Math.min(96, w + 10))}
-            className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-canvas)] transition-colors cursor-pointer"
             title="Zoom In"
           >
-            <ZoomIn className="w-3.5 h-3.5" />
+            <ZoomIn className="w-4 h-4" />
           </button>
 
           {interactive && (
@@ -249,10 +278,10 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 editMode
                   ? 'bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-canvas)]'
               }`}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <SlidersHorizontal className="w-4 h-4" />
               {editMode ? 'Editing Signals (Click Bit)' : 'Edit VALID/READY'}
             </button>
           )}
@@ -260,8 +289,8 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
       </div>
 
       {/* Signal Visibility Strip */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 border-b border-slate-200 dark:border-slate-800 text-xs bg-white dark:bg-slate-900">
-        <span className="text-slate-500 dark:text-slate-400 font-medium">Signals:</span>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-2.5 border-b border-[var(--border-subtle)] text-xs bg-[var(--bg-surface)]">
+        <span className="text-[var(--text-secondary)] font-medium">Signals:</span>
         {signals.map((sig) => {
           const isVisible = !hiddenSignals[sig.name];
           return (
@@ -271,8 +300,8 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
               onClick={() => setHiddenSignals((prev) => ({ ...prev, [sig.name]: !prev[sig.name] }))}
               className={`font-mono transition-colors cursor-pointer whitespace-nowrap ${
                 isVisible
-                  ? 'text-cyan-700 dark:text-cyan-400 font-medium'
-                  : 'text-slate-400 dark:text-slate-600 line-through'
+                  ? 'text-[var(--sem-control)] font-medium'
+                  : 'text-[var(--text-secondary)] opacity-45 line-through'
               }`}
             >
               {sig.name}
@@ -281,54 +310,107 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
         })}
       </div>
 
-      {/* SVG Waveform Canvas */}
-      <div className="overflow-x-auto bg-engineering-grid bg-slate-50/40 dark:bg-[#080E1A]">
-        <svg width={svgW} height={svgH} className="block select-none">
-          {/* Cycle Header & Grid Lines */}
-          {Array.from({ length: scenario.cycles }).map((_, c) => {
-            const x = labelColW + c * cellWidth;
-            const isSelected = c === cursorCycle;
-            const isHandshake = handshakeCycles.includes(c);
-            const hasErr = violations.some((v) => v.cycle === c);
-            return (
-              <g key={c} onClick={() => setCursorCycle(c)} className="cursor-pointer">
-                <rect
-                  x={x}
-                  y={0}
-                  width={cellWidth}
-                  height={svgH}
-                  fill={
-                    hasErr
-                      ? 'rgba(239, 68, 68, 0.10)'
-                      : isSelected
-                      ? 'rgba(6, 182, 212, 0.12)'
-                      : isHandshake
-                      ? 'rgba(16, 185, 129, 0.06)'
-                      : 'transparent'
-                  }
-                />
-                <line
-                  x1={x}
-                  y1={headerH}
-                  x2={x}
-                  y2={svgH}
-                  stroke={isSelected ? '#06b6d4' : 'rgba(148,163,184,0.18)'}
-                  strokeDasharray={isSelected ? undefined : '3 3'}
-                  strokeWidth={isSelected ? 1.5 : 1}
-                />
-                <text
-                  x={x + cellWidth / 2}
-                  y={18}
-                  textAnchor="middle"
-                  className="font-mono text-[11px] tabular-nums"
-                  fill={isSelected ? '#06b6d4' : '#64748b'}
-                  fontWeight={isSelected ? 700 : 500}
-                >
-                  C{c}
-                </text>
-              </g>
-            );
-          })}
+      {/* SVG Waveform Canvas + Unclipped Floating Tooltip */}
+      <div ref={canvasWrapperRef} className="relative overflow-visible">
+        {hoveredCell && (
+          <div
+            className="waveform-tooltip pointer-events-none absolute z-30 px-3 py-2 text-xs min-w-[164px] -translate-x-1/2 -translate-y-full transition-all duration-150"
+            style={{
+              left: `${hoveredCell.xPx}px`,
+              top: `${hoveredCell.yPx}px`,
+            }}
+          >
+            <div className="flex items-center justify-between gap-3 font-mono font-semibold text-[var(--text-primary)]">
+              <span>{hoveredCell.sigName}</span>
+              <span className="text-[var(--sem-control)] tabular-nums">C{hoveredCell.cycle}</span>
+            </div>
+            <div className="font-mono tabular-nums text-[11px] text-[var(--text-secondary)] mt-0.5">
+              Value:{' '}
+              <strong className="text-[var(--text-primary)]">
+                {String(hoveredCell.value)}
+              </strong>{' '}
+              ({hoveredCell.type})
+            </div>
+          </div>
+        )}
+
+        {visibleSignals.length === 0 ? (
+          <div className="py-10 px-6 text-center text-xs text-[var(--text-secondary)] bg-[var(--bg-canvas)]">
+            All signal traces are hidden. Click any signal name above to restore its waveform.
+          </div>
+        ) : (
+        <div
+          className="overflow-x-auto bg-engineering-grid bg-[var(--bg-canvas)] py-2"
+          onMouseLeave={() => setHoveredCell(null)}
+        >
+          <svg width={svgW} height={svgH} className="block select-none">
+            {/* Cycle Header & Grid Lines */}
+            {Array.from({ length: scenario.cycles }).map((_, c) => {
+              const x = labelColW + c * cellWidth;
+              const isSelected = c === cursorCycle;
+              const isHandshake = handshakeCycles.includes(c);
+              const hasErr = violations.some((v) => v.cycle === c);
+              return (
+                <g key={c} onClick={() => setCursorCycle(c)} className="cursor-pointer">
+                  <rect
+                    x={x}
+                    y={0}
+                    width={cellWidth}
+                    height={svgH}
+                    fill={
+                      hasErr
+                        ? 'var(--sem-error)'
+                        : isHandshake
+                        ? 'var(--sem-high)'
+                        : 'transparent'
+                    }
+                    fillOpacity={hasErr ? 0.08 : isHandshake ? 0.05 : 0}
+                  />
+                  <line
+                    x1={x}
+                    y1={headerH}
+                    x2={x}
+                    y2={svgH}
+                    stroke="var(--border-subtle)"
+                    strokeDasharray="3 3"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={x + cellWidth / 2}
+                    y={18}
+                    textAnchor="middle"
+                    className="font-mono text-[11px] tabular-nums svg-glide"
+                    fill={isSelected ? 'var(--sem-control)' : 'var(--text-secondary)'}
+                    fontWeight={isSelected ? 700 : 500}
+                  >
+                    C{c}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Gliding Active Cycle Cursor */}
+            <g
+              className="svg-glide pointer-events-none"
+              style={{ transform: `translateX(${labelColW + cursorCycle * cellWidth}px)` }}
+            >
+              <rect
+                x={0}
+                y={0}
+                width={cellWidth}
+                height={svgH}
+                fill="var(--sem-control)"
+                fillOpacity={0.11}
+              />
+              <line
+                x1={0}
+                y1={headerH}
+                x2={0}
+                y2={svgH}
+                stroke="var(--sem-control)"
+                strokeWidth={1.75}
+              />
+            </g>
 
           {/* Signal Rows */}
           {visibleSignals.map((sig, rowIdx) => {
@@ -364,12 +446,12 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
             const isReadySig = sig.name.includes('READY');
             const strokeColor =
               sig.type === 'clock'
-                ? '#94a3b8'
+                ? 'var(--text-secondary)'
                 : isValidSig
-                ? '#06b6d4'
+                ? 'var(--sem-high)'
                 : isReadySig
-                ? '#10b981'
-                : '#3b82f6';
+                ? 'var(--sem-control)'
+                : 'var(--sem-control)';
 
             return (
               <g key={sig.name}>
@@ -379,14 +461,15 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
                   y1={headerH + rowIdx * rowH}
                   x2={svgW}
                   y2={headerH + rowIdx * rowH}
-                  stroke="rgba(148,163,184,0.12)"
+                  stroke="var(--border-subtle)"
+                  strokeOpacity={0.65}
                 />
                 {/* Signal name */}
                 <text
                   x={14}
                   y={yMid + 4}
                   className="font-mono text-[12px]"
-                  fill="currentColor"
+                  fill="var(--text-primary)"
                   fontWeight={600}
                 >
                   {sig.name}
@@ -397,6 +480,8 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
                     const x0 = labelColW + c * cellWidth;
                     const x1 = x0 + cellWidth;
                     const isEmpty = val === '-' || val === 'Z';
+                    const isErrVal = String(val) === 'X' || String(val).includes('ERR');
+                    const stroke = isErrVal ? 'var(--sem-error)' : val === 'Z' ? 'var(--sem-active)' : 'var(--sem-control)';
                     if (isEmpty) {
                       return (
                         <line
@@ -405,7 +490,7 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
                           y1={yMid}
                           x2={x1}
                           y2={yMid}
-                          stroke="#64748b"
+                          stroke={stroke}
                           strokeWidth={1.5}
                           strokeDasharray={val === 'Z' ? '3 2' : undefined}
                         />
@@ -413,11 +498,17 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
                     }
                     const poly = `${x0 + 3},${yMid} ${x0 + 8},${yTop} ${x1 - 8},${yTop} ${x1 - 3},${yMid} ${x1 - 8},${yBot} ${x0 + 8},${yBot}`;
                     return (
-                      <g key={c} onClick={() => setCursorCycle(c)} className="cursor-pointer">
+                      <g
+                        key={c}
+                        onClick={() => setCursorCycle(c)}
+                        onMouseEnter={(e) => showHoverTooltip(e.currentTarget, sig.name, c, val, sig.type)}
+                        className="cursor-pointer"
+                      >
                         <polygon
                           points={poly}
-                          fill="rgba(59, 130, 246, 0.14)"
-                          stroke="#3b82f6"
+                          fill={stroke}
+                          fillOpacity={0.12}
+                          stroke={stroke}
                           strokeWidth={1.5}
                         />
                         <text
@@ -425,7 +516,7 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
                           y={yMid + 3.5}
                           textAnchor="middle"
                           className="font-mono text-[11px] tabular-nums"
-                          fill="#60a5fa"
+                          fill="var(--text-primary)"
                           fontWeight={600}
                         >
                           {String(val)}
@@ -435,36 +526,35 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
                   })
                 ) : (
                   <>
-                    <path d={pathD} fill="none" stroke={strokeColor} strokeWidth={2} />
-                    {sig.type === 'bit' &&
-                      editMode &&
-                      sig.values.map((val, c) => {
-                        const x0 = labelColW + c * cellWidth;
-                        return (
-                          <rect
-                            key={c}
-                            x={x0 + 2}
-                            y={yTop - 3}
-                            width={cellWidth - 4}
-                            height={rowH - 6}
-                            fill="transparent"
-                            className="cursor-pointer hover:fill-amber-500/15"
-                            onClick={() => handleToggleBit(sig.name, c)}
-                          >
-                            <title>Click to toggle {sig.name} at C{c} (currently {val})</title>
-                          </rect>
-                        );
-                      })}
+                    <path d={pathD} fill="none" stroke={strokeColor} strokeWidth={2} className="svg-glide" />
+                    {sig.values.map((val, c) => {
+                      const x0 = labelColW + c * cellWidth;
+                      return (
+                        <rect
+                          key={c}
+                          x={x0 + 2}
+                          y={yTop - 3}
+                          width={cellWidth - 4}
+                          height={rowH - 6}
+                          fill="transparent"
+                          className={`cursor-pointer ${editMode && sig.type === 'bit' ? 'hover:fill-amber-500/15' : ''}`}
+                          onClick={() => (editMode && sig.type === 'bit' ? handleToggleBit(sig.name, c) : setCursorCycle(c))}
+                          onMouseEnter={(e) => showHoverTooltip(e.currentTarget, sig.name, c, val, sig.type)}
+                        />
+                      );
+                    })}
                   </>
                 )}
               </g>
             );
           })}
-        </svg>
+          </svg>
+        </div>
+        )}
       </div>
 
       {/* Cycle Inspector & Compliance Status Footer */}
-      <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 flex flex-col gap-2">
+      <div className="px-6 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)] rounded-b-lg flex flex-col gap-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-mono font-semibold text-cyan-700 dark:text-cyan-400 tabular-nums">
@@ -506,6 +596,8 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
             ['RVALID', 'RREADY', 'Read Data'],
             ['TVALID', 'TREADY', 'Stream Beat'],
             ['VALID', 'READY', 'Channel Transfer'],
+            ['a_valid', 'a_ready', 'TileLink Channel A'],
+            ['d_valid', 'd_ready', 'TileLink Channel D'],
           ];
           const handshakes = pairs.filter(([v, r]) => getVal(v) === 1 && getVal(r) === 1).map(([, , lbl]) => lbl);
           const stalls = pairs.filter(([v, r]) => getVal(v) === 1 && getVal(r) === 0).map(([, , lbl]) => lbl);
@@ -526,8 +618,8 @@ export const WaveformViewer: React.FC<WaveformViewerProps> = ({ scenario, intera
             msg = `APB Wait State at C${cursorCycle}: Peripheral holds PREADY=0, stalling PENABLE=1 for an extra cycle.`;
           }
           return (
-            <div className="text-xs text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-900/70 px-3 py-1.5 rounded border border-slate-200 dark:border-slate-800">
-              <strong className="text-cyan-700 dark:text-cyan-400">What is happening at C{cursorCycle}:</strong> {msg}
+            <div className="text-xs text-[var(--text-secondary)] bg-[var(--bg-canvas)] px-3.5 py-2 rounded border border-[var(--border-subtle)]">
+              <strong className="text-[var(--sem-control)]">What is happening at C{cursorCycle}:</strong> {msg}
             </div>
           );
         })()}

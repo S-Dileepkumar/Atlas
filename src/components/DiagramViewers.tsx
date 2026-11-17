@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Check, Download, GraduationCap } from 'lucide-react';
 import { BlockDiagramLink, BlockDiagramNode, FsmStateNode, FsmTransition } from '../types/protocol';
 import {
@@ -48,38 +48,52 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
   const [selectedLinkIdx, setSelectedLinkIdx] = useState<number | null>(null);
   const nodeMap = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
+  useEffect(() => {
+    setSelectedNodeId(nodes[0]?.id || null);
+    setSelectedLinkIdx(null);
+  }, [nodes, links]);
+
   const bounds = useMemo(() => {
-    if (nodes.length === 0) return { minX: 0, minY: 0, width: 740, height: 240 };
+    if (nodes.length === 0) return { minX: -12, minY: -16, width: 760, height: 260 };
+    const minNodeX = Math.min(...nodes.map((n) => n.x), 0);
+    const minNodeY = Math.min(...nodes.map((n) => n.y), 0);
     const maxX = Math.max(...nodes.map((n) => n.x + n.width), 700);
     const maxY = Math.max(...nodes.map((n) => n.y + n.height), 200);
-    return { minX: 0, minY: 0, width: maxX + 36, height: maxY + 36 };
+    const minX = Math.min(-16, minNodeX - 16);
+    const minY = Math.min(-24, minNodeY - 24);
+    return {
+      minX,
+      minY,
+      width: maxX - minX + 36,
+      height: maxY - minY + 44,
+    };
   }, [nodes]);
 
   const activeNode = selectedNodeId ? nodeMap.get(selectedNodeId) || null : null;
   const activeLink = selectedLinkIdx !== null ? links[selectedLinkIdx] || null : null;
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#080E1A] p-4 space-y-3 bg-engineering-grid">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-        <span>Interactive Architecture Diagram · Click any block OR arrow link to read its student explanation</span>
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-6 space-y-4 bg-engineering-grid">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-secondary)]">
+        <span>Interactive Architecture Diagram · Click any block or arrow link to read its student explanation</span>
         <span className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> Manager</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-500" /> Interconnect</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Subordinate</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Manager</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-cyan-500" /> Interconnect</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Subordinate</span>
         </span>
       </div>
 
       <div className="overflow-x-auto">
         <svg
           viewBox={`${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}`}
-          className="w-full min-w-[600px] h-auto max-h-[280px] select-none"
+          className="w-full min-w-[540px] h-auto max-h-[300px] select-none"
         >
           <defs>
             <marker id="arrow-cyan" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill="#06b6d4" />
+              <polygon points="0 0, 8 3, 0 6" fill="var(--sem-control)" />
             </marker>
             <marker id="arrow-active" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill="#38bdf8" />
+              <polygon points="0 0, 8 3, 0 6" fill="var(--sem-high)" />
             </marker>
           </defs>
 
@@ -87,14 +101,38 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
             const a = nodeMap.get(link.from);
             const b = nodeMap.get(link.to);
             if (!a || !b) return null;
-            const goingRight = a.x <= b.x;
-            const x1 = goingRight ? a.x + a.width : a.x;
-            const x2 = goingRight ? b.x : b.x + b.width;
-            const sameSideOffset = (idx % 2 === 0 ? -14 : 14) + Math.floor(idx / 2) * 8;
-            const y1 = a.y + a.height / 2 + sameSideOffset;
-            const y2 = b.y + b.height / 2 + sameSideOffset;
-            const cx1 = x1 + (x2 - x1) * 0.45;
-            const cx2 = x2 - (x2 - x1) * 0.45;
+
+            const acx = a.x + a.width / 2;
+            const bcx = b.x + b.width / 2;
+            const acy = a.y + a.height / 2;
+            const bcy = b.y + b.height / 2;
+            const isVerticalStack = Math.abs(acx - bcx) < Math.max(a.width, b.width) * 0.5 && Math.abs(acy - bcy) > 30;
+
+            let x1: number, y1: number, x2: number, y2: number, cx1: number, cy1: number, cx2: number, cy2: number;
+            if (isVerticalStack) {
+              const goingDown = acy <= bcy;
+              const laneShift = (idx % 2 === 0 ? -16 : 16);
+              x1 = acx + laneShift;
+              y1 = goingDown ? a.y + a.height : a.y;
+              x2 = bcx + laneShift;
+              y2 = goingDown ? b.y : b.y + b.height;
+              cx1 = x1;
+              cy1 = y1 + (y2 - y1) * 0.45;
+              cx2 = x2;
+              cy2 = y2 - (y2 - y1) * 0.45;
+            } else {
+              const goingRight = a.x <= b.x;
+              x1 = goingRight ? a.x + a.width : a.x;
+              x2 = goingRight ? b.x : b.x + b.width;
+              const sameSideOffset = (idx % 2 === 0 ? -12 : 12) + Math.floor(idx / 2) * 6;
+              y1 = acy + sameSideOffset;
+              y2 = bcy + sameSideOffset;
+              cx1 = x1 + (x2 - x1) * 0.45;
+              cy1 = y1;
+              cx2 = x2 - (x2 - x1) * 0.45;
+              cy2 = y2;
+            }
+
             const mx = (x1 + x2) / 2;
             const my = (y1 + y2) / 2;
             const isHighlighted =
@@ -109,29 +147,32 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
                   setSelectedLinkIdx(idx);
                   setSelectedNodeId(null);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer svg-glide"
               >
                 <path
-                  d={`M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`}
+                  d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
                   fill="none"
-                  stroke={isHighlighted ? '#06b6d4' : '#64748b'}
+                  stroke={isHighlighted ? 'var(--sem-control)' : 'var(--text-secondary)'}
                   strokeWidth={isHighlighted ? 2.2 : 1.3}
                   markerEnd={isHighlighted ? 'url(#arrow-active)' : 'url(#arrow-cyan)'}
+                  className="svg-glide"
                 />
-                <circle cx={x1} cy={y1} r={3} fill="#06b6d4" />
+                <circle cx={x1} cy={y1} r={3} fill="var(--sem-control)" />
                 <rect
                   x={mx - 62}
                   y={my - 10}
                   width={124}
                   height={19}
                   rx={4}
-                  className="fill-white dark:fill-slate-900 stroke-slate-300 dark:stroke-slate-700"
+                  fill="var(--bg-elevated)"
+                  stroke="var(--border-subtle)"
                 />
                 <text
                   x={mx}
                   y={my + 3}
                   textAnchor="middle"
-                  className="font-mono text-[9.5px] font-medium fill-slate-700 dark:fill-cyan-300"
+                  className="font-mono text-[9.5px] font-medium"
+                  fill="var(--sem-control)"
                 >
                   {link.label.length > 21 ? `${link.label.slice(0, 19)}..` : link.label}
                 </text>
@@ -149,7 +190,7 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
                   setSelectedNodeId(node.id);
                   setSelectedLinkIdx(null);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer svg-glide"
               >
                 <rect
                   x={node.x}
@@ -157,16 +198,16 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
                   width={node.width}
                   height={node.height}
                   rx={8}
-                  className={isSel ? 'fill-cyan-50/90 dark:fill-slate-800' : 'fill-white dark:fill-slate-900'}
+                  fill={isSel ? 'var(--bg-elevated)' : 'var(--bg-surface)'}
                   stroke={st.stroke}
-                  strokeWidth={isSel ? 2.5 : 1.6}
+                  strokeWidth={isSel ? 2.2 : 1.4}
+                  className="svg-glide"
                 />
-                {/* Top role accent strip */}
                 <rect
                   x={node.x + 1}
                   y={node.y + 1}
                   width={node.width - 2}
-                  height={5}
+                  height={4}
                   rx={3}
                   fill={st.stroke}
                   opacity={0.85}
@@ -175,7 +216,8 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
                   x={node.x + node.width / 2}
                   y={node.y + node.height / 2 - 2}
                   textAnchor="middle"
-                  className="font-display text-[13px] font-semibold fill-slate-900 dark:fill-slate-100"
+                  className="font-display text-[13px] font-semibold"
+                  fill="var(--text-primary)"
                 >
                   {node.label}
                 </text>
@@ -183,7 +225,8 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
                   x={node.x + node.width / 2}
                   y={node.y + node.height / 2 + 16}
                   textAnchor="middle"
-                  className="font-mono text-[9.5px] uppercase fill-slate-500 dark:fill-slate-400"
+                  className="font-mono text-[9.5px] uppercase"
+                  fill="var(--text-secondary)"
                 >
                   {st.badge}
                 </text>
@@ -194,16 +237,16 @@ export const BlockDiagramSvg: React.FC<{ nodes: BlockDiagramNode[]; links: Block
       </div>
 
       {(activeNode || activeLink) && (
-        <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300">
-          <GraduationCap className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+        <div className="pt-3 border-t border-[var(--border-subtle)] flex items-start gap-2.5 text-xs text-[var(--text-secondary)]">
+          <GraduationCap className="w-4 h-4 text-[var(--sem-control)] shrink-0 mt-0.5" />
           {activeNode ? (
             <div>
-              <strong className="text-slate-900 dark:text-slate-100">{activeNode.label}:</strong>{' '}
+              <strong className="text-[var(--text-primary)]">{activeNode.label}:</strong>{' '}
               {ROLE_STYLES[activeNode.role].studentHint}
             </div>
           ) : activeLink ? (
             <div>
-              <strong className="text-slate-900 dark:text-slate-100">
+              <strong className="text-[var(--text-primary)]">
                 Wire Connection ({nodeMap.get(activeLink.from)?.label} → {nodeMap.get(activeLink.to)?.label} · {activeLink.label}):
               </strong>{' '}
               {explainSignalLikeStudent(activeLink.label)}
@@ -223,47 +266,64 @@ export const FsmDiagramSvg: React.FC<{ states: FsmStateNode[]; transitions: FsmT
   const [selectedTransition, setSelectedTransition] = useState<number | null>(null);
   const stateMap = useMemo(() => new Map(states.map((s) => [s.id, s])), [states]);
 
+  useEffect(() => {
+    setSelectedState(states[0]?.id || '');
+    setSelectedTransition(null);
+  }, [states, transitions]);
+
   const bounds = useMemo(() => {
-    if (states.length === 0) return { width: 660, height: 210 };
+    if (states.length === 0) return { minX: -24, minY: -44, width: 700, height: 260 };
+    const minStateX = Math.min(...states.map((s) => s.x), 36);
+    const minStateY = Math.min(...states.map((s) => s.y), 40);
     const maxX = Math.max(...states.map((s) => s.x + 130), 660);
-    const maxY = Math.max(...states.map((s) => s.y + 115), 205);
-    return { width: maxX + 24, height: maxY };
+    const maxY = Math.max(...states.map((s) => s.y + 125), 215);
+    const minX = Math.min(-24, minStateX - 48);
+    const minY = Math.min(-44, minStateY - 52);
+    return {
+      minX,
+      minY,
+      width: maxX - minX + 36,
+      height: maxY - minY + 24,
+    };
   }, [states]);
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#080E1A] p-4 bg-engineering-grid space-y-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-        <span>Interactive Finite State Machine · Click any state circle OR transition arrow to read plain-English logic</span>
-        <span className="font-mono text-emerald-600 dark:text-emerald-400">RST → Initial State</span>
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-6 bg-engineering-grid space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--text-secondary)]">
+        <span>Interactive Finite State Machine · Click any state circle or transition arrow to read plain-English logic</span>
+        <span className="font-mono text-[var(--sem-high)] font-medium">RST → Initial State</span>
       </div>
       <div className="overflow-x-auto">
-        <svg viewBox={`0 0 ${bounds.width} ${bounds.height}`} className="w-full min-w-[540px] h-auto max-h-[230px] select-none">
+        <svg
+          viewBox={`${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}`}
+          className="w-full min-w-[520px] h-auto max-h-[250px] select-none"
+        >
           <defs>
             <marker id="fsm-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+              <polygon points="0 0, 8 3, 0 6" fill="var(--sem-control)" />
             </marker>
             <marker id="fsm-reset" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
-              <polygon points="0 0, 7 2.5, 0 5" fill="#10b981" />
+              <polygon points="0 0, 7 2.5, 0 5" fill="var(--sem-high)" />
             </marker>
           </defs>
 
-          {/* Reset Entry Arrow to Initial State */}
           {states[0] && (
             <g>
               <line
-                x1={Math.max(6, states[0].x - 36)}
+                x1={states[0].x - 36}
                 y1={states[0].y + 24}
                 x2={states[0].x}
                 y2={states[0].y + 24}
-                stroke="#10b981"
+                stroke="var(--sem-high)"
                 strokeWidth={1.75}
                 markerEnd="url(#fsm-reset)"
               />
               <text
-                x={Math.max(4, states[0].x - 20)}
+                x={states[0].x - 20}
                 y={states[0].y + 14}
                 textAnchor="middle"
-                className="font-mono text-[9px] font-bold fill-emerald-600 dark:fill-emerald-400"
+                className="font-mono text-[9px] font-bold"
+                fill="var(--sem-high)"
               >
                 RST
               </text>
@@ -284,7 +344,7 @@ export const FsmDiagramSvg: React.FC<{ states: FsmStateNode[]; transitions: FsmT
               : `M ${a.x + 55} ${a.y + 48} Q ${(a.x + b.x) / 2 + 55} ${a.y + 104} ${b.x + 55} ${b.y + 48}`;
 
             const labelX = isSelfLoop ? a.x + 55 : (a.x + b.x) / 2 + 55;
-            const labelY = isSelfLoop ? a.y - 30 : forward ? a.y - 8 : a.y + 98;
+            const labelY = isSelfLoop ? a.y - 32 : forward ? a.y - 10 : a.y + 98;
             const active =
               selectedTransition === i ||
               (selectedTransition === null && (selectedState === t.from || selectedState === t.to));
@@ -297,20 +357,22 @@ export const FsmDiagramSvg: React.FC<{ states: FsmStateNode[]; transitions: FsmT
                   setSelectedTransition(i);
                   setSelectedState('');
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer svg-glide"
               >
                 <path
                   d={path}
                   fill="none"
-                  stroke={active ? '#06b6d4' : '#3b82f6'}
+                  stroke={active ? 'var(--sem-control)' : 'var(--text-secondary)'}
                   strokeWidth={active ? 2.2 : 1.4}
                   markerEnd="url(#fsm-arrow)"
+                  className="svg-glide"
                 />
                 <text
                   x={labelX}
                   y={labelY}
                   textAnchor="middle"
-                  className="font-mono text-[9.5px] font-medium fill-slate-700 dark:fill-slate-300"
+                  className="font-mono text-[9.5px] font-medium"
+                  fill="var(--text-secondary)"
                 >
                   {t.condition}
                 </text>
@@ -327,7 +389,7 @@ export const FsmDiagramSvg: React.FC<{ states: FsmStateNode[]; transitions: FsmT
                   setSelectedState(st.id);
                   setSelectedTransition(null);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer svg-glide"
               >
                 <rect
                   x={st.x}
@@ -335,15 +397,17 @@ export const FsmDiagramSvg: React.FC<{ states: FsmStateNode[]; transitions: FsmT
                   width={110}
                   height={48}
                   rx={24}
-                  className={active ? 'fill-cyan-500/20' : 'fill-white dark:fill-slate-900'}
-                  stroke={active ? '#06b6d4' : idx === 0 ? '#10b981' : '#64748b'}
-                  strokeWidth={active ? 2.5 : 1.5}
+                  fill={active ? 'var(--bg-elevated)' : 'var(--bg-surface)'}
+                  stroke={active ? 'var(--sem-control)' : idx === 0 ? 'var(--sem-high)' : 'var(--border-subtle)'}
+                  strokeWidth={active ? 2.2 : 1.4}
+                  className="svg-glide"
                 />
                 <text
                   x={st.x + 55}
                   y={st.y + 28}
                   textAnchor="middle"
-                  className="font-mono text-[12px] font-semibold fill-slate-900 dark:fill-slate-100"
+                  className="font-mono text-[12px] font-semibold"
+                  fill="var(--text-primary)"
                 >
                   {st.label}
                 </text>
@@ -353,17 +417,17 @@ export const FsmDiagramSvg: React.FC<{ states: FsmStateNode[]; transitions: FsmT
         </svg>
       </div>
       {selectedState && stateMap.get(selectedState) && (
-        <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs">
-          <div className="text-slate-700 dark:text-slate-200">
-            <span className="font-mono font-semibold text-cyan-700 dark:text-cyan-400">
+        <div className="pt-3 border-t border-[var(--border-subtle)] space-y-1 text-xs">
+          <div className="text-[var(--text-primary)]">
+            <span className="font-mono font-semibold text-[var(--sem-control)]">
               {stateMap.get(selectedState)?.label}:
             </span>{' '}
             {stateMap.get(selectedState)?.description}
           </div>
-          <div className="text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
-            <GraduationCap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+          <div className="text-[var(--text-secondary)] flex items-start gap-1.5">
+            <GraduationCap className="w-4 h-4 text-[var(--sem-control)] shrink-0 mt-0.5" />
             <span>
-              <strong>Student Meaning:</strong>{' '}
+              <strong className="text-[var(--text-primary)]">Student Meaning:</strong>{' '}
               {explainFsmStateLikeStudent(
                 stateMap.get(selectedState)!.label,
                 stateMap.get(selectedState)!.description
@@ -373,15 +437,15 @@ export const FsmDiagramSvg: React.FC<{ states: FsmStateNode[]; transitions: FsmT
         </div>
       )}
       {selectedTransition !== null && transitions[selectedTransition] && (
-        <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs">
-          <div className="font-mono font-semibold text-cyan-700 dark:text-cyan-400">
+        <div className="pt-3 border-t border-[var(--border-subtle)] space-y-1 text-xs">
+          <div className="font-mono font-semibold text-[var(--sem-control)]">
             Transition: {stateMap.get(transitions[selectedTransition].from)?.label || transitions[selectedTransition].from} →{' '}
             {stateMap.get(transitions[selectedTransition].to)?.label || transitions[selectedTransition].to} when [{transitions[selectedTransition].condition}]
           </div>
-          <div className="text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
-            <GraduationCap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+          <div className="text-[var(--text-secondary)] flex items-start gap-1.5">
+            <GraduationCap className="w-4 h-4 text-[var(--sem-control)] shrink-0 mt-0.5" />
             <span>
-              <strong>Student Meaning:</strong>{' '}
+              <strong className="text-[var(--text-primary)]">Student Meaning:</strong>{' '}
               {explainFsmTransitionLikeStudent(
                 stateMap.get(transitions[selectedTransition].from)?.label || transitions[selectedTransition].from,
                 stateMap.get(transitions[selectedTransition].to)?.label || transitions[selectedTransition].to,
@@ -419,8 +483,8 @@ export const CodeBlock: React.FC<{ title: string; language: string; code: string
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-100 overflow-hidden">
-      <div className="flex items-center justify-between gap-4 px-4 py-2.5 border-b border-slate-800 bg-slate-900/90">
+    <div className="min-w-0 w-full rounded-lg border border-[var(--border-subtle)] bg-[#0B0F19] text-slate-100 overflow-hidden">
+      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[#1E293B] bg-[#111827]">
         <div className="flex items-center gap-2 text-xs">
           <span className="font-mono font-medium text-cyan-400">{title}</span>
           <span className="text-slate-500" aria-hidden="true">·</span>
@@ -430,22 +494,22 @@ export const CodeBlock: React.FC<{ title: string; language: string; code: string
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-[#1E293B] text-slate-300 hover:bg-[#161E2E] transition-colors cursor-pointer whitespace-nowrap"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
             {copied ? 'Copied' : 'Copy'}
           </button>
           <button
             type="button"
             onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-[#1E293B] text-slate-300 hover:bg-[#161E2E] transition-colors cursor-pointer whitespace-nowrap"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4" />
             Export .sv
           </button>
         </div>
       </div>
-      <pre className="p-4 text-xs leading-relaxed overflow-x-auto font-mono text-slate-200">
+      <pre className="p-5 text-xs leading-relaxed overflow-x-auto font-mono text-slate-200 tabular-nums">
         <code>{code}</code>
       </pre>
     </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Play, Pause, SkipForward, RotateCcw, Layers, ShieldCheck, Cpu } from 'lucide-react';
 import { ProtocolDocument } from '../types/protocol';
 import { IpRegister } from '../types/ipUniverse';
@@ -135,14 +135,18 @@ export const PacketLayerInspectorSvg: React.FC<{ protocol: ProtocolDocument }> =
   const layers = useMemo(() => getProtocolPacketLayers(protocol), [protocol]);
   const [selectedField, setSelectedField] = useState<PacketField | null>(layers[0]?.fields[0] || null);
 
+  useEffect(() => {
+    setSelectedField(layers[0]?.fields[0] || null);
+  }, [protocol.id, layers]);
+
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#080E1A] p-4 space-y-3">
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-          <Layers className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+        <div className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <Layers className="w-4 h-4 text-[var(--sem-control)]" />
           Interactive Protocol Layer &amp; Packet Bit-Field Diagram
         </div>
-        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+        <span className="text-[11px] text-[var(--text-secondary)]">
           Click any segment below to inspect field width and hardware role
         </span>
       </div>
@@ -151,17 +155,17 @@ export const PacketLayerInspectorSvg: React.FC<{ protocol: ProtocolDocument }> =
         {layers.map((layer) => {
           const totalWeight = layer.fields.reduce((acc, f) => acc + f.widthWeight, 0) || 100;
           return (
-            <div key={layer.title} className="rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 space-y-2">
+            <div key={layer.title} className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <div className="font-semibold text-slate-900 dark:text-slate-100">
-                  <span className="font-mono text-cyan-700 dark:text-cyan-400 mr-2">{layer.layer}</span>
+                <div className="font-semibold text-[var(--text-primary)]">
+                  <span className="font-mono text-[var(--sem-control)] mr-2">{layer.layer}</span>
                   {layer.title}
                 </div>
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-400">{layer.details}</p>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{layer.details}</p>
 
               {/* Vector Segmented Packet Bar */}
-              <div className="flex w-full rounded overflow-hidden border border-slate-300 dark:border-slate-700">
+              <div className="flex w-full rounded-md overflow-hidden border border-[var(--border-subtle)]">
                 {layer.fields.map((f) => {
                   const pct = (f.widthWeight / totalWeight) * 100;
                   const isSel = selectedField?.name === f.name;
@@ -170,19 +174,13 @@ export const PacketLayerInspectorSvg: React.FC<{ protocol: ProtocolDocument }> =
                       key={f.name}
                       type="button"
                       onClick={() => setSelectedField(f)}
-                      style={{ width: `${pct}%` }}
-                      className={`px-2 py-2 text-left transition-opacity cursor-pointer border-r last:border-r-0 border-white/25 text-white ${
+                      style={{ width: `${pct}%`, backgroundColor: f.color }}
+                      className={`relative px-2.5 py-2 text-left flex flex-col justify-between transition-opacity cursor-pointer border-r last:border-r-0 border-white/25 text-white min-w-0 ${
                         isSel ? 'ring-2 ring-inset ring-white opacity-100' : 'opacity-85 hover:opacity-100'
                       }`}
                     >
-                      <div style={{ backgroundColor: f.color }} className="absolute inset-0 -z-10" />
-                      <div
-                        style={{ backgroundColor: f.color }}
-                        className="-mx-2 -my-2 px-2 py-2 h-full flex flex-col justify-between"
-                      >
-                        <div className="font-mono text-[11px] font-bold truncate">{f.name}</div>
-                        <div className="font-mono text-[9.5px] opacity-90 truncate">{f.bits}</div>
-                      </div>
+                      <div className="font-mono text-[11px] font-bold truncate w-full">{f.name}</div>
+                      <div className="font-mono text-[9.5px] opacity-90 truncate w-full tabular-nums">{f.bits}</div>
                     </button>
                   );
                 })}
@@ -193,10 +191,10 @@ export const PacketLayerInspectorSvg: React.FC<{ protocol: ProtocolDocument }> =
       </div>
 
       {selectedField && (
-        <div className="p-3 rounded border border-cyan-500/30 bg-cyan-50/60 dark:bg-cyan-950/20 text-xs text-slate-700 dark:text-slate-200">
-          <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">{selectedField.name}</span>{' '}
-          <span className="font-mono text-slate-500 dark:text-slate-400">({selectedField.bits}):</span>{' '}
-          {selectedField.role}
+        <div className="p-3.5 rounded-md border border-[var(--sem-control)]/40 bg-[var(--bg-elevated)] text-xs text-[var(--text-secondary)]">
+          <span className="font-mono font-bold text-[var(--sem-control)]">{selectedField.name}</span>{' '}
+          <span className="font-mono text-[var(--text-secondary)]">({selectedField.bits}):</span>{' '}
+          <span className="text-[var(--text-primary)]">{selectedField.role}</span>
         </div>
       )}
     </div>
@@ -415,12 +413,18 @@ const FIELD_COLORS = ['#06b6d4', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#e
 
 export const RegisterMemoryMapSvg: React.FC<{ registers: IpRegister[] }> = ({ registers }) => {
   const [selectedIdx, setSelectedIdx] = useState(0);
+
+  useEffect(() => {
+    setSelectedIdx(0);
+  }, [registers]);
+
   if (registers.length === 0) return null;
 
-  const activeReg = registers[selectedIdx] || registers[0];
+  const safeIdx = selectedIdx < registers.length ? selectedIdx : 0;
+  const activeReg = registers[safeIdx];
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#080E1A] p-4 space-y-3">
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
           <Cpu className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
@@ -434,7 +438,7 @@ export const RegisterMemoryMapSvg: React.FC<{ registers: IpRegister[] }> = ({ re
       {/* Horizontal Address Offset Strip */}
       <div className="flex flex-wrap gap-1.5">
         {registers.map((r, idx) => {
-          const isSel = idx === selectedIdx;
+          const isSel = idx === safeIdx;
           return (
             <button
               key={r.name}

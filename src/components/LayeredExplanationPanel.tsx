@@ -20,55 +20,55 @@ export const LayeredExplanationPanel: React.FC<LayeredExplanationPanelProps> = (
   const showL3 = depthLevel === 'all' || depthLevel === 'l3';
 
   return (
-    <div className={compact ? 'space-y-3' : 'space-y-4'}>
+    <div className={compact ? 'space-y-4' : 'space-y-6'}>
       {/* LEVEL 1 — FUNDAMENTAL UNDERSTANDING */}
       {showL1 && (
-        <section className="rounded-lg border border-cyan-500/30 bg-cyan-50/45 dark:bg-cyan-950/20 p-5 space-y-3.5 text-xs">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 space-y-4 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-bold text-cyan-800 dark:text-cyan-300">
+            <div className="flex items-center gap-2 text-sm font-bold text-[var(--sem-control)]">
               <BookOpen className="w-4 h-4 shrink-0" />
               <span>LEVEL 1 — Fundamental Understanding (First Principles & Student Intuition)</span>
             </div>
-            <span className="font-mono text-[11px] text-cyan-700 dark:text-cyan-400">
+            <span className="font-mono text-[11px] text-[var(--sem-control)]">
               Zero prior VLSI assumptions
             </span>
           </div>
 
-          <p className="text-sm text-slate-900 dark:text-slate-100 leading-relaxed">
+          <p className="text-sm text-[var(--text-primary)] leading-relaxed">
             {explanation.level1.intuitionSummary}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="p-3.5 rounded border border-cyan-500/20 bg-white/80 dark:bg-slate-900/70 space-y-1">
-              <div className="font-semibold text-cyan-800 dark:text-cyan-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-1.5">
+              <div className="font-semibold text-[var(--sem-control)]">
                 Why Engineers Had to Invent It
               </div>
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 {explanation.level1.whyItExists}
               </p>
             </div>
-            <div className="p-3.5 rounded border border-cyan-500/20 bg-white/80 dark:bg-slate-900/70 space-y-1">
-              <div className="font-semibold text-cyan-800 dark:text-cyan-300">
+            <div className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-1.5">
+              <div className="font-semibold text-[var(--sem-control)]">
                 Everyday Mental Model & Analogy
               </div>
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 {explanation.level1.everydayAnalogy}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {explanation.level1.stepByStepMentalModel.map((step, i) => (
               <div
                 key={i}
-                className="p-3 rounded border border-cyan-500/20 bg-white/75 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 leading-relaxed"
+                className="p-3.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] leading-relaxed"
               >
                 {step}
               </div>
             ))}
           </div>
 
-          <div className="flex items-start gap-2 pt-1 text-amber-800 dark:text-amber-300">
+          <div className="flex items-start gap-2 pt-1 text-[var(--sem-data)]">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               <strong>Common Beginner Misconception:</strong> {explanation.level1.beginnerMisconception}
@@ -79,46 +79,46 @@ export const LayeredExplanationPanel: React.FC<LayeredExplanationPanelProps> = (
 
       {/* LEVEL 2 — ENGINEERING & SPECIFICATION MECHANICS */}
       {showL2 && (
-        <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/75 p-5 space-y-3.5 text-xs">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 space-y-4 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
-              <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <Layers className="w-4 h-4 text-[var(--sem-control)] shrink-0" />
               <span>LEVEL 2 — Engineering Mechanics (Architecture, Equations, Worked Example & Reset)</span>
             </div>
-            <span className="font-mono text-[11px] text-blue-700 dark:text-blue-400">
+            <span className="font-mono text-[11px] text-[var(--sem-control)]">
               Design & Timing Spec
             </span>
           </div>
 
-          <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+          <p className="text-sm text-[var(--text-primary)] leading-relaxed">
             {explanation.level2.architectureAndMechanics}
           </p>
 
           <div className="space-y-1.5">
-            <div className="font-semibold text-slate-900 dark:text-slate-100">
+            <div className="font-semibold text-[var(--text-primary)]">
               Quantitative Rules, Bit Math & Timing Constraints
             </div>
-            <ul className="list-disc pl-5 space-y-1 font-mono text-slate-700 dark:text-cyan-300">
+            <ul className="list-disc pl-5 space-y-1 font-mono text-[var(--sem-control)]">
               {explanation.level2.mathematicalAndTimingRules.map((rule, idx) => (
                 <li key={idx}>{rule}</li>
               ))}
             </ul>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="p-3.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 space-y-1">
-              <div className="font-semibold text-slate-900 dark:text-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-1.5">
+              <div className="font-semibold text-[var(--text-primary)]">
                 Worked Cycle-by-Cycle / Numeric Example
               </div>
-              <p className="font-mono text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="font-mono text-[var(--text-secondary)] leading-relaxed">
                 {explanation.level2.workedEngineeringExample}
               </p>
             </div>
-            <div className="p-3.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 space-y-1">
-              <div className="font-semibold text-slate-900 dark:text-slate-100">
+            <div className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-1.5">
+              <div className="font-semibold text-[var(--text-primary)]">
                 Reset & Safe Initialization Rules
               </div>
-              <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="text-[var(--text-secondary)] leading-relaxed">
                 {explanation.level2.resetAndInitialization}
               </p>
             </div>
@@ -128,43 +128,43 @@ export const LayeredExplanationPanel: React.FC<LayeredExplanationPanelProps> = (
 
       {/* LEVEL 3 — EXPERT MICROARCHITECTURE, CORNER CASES & VERIFICATION */}
       {showL3 && (
-        <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/75 p-5 space-y-4 text-xs">
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 space-y-5 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <ShieldCheck className="w-4 h-4 text-[var(--sem-high)] shrink-0" />
               <span>LEVEL 3 — Expert Microarchitecture, Corner Cases & Silicon Debug</span>
             </div>
-            <span className="font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
+            <span className="font-mono text-[11px] text-[var(--sem-high)]">
               RTL Signoff & DV
             </span>
           </div>
 
           <div>
-            <div className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
+            <div className="font-semibold text-[var(--text-primary)] mb-1">
               Synthesizable RTL & CDC Microarchitecture
             </div>
-            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+            <p className="text-[var(--text-secondary)] leading-relaxed">
               {explanation.level3.rtlMicroarchitecture}
             </p>
           </div>
 
-          <div className="space-y-2">
-            <div className="font-semibold text-rose-700 dark:text-rose-400">
+          <div className="space-y-2.5">
+            <div className="font-semibold text-[var(--sem-error)]">
               Real-World Corner Cases & Failure Mode Analysis
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {explanation.level3.cornerCasesAndFailureModes.map((cf, idx) => (
                 <div
                   key={idx}
-                  className="p-3.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 space-y-1.5"
+                  className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-1.5"
                 >
-                  <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  <div className="font-semibold text-[var(--text-primary)]">
                     Symptom: {cf.symptom}
                   </div>
-                  <div className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <div className="text-[var(--text-secondary)] leading-relaxed">
                     <strong>Root Cause:</strong> {cf.rootCause}
                   </div>
-                  <div className="text-cyan-800 dark:text-cyan-300 leading-relaxed">
+                  <div className="text-[var(--sem-control)] leading-relaxed">
                     <strong>Resolution:</strong> {cf.resolution}
                   </div>
                 </div>
@@ -172,25 +172,25 @@ export const LayeredExplanationPanel: React.FC<LayeredExplanationPanelProps> = (
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-[var(--border-subtle)]">
+            <div className="flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-[var(--sem-high)] shrink-0 mt-0.5" />
               <div>
-                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                <div className="font-semibold text-[var(--text-primary)]">
                   UVM Verification & SVA Assertion Focus
                 </div>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed mt-0.5">
+                <p className="text-[var(--text-secondary)] leading-relaxed mt-1">
                   {explanation.level3.verificationAndAssertions}
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Wrench className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5">
+              <Wrench className="w-4 h-4 text-[var(--sem-control)] shrink-0 mt-0.5" />
               <div>
-                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                <div className="font-semibold text-[var(--text-primary)]">
                   Silicon Bring-Up & Waveform Debug Playbook
                 </div>
-                <p className="text-slate-600 dark:text-slate-300 leading-relaxed mt-0.5">
+                <p className="text-[var(--text-secondary)] leading-relaxed mt-1">
                   {explanation.level3.siliconDebugPlaybook}
                 </p>
               </div>

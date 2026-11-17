@@ -22,56 +22,56 @@ export const CompletenessTrackerPanel: React.FC<CompletenessTrackerPanelProps> =
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 overflow-hidden">
+    <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="w-full px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
+        className="w-full px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 text-left hover:bg-[var(--bg-elevated)]/60 transition-colors cursor-pointer"
       >
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-            Documentation Completeness & Source Verification Tracker — {title}
+          <div className="text-xs font-semibold text-[var(--text-primary)]">
+            Documentation Completeness &amp; Source Verification Tracker — {title}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <div className="text-[11px] text-[var(--text-secondary)] mt-0.5">
             {report.documentedCount}/{report.applicableCount} applicable technical domains fully verified ({report.percentComplete}%) · {report.note}
           </div>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-28 h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+          <div className="w-28 h-2 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
             <div
-              className="h-full bg-cyan-600 dark:bg-cyan-400"
+              className="h-full bg-[var(--sem-control)] transition-all duration-200"
               style={{ width: `${report.percentComplete}%` }}
             />
           </div>
-          <span className="text-xs font-mono font-semibold tabular-nums text-cyan-700 dark:text-cyan-400">
+          <span className="text-xs font-mono font-semibold tabular-nums text-[var(--sem-control)]">
             {report.percentComplete}%
           </span>
-          <span className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+          <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
             {expanded ? 'Hide Checklist' : 'Inspect 16 Checkpoints'}
-            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </span>
         </div>
       </button>
 
       {expanded && (
-        <div className="border-t border-slate-200 dark:border-slate-800 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+        <div className="border-t border-[var(--border-subtle)] p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           {report.items.map((item) => {
             const st = STATUS_STYLE[item.status];
             const Icon = st.Icon;
             return (
               <div
                 key={item.topic}
-                className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 space-y-1"
+                className="p-3.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-1.5"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">{item.topic}</span>
+                  <span className="font-semibold text-[var(--text-primary)]">{item.topic}</span>
                   <span className={`inline-flex items-center gap-1 text-[11px] font-medium shrink-0 ${st.text}`}>
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-4 h-4" />
                     {item.status}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">{item.detail}</p>
+                <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{item.detail}</p>
               </div>
             );
           })}

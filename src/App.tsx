@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Dices, Moon, Sun, X } from 'lucide-react';
+import { Dices, GitCompareArrows, HelpCircle, Menu, Moon, Search, Sun, X } from 'lucide-react';
 import { AppView, HomeDashboard } from './components/HomeDashboard';
 import { SearchModal } from './components/SearchModal';
 import { ALL_PROTOCOLS, getProtocolById } from './data/protocols';
 import { ALL_IPS, getIpById } from './data/ips';
 import { AES_CURRICULUM } from './data/aesCurriculum';
+import type { CurriculumPillarId } from './data/rtlSvUvmCurriculum';
 
 const ProtocolDocView = lazy(() => import('./components/ProtocolDocView').then((m) => ({ default: m.ProtocolDocView })));
 const SimulatorLab = lazy(() => import('./components/SimulatorLab').then((m) => ({ default: m.SimulatorLab })));
@@ -29,6 +30,12 @@ const DocumentationCompletenessDashboard = lazy(() =>
 const MasterArchitectureView = lazy(() => import('./components/MasterArchitectureView').then((m) => ({ default: m.MasterArchitectureView })));
 const InteractiveExplainerView = lazy(() =>
   import('./components/explainer/InteractiveExplainerView').then((m) => ({ default: m.InteractiveExplainerView }))
+);
+const RtlSvUvmStudioView = lazy(() =>
+  import('./components/RtlSvUvmStudioView').then((m) => ({ default: m.RtlSvUvmStudioView }))
+);
+const PlatformGuideView = lazy(() =>
+  import('./components/PlatformGuideView').then((m) => ({ default: m.PlatformGuideView }))
 );
 
 function parseExplainerHash(): { active: boolean; topicId?: string; sceneIdx?: number; step?: number } {
@@ -58,8 +65,11 @@ export default function App() {
   const [simProtocolId, setSimProtocolId] = useState<string>('axi4');
   const [compareProtoId, setCompareProtoId] = useState<string | undefined>(undefined);
   const [compareIpAId, setCompareIpAId] = useState<string | undefined>(undefined);
+  const [curriculumModuleId, setCurriculumModuleId] = useState<string | undefined>(undefined);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [useCaseFilter, setUseCaseFilter] = useState<'all' | 'rtl' | 'uvm' | 'interview'>('all');
+  const [mobileDocDrawerOpen, setMobileDocDrawerOpen] = useState<boolean>(false);
   const [luckyPick, setLuckyPick] = useState<{
     kind: 'Protocol' | 'Open-Source IP' | 'AES 7-Chapter Lab' | 'Clock Domain Analysis' | 'Waveform Lab';
     title: string;
@@ -86,6 +96,17 @@ export default function App() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
+        return;
+      }
+      if (
+        e.key === '/' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !(e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.isContentEditable))
+      ) {
+        e.preventDefault();
+        setSearchOpen(true);
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -122,7 +143,17 @@ export default function App() {
 
   const navigate = (v: AppView) => {
     setLuckyPick(null);
+    if (v === 'rtl-design' || v === 'systemverilog' || v === 'uvm-studio') {
+      setCurriculumModuleId(undefined);
+    }
     setView(v);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openCurriculum = (pillar: CurriculumPillarId, moduleId?: string) => {
+    setLuckyPick(null);
+    setCurriculumModuleId(moduleId);
+    setView(pillar === 'rtl-design' ? 'rtl-design' : pillar === 'systemverilog' ? 'systemverilog' : 'uvm-studio');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -214,32 +245,41 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Top Header Navigation: clean concise single-line links adhering to Top Bar Contract
+  // Top Header Navigation: clean concise single-line links directly exposing Protocols, RTL Design, SV, UVM, IPs & Explainers
   const headerNavItems: Array<{ id: AppView; label: string; matchViews: AppView[] }> = [
     { id: 'home', label: 'Home', matchViews: ['home'] },
-    { id: 'explainer', label: 'Explainers', matchViews: ['explainer'] },
     {
       id: 'protocol-atlas',
       label: 'Protocol Atlas',
-      matchViews: ['protocol-atlas', 'protocol', 'simulator', 'checker', 'compare', 'soc-map', 'uvm'],
+      matchViews: ['protocol-atlas', 'protocol', 'simulator', 'checker', 'compare', 'soc-map'],
+    },
+    {
+      id: 'rtl-design',
+      label: 'RTL Design',
+      matchViews: ['rtl-design', 'rtl-explorer', 'cdc-analyzer'],
+    },
+    {
+      id: 'systemverilog',
+      label: 'SystemVerilog',
+      matchViews: ['systemverilog'],
+    },
+    {
+      id: 'uvm-studio',
+      label: 'UVM',
+      matchViews: ['uvm-studio', 'uvm', 'verification-hub'],
     },
     {
       id: 'ip-universe',
       label: 'IP Universe',
-      matchViews: ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare'],
+      matchViews: ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'aes-deep-dive', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'],
     },
-    {
-      id: 'soc-explorer',
-      label: 'SoCs & RTL',
-      matchViews: ['master-architecture', 'soc-explorer', 'rtl-explorer', 'cdc-analyzer', 'aes-deep-dive', 'verification-hub', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'],
-    },
-    { id: 'glossary', label: 'Glossary', matchViews: ['glossary'] },
+    { id: 'explainer', label: 'Explainers', matchViews: ['explainer'] },
   ];
 
-  // Context-aware workspace sub-bars: only appear inside multi-view engineering hubs (calm 5-6 links max)
-  const PROTOCOL_HUB_VIEWS: AppView[] = ['protocol', 'simulator', 'checker', 'compare', 'soc-map', 'uvm'];
-  const IP_HUB_VIEWS: AppView[] = ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare'];
-  const SOC_LAB_VIEWS: AppView[] = ['master-architecture', 'soc-explorer', 'rtl-explorer', 'cdc-analyzer', 'aes-deep-dive', 'verification-hub', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'];
+  // Context-aware workspace sub-bars
+  const PROTOCOL_HUB_VIEWS: AppView[] = ['protocol', 'simulator', 'checker', 'compare', 'soc-map'];
+  const RTL_SV_UVM_VIEWS: AppView[] = ['rtl-design', 'systemverilog', 'uvm-studio', 'rtl-explorer', 'cdc-analyzer', 'uvm', 'verification-hub'];
+  const IP_HUB_VIEWS: AppView[] = ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'aes-deep-dive', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'];
 
   const subBarLinks: Array<{ id: AppView; label: string }> = PROTOCOL_HUB_VIEWS.includes(view)
     ? [
@@ -248,7 +288,19 @@ export default function App() {
         { id: 'checker', label: 'Compliance Checker' },
         { id: 'compare', label: 'Protocol Compare' },
         { id: 'soc-map', label: 'Bus Fabric Map' },
+        { id: 'rtl-design', label: 'RTL Handbook' },
+        { id: 'systemverilog', label: 'SV Handbook' },
+        { id: 'uvm-studio', label: 'UVM Handbook' },
+      ]
+    : RTL_SV_UVM_VIEWS.includes(view)
+    ? [
+        { id: 'rtl-design', label: 'RTL Design (14)' },
+        { id: 'systemverilog', label: 'SystemVerilog (14)' },
+        { id: 'uvm-studio', label: 'UVM Methodology (14)' },
+        { id: 'rtl-explorer', label: 'RTL Source Explorer' },
+        { id: 'cdc-analyzer', label: 'Clock Domains (CDC)' },
         { id: 'uvm', label: 'UVM & SVA Gen' },
+        { id: 'verification-hub', label: 'Verification Hub' },
       ]
     : IP_HUB_VIEWS.includes(view)
     ? [
@@ -256,91 +308,132 @@ export default function App() {
         { id: 'processors', label: 'Processors' },
         { id: 'gpus', label: 'GPUs' },
         { id: 'ai-accelerators', label: 'AI Accelerators' },
-        { id: 'ip-compare', label: 'Compare IPs' },
-      ]
-    : SOC_LAB_VIEWS.includes(view)
-    ? [
-        { id: 'master-architecture', label: '16-Domain Atlas' },
         { id: 'soc-explorer', label: 'SoC Explorer' },
-        { id: 'rtl-explorer', label: 'RTL Explorer' },
-        { id: 'cdc-analyzer', label: 'Clock Domains (CDC)' },
-        { id: 'aes-deep-dive', label: 'AES 7-Chapter Lab' },
-        { id: 'verification-hub', label: 'Verification Hub' },
+        { id: 'master-architecture', label: '16-Domain Atlas' },
         { id: 'knowledge-graph', label: 'Knowledge Graph' },
-        { id: 'completeness-dashboard', label: 'Completeness Audit' },
+        { id: 'ip-compare', label: 'Compare IPs' },
       ]
     : [];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-[#0B1120] dark:text-slate-100">
-      {/* Strict 3-Zone Top Bar Contract */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6">
-          <button
-            type="button"
-            onClick={() => navigate('home')}
-            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0 cursor-pointer hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
-          >
-            VLSI Protocol Atlas
-          </button>
+    <div className="min-h-screen flex flex-col bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+      {/* Sticky 60px Stripe/Linear Engineering Header */}
+      <header className="sticky top-0 z-40 h-[60px] border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/95 backdrop-blur-md">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
+          {/* Left: Mobile Drawer Trigger + Brand + Primary Hub Nav */}
+          <div className="flex items-center gap-4 min-w-0">
+            {view === 'protocol' && (
+              <button
+                type="button"
+                onClick={() => setMobileDocDrawerOpen((v) => !v)}
+                aria-label="Toggle protocol sidebar"
+                className="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer shrink-0"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('home')}
+              className="text-sm sm:text-base font-bold tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0 cursor-pointer hover:text-[var(--sem-control)] transition-colors"
+            >
+              VLSI Protocol Atlas
+            </button>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            {headerNavItems.map((item) => {
-              const active = item.matchViews.includes(view);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => navigate(item.id === 'protocol-atlas' ? 'protocol' : item.id)}
-                  className={`whitespace-nowrap shrink-0 py-1 transition-colors cursor-pointer border-b-2 ${
-                    active
-                      ? 'border-cyan-500 text-slate-900 dark:text-cyan-300'
-                      : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+            <nav className="hidden md:flex items-center gap-3.5 xl:gap-5 text-[12.5px] xl:text-[13px] font-medium pl-3 border-l border-[var(--border-subtle)]">
+              {headerNavItems.map((item) => {
+                const active = item.matchViews.includes(view);
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => navigate(item.id === 'protocol-atlas' ? 'protocol' : item.id)}
+                    className={`whitespace-nowrap shrink-0 h-[60px] inline-flex items-center border-b-2 transition-colors cursor-pointer ${
+                      active
+                        ? 'border-[var(--sem-control)] text-[var(--text-primary)]'
+                        : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
+          {/* Right: Compare Matrix + Search Shortcut + Feeling Lucky + Guide + Theme Toggle */}
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => navigate('compare')}
+              title="Open Protocol Comparison Matrix"
+              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                view === 'compare'
+                  ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+              }`}
+            >
+              <GitCompareArrows className="w-4 h-4" />
+              <span>Compare</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('guide')}
+              title="How to Use & Where to Find What (Platform Guide)"
+              aria-label="How to Use and Where to Find What"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                view === 'guide'
+                  ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span className="hidden xl:inline">Guide</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              title="Search Atlas (/ or Cmd+K)"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Search className="w-4 h-4 text-[var(--text-secondary)]" />
+              <span className="hidden sm:inline">Search Atlas</span>
+              <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono tabular-nums rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)]">
+                /
+              </kbd>
+            </button>
+
             <button
               type="button"
               onClick={() => handleFeelingLucky('any')}
               title="Jump to a random protocol, open-source IP, CDC map, or lab"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              aria-label="Feeling Lucky random discovery"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--sem-data)] hover:bg-[var(--bg-elevated)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Dices className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Feeling Lucky</span>
+              <Dices className="w-4 h-4" />
             </button>
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="px-3.5 py-1.5 text-xs font-medium rounded-md bg-slate-900 dark:bg-cyan-600 text-white hover:bg-slate-800 dark:hover:bg-cyan-500 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              Search Atlas
-            </button>
+
             <button
               type="button"
               onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-              title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-              aria-label={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all duration-150 shrink-0 cursor-pointer"
             >
               {theme === 'dark' ? (
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
+                <Sun className="w-4 h-4 text-amber-400 transition-transform duration-150 rotate-0" />
               ) : (
-                <Moon className="w-3.5 h-3.5 text-slate-700" />
+                <Moon className="w-4 h-4 text-slate-700 transition-transform duration-150 rotate-0" />
               )}
-              <span className="hidden lg:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Mobile primary hub navigation (< md) */}
-      <div className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs">
+      <div className="md:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs">
         {headerNavItems.map((item) => {
           const active = item.matchViews.includes(view);
           return (
@@ -348,10 +441,10 @@ export default function App() {
               key={item.id}
               type="button"
               onClick={() => navigate(item.id === 'protocol-atlas' ? 'protocol' : item.id)}
-              className={`px-2.5 py-1 rounded whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 rounded whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 active
-                  ? 'bg-cyan-600 text-white font-semibold'
-                  : 'text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
+                  ? 'bg-[var(--sem-control)] text-white font-medium'
+                  : 'text-[var(--text-secondary)] border border-[var(--border-subtle)]'
               }`}
             >
               {item.label}
@@ -362,27 +455,60 @@ export default function App() {
 
       {/* Main Content Viewport */}
       <main className="flex-1">
-        {/* Clean Context-Aware Hub Sub-Bar (hidden on Home & Glossary so pages stay uncluttered) */}
+        {/* Clean Context-Aware Hub Sub-Bar */}
         {subBarLinks.length > 0 && (
-          <div className="border-b border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-950/60">
-            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-2 flex items-center gap-2 overflow-x-auto text-xs">
-              {subBarLinks.map((lnk) => {
-                const active = view === lnk.id || (lnk.id === 'ip-universe' && view === 'ip-detail');
-                return (
-                  <button
-                    key={lnk.id}
-                    type="button"
-                    onClick={() => navigate(lnk.id)}
-                    className={`px-3 py-1 rounded whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
-                      active
-                        ? 'bg-cyan-600/15 text-cyan-700 dark:text-cyan-300 font-semibold'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                    }`}
-                  >
-                    {lnk.label}
-                  </button>
-                );
-              })}
+          <div className="border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/70">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+                {subBarLinks.map((lnk) => {
+                  const active = view === lnk.id || (lnk.id === 'ip-universe' && view === 'ip-detail');
+                  return (
+                    <button
+                      key={lnk.id}
+                      type="button"
+                      onClick={() => navigate(lnk.id)}
+                      className={`px-3 py-1 rounded whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                        active
+                          ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-medium'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]/60 border border-transparent'
+                      }`}
+                    >
+                      {lnk.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Use-Case Filter when inside Protocol Docs */}
+              {view === 'protocol' && (
+                <div
+                  role="group"
+                  aria-label="Protocol Doc Focus Filter"
+                  className="inline-flex items-center p-0.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] shrink-0"
+                >
+                  {(
+                    [
+                      { id: 'all', label: 'All Focus' },
+                      { id: 'rtl', label: 'RTL Focus' },
+                      { id: 'uvm', label: 'UVM Focus' },
+                      { id: 'interview', label: 'Interview Prep' },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setUseCaseFilter(opt.id)}
+                      className={`px-2.5 py-1 text-[11px] font-medium rounded cursor-pointer transition-colors whitespace-nowrap ${
+                        useCaseFilter === opt.id
+                          ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -467,6 +593,10 @@ export default function App() {
             {view === 'protocol' && (
               <ProtocolDocView
                 protocol={getProtocolById(selectedProtocolId)}
+                useCaseFilter={useCaseFilter}
+                onSelectProtocol={openProtocol}
+                mobileSidebarOpen={mobileDocDrawerOpen}
+                onCloseMobileSidebar={() => setMobileDocDrawerOpen(false)}
                 onBack={() => navigate('home')}
                 onOpenLab={(simId) => {
                   setSimProtocolId(simId);
@@ -480,6 +610,26 @@ export default function App() {
                 onOpenAesDeepDive={() => navigate('aes-deep-dive')}
                 onOpenKnowledgeGraph={openKnowledgeGraph}
                 onOpenExplainer={openExplainer}
+                onOpenCurriculum={(pillar) => openCurriculum(pillar)}
+              />
+            )}
+
+            {(view === 'rtl-design' || view === 'systemverilog' || view === 'uvm-studio') && (
+              <RtlSvUvmStudioView
+                initialPillar={
+                  view === 'rtl-design'
+                    ? 'rtl-design'
+                    : view === 'systemverilog'
+                    ? 'systemverilog'
+                    : 'uvm-methodology'
+                }
+                initialModuleId={curriculumModuleId}
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+                onNavigate={navigate}
+                onPillarChange={(p) =>
+                  setView(p === 'rtl-design' ? 'rtl-design' : p === 'systemverilog' ? 'systemverilog' : 'uvm-studio')
+                }
               />
             )}
 
@@ -629,39 +779,53 @@ export default function App() {
                 onSelectIp={openIp}
               />
             )}
+
+            {view === 'guide' && (
+              <PlatformGuideView
+                onNavigate={navigate}
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+                onOpenCurriculum={openCurriculum}
+                onOpenSearch={() => setSearchOpen(true)}
+                onFeelingLucky={handleFeelingLucky}
+              />
+            )}
           </div>
         </Suspense>
       </main>
 
       {/* Quiet Engineering Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] py-6 px-4 sm:px-6 text-xs text-slate-500 dark:text-slate-400">
-        <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-0.5">
-            <div className="font-medium text-slate-700 dark:text-slate-300">
+      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] py-8 px-4 sm:px-6 text-xs text-[var(--text-secondary)]">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="font-semibold text-[var(--text-primary)]">
               VLSI Protocol Atlas &amp; Open-Source IP Universe · MIT License
             </div>
             <div>
-              Grounded in ARM AMBA, PCI-SIG, JEDEC, MIPI, RISC-V, OpenTitan, Ibex, OpenHW, UC Berkeley, PULP, Vortex &amp; LiteX repositories.
+              Grounded in ARM AMBA, PCI-SIG, JEDEC, MIPI, IEEE 1800 / 1800.2, RISC-V, OpenTitan, Ibex, OpenHW, UC Berkeley, PULP, Vortex &amp; LiteX.
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
+            <button type="button" onClick={() => navigate('rtl-design')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
+              RTL Design
+            </button>
+            <button type="button" onClick={() => navigate('systemverilog')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
+              SystemVerilog
+            </button>
+            <button type="button" onClick={() => navigate('uvm-studio')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
+              UVM
+            </button>
             <button type="button" onClick={() => navigate('master-architecture')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
               16-Domain Atlas
-            </button>
-            <button type="button" onClick={() => navigate('ip-universe')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              IP Universe
             </button>
             <button type="button" onClick={() => navigate('completeness-dashboard')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
               Completeness Audit
             </button>
-            <button type="button" onClick={() => navigate('soc-explorer')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              SoC Explorer
-            </button>
-            <button type="button" onClick={() => navigate('repo-ingestion')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              Repo Ingestion
-            </button>
             <button type="button" onClick={() => navigate('glossary')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
               Glossary
+            </button>
+            <button type="button" onClick={() => navigate('guide')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer font-medium text-[var(--sem-control)]">
+              How to Use &amp; Guide
             </button>
           </div>
         </div>
@@ -678,6 +842,8 @@ export default function App() {
           setAesSubtopicId(subId);
           navigate('aes-deep-dive');
         }}
+        onSelectCurriculum={openCurriculum}
+        onSelectGuide={() => navigate('guide')}
       />
     </div>
   );

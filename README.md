@@ -9,8 +9,10 @@
 </p>
 
 <p align="center">
+  <a href="#where-to-find-what--how-to-use">Where to Find What</a> •
   <a href="#features">Features</a> •
-  <a href="#23-protocol--interface-domains">Protocol Domains</a> •
+  <a href="#30-protocol-categories--16-master-knowledge-domains">Protocol Domains</a> •
+  <a href="#rtl-design-systemverilog--uvm-curriculum-42-modules">RTL / SV / UVM</a> •
   <a href="#open-source-silicon-ip-universe">Open-Source IP Universe</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#github-pages-deployment">GitHub Pages Deployment</a> •
@@ -21,9 +23,18 @@
 
 ## Overview
 
-**VLSI Protocol Atlas & Open-Source IP Universe** is an interactive semiconductor engineering documentation platform, cycle-accurate protocol simulator, RTL reverse-engineering explorer, and UVM/SVA verification workbench.
+**VLSI Protocol Atlas & Open-Source IP Universe** is an interactive semiconductor engineering documentation platform, cycle-accurate protocol simulator, RTL/SystemVerilog/UVM handbook, RTL reverse-engineering explorer, and UVM/SVA verification workbench.
 
-Built for **RTL designers, SoC architects, design verification (DV) engineers, silicon bring-up teams, and students**, the platform unifies authoritative specification details across **498+ protocols and standards (30 categories & 16 Master Knowledge Domains)** with **37+ real open-source silicon IPs**, **6 complete SoC topologies**, a **Semiconductor Engineering Knowledge Graph**, and the **Interactive Hardware Explainer Studio**:
+Built for **RTL designers, SoC architects, design verification (DV) engineers, silicon bring-up teams, and students**, the platform connects:
+
+- **498 Protocols & Standards** across **30 Categories** and **16 Master Knowledge Domains** (`100%` passing the 16-checkpoint specification audit)
+- **42 Interactive RTL Design, SystemVerilog (IEEE 1800) & UVM (IEEE 1800.2) Modules** (14 per pillar) cross-linked to protocols and open-source RTL
+- **37 Real Open-Source Silicon IPs** and **6 Reference SoC Topologies** (OpenTitan EarlGrey, Chipyard, PULPissimo, CVA6 SoC, LiteX, OpenPiton)
+- **544 Interactive Hardware Explainers** powered by **14 Synchronized Visualization Renderers**
+- **1,108-Node / 1,031-Edge Semiconductor Engineering Knowledge Graph** with shortest-path tracing, blast-radius analysis, natural-language queries, and live Verilog/SV repo ingestion
+- **30-Subtopic AES 7-Chapter Hardware Security Deep Dive** (plus an interactive FIPS-197 AES-128 round stepper) and **28 Linked Silicon Glossary Terms**
+
+Every protocol, IP, and explainer is structured across three engineering depth layers:
 
 - **Level 1 — Fundamental Understanding:** First-principles intuition, design motivation, everyday analogies, step-by-step mental models, and common beginner misconceptions.
 - **Level 2 — Engineering Mechanics:** Formal bus/datapath architecture, quantitative timing & bit-width math, worked cycle-by-cycle examples, and safe reset rules.
@@ -31,34 +42,77 @@ Built for **RTL designers, SoC architects, design verification (DV) engineers, s
 
 ---
 
+## Where to Find What & How to Use
+
+You can open the interactive **How to Use & Guide** page directly inside the web app from:
+- The **Guide** button (`?`) in the top-right header utility bar
+- The **How to Use & Guide** button in the Home Workspace Utility Strip or footer
+- **Search Atlas** (`/` or `Cmd/Ctrl + K`) by typing `"guide"`, `"how to use"`, or `"where to find"`
+
+### Workspace Directory Map
+
+| Feature / Workbench | Where to Find It in the UI | How to Use It |
+|---|---|---|
+| **Platform Guide (Roadmap)** | Header right bar -> **Guide** (`?`), Home strip, Footer, or Search (`/`) | Browse role-based workflows, click-paths, tool playbooks, and keyboard shortcuts. |
+| **Protocol Specs (498)** | Header -> **Protocol Atlas** (or Home 30-Domain Directory) | Pick any protocol in the left category tree, filter signals, click any signal row or right-rail pinout chip to inspect RTL/SVA/UVM rules, switch **Focus Mode** (`All`, `RTL`, `UVM`, `Interview`), and compare Expected vs Bug waveforms. |
+| **Waveform Studio** | Protocol Atlas sub-bar -> **Waveform Lab** (or Home card) | Select a bus (`AXI4`, `AXI4-Lite`, `AXI4-Stream`, `APB`, `SPI`, `I2C`, `UART`), inject backpressure stalls, step cycle-by-cycle, and check handshake violation flags. |
+| **Compliance Checker** | Protocol Atlas sub-bar -> **Compliance Checker** (or Home card) | Load or edit cycle traces in JSON and run live AMBA / TileLink rule validation (`VALID/READY` stability, `WLAST`, 4KB boundaries). |
+| **Protocol Compare & Bus Fabric Map** | Header -> **Compare** button; Protocol Atlas sub-bar -> **Protocol Compare** / **Bus Fabric Map** | Benchmark two protocols side-by-side (ordering, coherency, bursts, signal count) or trace CPU -> NoC -> DDR5/PCIe/RoT links across an SoC fabric. |
+| **RTL Design Handbook (14)** | Header -> **RTL Design** (or Protocol Doc footer links) | Navigate chapters via the sticky left syllabus, study normative design rules and *Pitfall vs Verified Fix* cards, copy/export `.sv` snippets, and launch linked CDC/RTL labs. |
+| **SystemVerilog IEEE 1800 (14)** | Header -> **SystemVerilog** (or RTL Design sub-bar) | Master 2-state vs 4-state types, interfaces/modports, clocking blocks, OOP & parameterized classes, constraints, covergroups, SVA sequences, event regions, and DPI-C. |
+| **UVM Methodology IEEE 1800.2 (14)** | Header -> **UVM** (or RTL Design sub-bar) | Learn UVM topology, factory overrides, objections, virtual sequences, TLM ports, scoreboards, UVM RAL, `uvm_config_db`, and protocol agent patterns. |
+| **RTL Explorer, CDC Analyzer & Verification Hub** | RTL Design sub-bar -> **RTL Source Explorer**, **Clock Domains (CDC)**, **UVM & SVA Gen**, **Verification Hub** | Inspect extracted RTL module trees, async FIFO / 2-FF / reset-bridge clock islands across IPs, generate parameterized SV interfaces/agents, and review `core_ibex` / `dvsim` / `cocotb` testbenches. |
+| **Open-Source Silicon IP Universe (37)** | Header -> **IP Universe** (sub-tabs: **Processors**, **GPUs**, **AI Accelerators**, **IP Comparison**) | Filter CPUs, GPUs, AI accelerators, security cores, and interconnects; toggle between **IP Explorer** (modules, FSMs, CSR bit-fields) and **Protocol Explorer** (bus connectivity). |
+| **SoC Explorer (6) & 16-Domain Atlas** | IP Universe sub-bar -> **SoC Explorer** / **16-Domain Atlas** | Inspect EarlGrey, Chipyard, PULPissimo, CVA6 SoC, LiteX, and OpenPiton memory maps and crossbars, plus ISA, packaging, physical design, DFT, and ISO 26262 safety domains. |
+| **Knowledge Graph & Repo Ingestion** | IP Universe sub-bar -> **Knowledge Graph** / Home; Repo Ingestion via Search/Guide | Trace shortest paths and blast radius across 1,108 nodes & 1,031 edges, run natural-language queries, export JSON/CSV/Markdown/Mermaid, or paste live Verilog/SV/Chisel RTL. |
+| **Interactive Explainers (544)** | Header -> **Explainers** (or **Explainer** links on Home / Protocol cards) | Scrub timelines, toggle **Overview / Detail / Expert** live, enable **Verification View**, mutate signals with **Try It**, check **What Changes**, and complete 3-question self-checks. |
+| **AES 7-Chapter Lab (30 Topics)** | Home -> **AES 7-Chapter Deep Dive** / Utility cards | Study GF(2⁸), S-Box, DOM masking, TL-UL integrity, TVLA/fault attacks, and step cycle-by-cycle through a live FIPS-197 AES-128 state matrix. |
+| **Completeness Audit & Glossary** | Home Utility Strip / Footer -> **Completeness Audit**, **Glossary** | Verify 16-checkpoint `100%` documentation coverage across all 498 protocols and look up linked RTL/DV terminology. |
+
+### Keyboard Shortcuts & Deep Links
+
+- **`/` or `Cmd/Ctrl + K`** — Open **Search Atlas** across all 498 protocols, 42 RTL/SV/UVM modules, 37 IPs, RTL files, signals, SoCs, AES chapters, glossary, and Guide
+- **`Esc`** — Close modals cleanly
+- **`Space` / `←` / `→`** — Play/pause or step cycle-by-cycle inside the Interactive Hardware Explainer Studio
+- **`#explainer/<topic>/s<scene>/t<step>`** — Bookmark or share an exact explainer topic, scene, and clock cycle
+- **Focus Filter (`All Focus` | `RTL Focus` | `UVM Focus` | `Interview Prep`)** — Located in the Protocol Atlas sub-bar to emphasize matching protocol sections
+- **Light / Dark Mode Toggle** — Top-right Sun/Moon icon switches CSS design tokens consistently across pages, waveforms, SVG FSMs, and code blocks
+
+---
+
 ## Features
 
-### 1. Interactive Hardware Explainer Studio (14 Synchronized Renderers)
-- **Unified Timeline & Deep-Link Engine (`#explainer/<topic>/s<scene>/t<step>`):** Synchronizes play/pause, cycle step (`←`/`→`), speed control, scrubbing, live **Overview / Detail / Expert** depth switching, **Verification View**, interactive **"Try It"** mutations, **"What Changes"** mode diff tables, and **3-question self-checks**.
+### 1. Interactive Hardware Explainer Studio (544 Topics · 14 Synchronized Renderers)
+- **Unified Timeline & Deep-Link Engine (`#explainer/<topic>/s<scene>/t<step>`):** Synchronizes play/pause, cycle step (`←`/`→`), speed control, scrubbing, live **Overview / Detail / Expert** depth switching, **Verification View**, interactive **"Try It"** mutations, **"What Changes"** diff tables, and **3-question self-checks**.
 - **14 Data-Driven Visualization Renderers:** Block Packet Flows, Sequence Diagrams, Cycle-Accurate Waveforms, FSM State Graphs, Live Hex Bit-Field Decoders, CPU/GPU Pipeline Lanes (forwarding/stalls/flushes), SoC Memory Map & Page Walk, UPF/Clock/Reset Floorplan Overlays, 60fps Systolic Array Canvas (`WS`/`OS`/`RS`), MESI Cache Coherence, 60fps 2D NoC Mesh Canvas, Queue/Credit Meters, Roofline Performance Charts, and Layered Encapsulation Stacks.
 - **Built-In Schema Validator & Authoring Guide:** Runtime `validateTopic()` verification enforces citations, accessibility `ariaDescription`, 3 depth layers, and 3-question self-checks on every topic.
 
-### 2. Protocol Atlas (498+ Protocols & Standards Across 30 Domains)
-- **Protocol-to-RTL Signal Inspector:** Click any signal across channels to examine width, direction, polarity, reset value, timing rules, legal/illegal handshake conditions, synthesizable SystemVerilog snippets, SVA properties, and UVM driver notes.
-- **Interactive Waveform Studio:** Step cycle-by-cycle through live bus handshakes (`AXI4`, `AXI4-Lite`, `AXI4-Stream`, `APB`, `SPI`, `I2C`, `UART`), trigger backpressure stalls, and inspect signal transitions.
-- **Compliance Checker:** Validate transaction traces against AMBA and TileLink integrity invariants.
+### 2. Protocol Atlas (498 Protocols & Standards Across 30 Domains)
+- **Protocol-to-RTL Signal Inspector:** Click any signal row or right-rail pinout chip to scroll smoothly to the Signal Inspector drawer and review width, direction, polarity, reset value, timing rules, legal/illegal handshake conditions, synthesizable SystemVerilog snippets, SVA properties, and UVM driver notes.
+- **Interactive Waveform Studio:** Step cycle-by-cycle through live bus handshakes (`AXI4`, `AXI4-Lite`, `AXI4-Stream`, `APB`, `SPI`, `I2C`, `UART`), inject backpressure stalls, track hovered cycle coordinates accurately, and inspect handshake violations (including TileLink `a_valid`/`a_ready` & `d_valid`/`d_ready`).
+- **Compliance Checker:** Validate transaction traces against AMBA and TileLink integrity invariants with proper 1-bit binary flag rendering (`PWRITE`, `PSLVERR`) and bus waveforms.
 - **Protocol Compare & Bus Fabric Map:** Side-by-side throughput, burst, ordering, coherency, and signal matrices plus SoC-wide interconnect topology maps.
 - **UVM & SVA Generator:** Generate parameterized SystemVerilog interfaces, assertions, and verification templates.
 
-### 3. Semiconductor Engineering Knowledge Graph & Repo Ingestion
-- **Unified Graph Engine (1,054 Nodes, 977 Edges):** Links 15 entity types across Protocols, Hardware IPs, Processors, SoCs, RTL Modules, Signals, UVM Components, Testcases, Assertions, Standards, Registers, Memory, Clock/Reset Domains, and EDA Tools with shortest-path tracing, blast-radius analysis, natural-language query patterns, and JSON/CSV/Markdown/Mermaid export.
+### 3. RTL Design, SystemVerilog & UVM Curriculum (42 Modules)
+- **RTL Design (14 Modules):** Synthesizable coding rules (`always_ff`/`always_comb`), blocking vs non-blocking rules, safe FSM encoding & recovery, elastic `valid/ready` skid buffers, Gray-coded async FIFOs, reset synchronizer bridges, fixed-priority & round-robin arbitration, datapath pipelining, fixed-point arithmetic, SRAM & register-file inference, ICG low-power clock gating, synthesis-vs-simulation mismatches, and STA timing closure.
+- **SystemVerilog — IEEE 1800 (14 Modules):** 2-state vs 4-state semantics, packed/unpacked arrays, queues & associative arrays, interfaces & modports, clocking blocks, OOP & parameterized classes, constrained randomization & weights, functional covergroups & cross coverage, immediate & concurrent SVA assertions, event scheduling regions, `fork/join` synchronization, and DPI-C.
+- **UVM Methodology — IEEE 1800.2 (14 Modules):** Testbench hierarchy & factory overrides, run phases & objection lifecycle, `uvm_sequence_item` & sequence arbitration, virtual sequences, active/passive drivers & monitors, TLM FIFOs & analysis ports, self-checking scoreboards, functional coverage subscribers, UVM RAL register abstraction, `uvm_config_db` scoping, and reusable AXI/TileLink agent patterns.
+
+### 4. Semiconductor Engineering Knowledge Graph & Repo Ingestion
+- **Unified Graph Engine (1,108 Nodes, 1,031 Edges):** Links 15 entity types across Protocols, Hardware IPs, Processors, SoCs, RTL Modules, Signals, UVM Components, Testcases, Assertions, Standards, Registers, Memory, Clock/Reset Domains, and EDA Tools with shortest-path BFS tracing, blast-radius analysis, natural-language queries, and JSON/CSV/Markdown/Mermaid export.
 - **Live RTL Repository Ingestion:** Parse Verilog/SystemVerilog/Chisel snippets or upload modules to auto-patch the Knowledge Graph live.
 
-### 4. Open-Source Silicon IP Universe (Dual Explorer Architecture)
+### 5. Open-Source Silicon IP Universe (Dual Explorer Architecture)
 Every silicon IP includes both:
 1. **IP Explorer:** Submodule RTL trees, internal block diagrams, extracted FSM state diagrams, CSR register maps (`HJSON / reggen` bit fields), compile-time parameters, clocking/reset architecture, and upstream verification commands.
 2. **Protocol Explorer:** Interactive SVG bus connectivity hub linking external ports (`OBI`, `AXI4`, `AXI4-Lite`, `TL-UL`, `RoCC`, `PCIe`, `I2C`, `UART`) directly into their protocol specs.
 
-### 5. Specialized Silicon Engineering Labs
+### 6. Specialized Silicon Engineering Labs
 - **Clock Domain Analysis (CDC) Tool:** Maps clock islands, reset domains, asynchronous crossings, and synchronizer insertion points (`2-FF`, Gray async FIFOs, reset bridges) across multi-clock IPs.
-- **AES 7-Chapter Deep Dive & Interactive FIPS-197 Lab:** Full 26-topic hardware security curriculum covering GF(2⁸) finite fields, SubBytes/ShiftRows/MixColumns/KeyExpansion, DOM masking countermeasures, `TL-UL` integrity, TVLA/fault injection, and an interactive cycle-by-cycle AES-128 state matrix stepper.
-- **Documentation Completeness Dashboard:** Live 16-topic **MASTER INSTRUCTION** audit tracking Fundamentals, Architecture, Specifications, Signals, Transactions, Timing, RTL Hierarchy, Internal Modules, Registers, Parameters, Verification, Assertions, Coverage, Debugging, Corner Cases, and Primary Citations across all indexed protocols and IPs.
-- **Semiconductor Glossary & Feeling Lucky Discovery:** Authoritative 3-level glossary plus non-repeating **Feeling Lucky** random picks across protocols, silicon IPs, CDC labs, and simulators.
+- **AES 7-Chapter Deep Dive & Interactive FIPS-197 Lab:** Full 30-subtopic hardware security curriculum covering GF(2⁸) finite fields, SubBytes/ShiftRows/MixColumns/KeyExpansion, DOM masking countermeasures, `TL-UL` integrity, TVLA/fault injection, and an interactive cycle-by-cycle AES-128 state matrix stepper.
+- **Documentation Completeness Dashboard:** Live 16-checkpoint **MASTER INSTRUCTION** audit tracking Fundamentals, Architecture, Specifications, Signals, Transactions, Timing, RTL Hierarchy, Internal Modules, Registers, Parameters, Verification, Assertions, Coverage, Debugging, Corner Cases, and Primary Citations (`100%` pass rate across all 498 protocols and 37 IPs).
+- **Semiconductor Glossary & Feeling Lucky Discovery:** Linked 3-level glossary (`28` terms) plus non-repeating **Feeling Lucky** random discovery across protocols, silicon IPs, AES chapters, CDC labs, and simulators.
 
 ---
 
@@ -95,8 +149,8 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 
 ## Tech Stack
 
-- **Frontend:** React 19, TypeScript 7, Tailwind CSS v4 (`@tailwindcss/vite`), Lucide Icons
-- **Build & Tooling:** Vite 8, `tsx`, ESLint/TypeScript (`tsc --noEmit`)
+- **Frontend:** React 19, TypeScript 7, Tailwind CSS v4 (`@tailwindcss/vite`), Lucide Icons, Motion
+- **Build & Tooling:** Vite 8, `esbuild` 0.28, `tsx`, TypeScript typechecker (`tsc --noEmit`)
 - **Deployment:** Static production bundle with automated GitHub Actions Pages CI/CD
 
 ---
@@ -105,34 +159,43 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 
 ```text
 ├── .github/workflows/
-│   └── deploy-pages.yml          # Automated GitHub Actions build & GitHub Pages deploy
+│   └── deploy-pages.yml               # Automated GitHub Actions build & GitHub Pages deploy
 ├── public/assets/aistudio/
-│   └── gemini-svg_07b7b86a.svg   # Official VLSI Protocol Atlas SVG brand logo (README only)
+│   └── gemini-svg_07b7b86a.svg        # Official VLSI Protocol Atlas SVG brand logo (README only)
 ├── src/
 │   ├── engine/
-│   │   ├── explainerSchema.ts    # Hardware explainer schema, semantic legend & validateTopic()
-│   │   └── useTimelineController.ts # Shared playback, scrubbing, keyboard & hash deep-link hook
+│   │   ├── explainerSchema.ts         # Hardware explainer schema, semantic legend & validateTopic()
+│   │   └── useTimelineController.ts   # Shared playback, scrubbing, keyboard & hash deep-link hook
 │   ├── components/
-│   │   ├── explainer/            # Interactive Explainer Studio + all 14 synchronized renderers
-│   │   ├── KnowledgeGraphView.tsx
+│   │   ├── explainer/                 # Interactive Explainer Studio + all 14 synchronized renderers
+│   │   ├── PlatformGuideView.tsx      # "How to Use What & Where to Find Everything" guide page
+│   │   ├── RtlSvUvmStudioView.tsx     # 42-module RTL Design, SystemVerilog & UVM interactive studio
+│   │   ├── ProtocolDocView.tsx        # Protocol Docs, Signal Inspector drawer, waveforms & assertions
+│   │   ├── WaveformViewer.tsx         # Interactive bus/bit waveform viewer & violation detector
+│   │   ├── DiagramViewers.tsx         # SVG Block Diagram, FSM Graph & exportable CodeBlock viewers
+│   │   ├── TechnicalVisualizers.tsx   # Packet Layer Stack & Register Memory Map visualizers
+│   │   ├── SimulatorLab.tsx           # Interactive cycle-accurate protocol waveform simulator
+│   │   ├── ComplianceChecker.tsx      # AMBA / TileLink protocol trace invariant checker
+│   │   ├── KnowledgeGraphView.tsx     # 1,108-node Knowledge Graph explorer & pathfinder
 │   │   ├── DocumentationCompletenessDashboard.tsx
 │   │   ├── MasterArchitectureView.tsx
-│   │   ├── ProtocolDocView.tsx
 │   │   ├── IpDetailView.tsx
+│   │   ├── SearchModal.tsx            # Global search across protocols, IPs, RTL/SV/UVM, glossary & guide
 │   │   └── ...
 │   ├── data/
-│   │   ├── explainers/           # Authoritative explainer topic datasets + TOPIC_TEMPLATE
-│   │   ├── protocols/            # 498+ protocols & standards across 30 categories
-│   │   ├── ips/                  # 37+ open-source silicon IP profiles
-│   │   ├── socs/                 # 6 SoC integration topologies
-│   │   ├── knowledgeGraphEngine.ts # 1,054+ node graph builder, BFS pathfinder & NL queries
-│   │   └── glossary.ts           # Multi-layer VLSI & verification terminology
-│   ├── App.tsx                   # Top navigation, hash router, Feeling Lucky picker & view router
+│   │   ├── explainers/                # 544 explainer topics + TOPIC_TEMPLATE
+│   │   ├── protocols/                 # 498 protocols & standards across 30 categories
+│   │   ├── ips/                       # 37 open-source silicon IP profiles
+│   │   ├── socs/                      # 6 SoC integration topologies
+│   │   ├── rtlSvUvmCurriculum.ts      # 42 structured RTL Design, SystemVerilog & UVM modules
+│   │   ├── knowledgeGraphEngine.ts    # 1,108-node graph builder, BFS pathfinder & NL queries
+│   │   └── glossary.ts                # Multi-layer VLSI & verification terminology
+│   ├── App.tsx                        # Header navigation, workspace sub-bars, router & theme state
 │   └── main.tsx
 ├── index.html
 ├── vite.config.ts
 ├── package.json
-└── LICENSE                       # MIT License
+└── LICENSE                            # MIT License
 ```
 
 ---
@@ -178,14 +241,14 @@ This repository includes a zero-config GitHub Actions workflow at `.github/workf
 
 1. Push to `main` or `master` (or trigger manually via **Actions → Deploy to GitHub Pages → Run workflow**).
 2. In your GitHub repository, navigate to **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**.
-3. The workflow automatically detects your repository base path (`VITE_BASE_PATH`), runs `npm run lint` and `npm run build`, generates `.nojekyll` + `404.html`, and publishes to GitHub Pages.
+3. The workflow installs dependencies, executes `npm run lint` (`tsc --noEmit`), resolves the repository `VITE_BASE_PATH`, runs `npm run build`, generates `.nojekyll` + `404.html`, and publishes `./dist` to GitHub Pages.
 
 ---
 
 ## Authoritative Sources & Attributions
 
 Technical documentation and hardware architectures synthesize public specifications and open-source RTL repositories from:
-- **Standards Bodies:** Arm AMBA Specifications, PCI-SIG, JEDEC, MIPI Alliance, USB-IF, RISC-V International, Open Compute Project (OCP), IEEE Standards Association, and OpenTitan Documentation.
+- **Standards Bodies:** Arm AMBA Specifications, PCI-SIG, JEDEC, MIPI Alliance, USB-IF, RISC-V International, Open Compute Project (OCP), IEEE Standards Association (`1800`, `1800.2`, `1801`, `1149.1`, `1687`, `802.3`), and OpenTitan Documentation.
 - **Open-Source Silicon Projects:** lowRISC OpenTitan & Ibex, OpenHW Group (CVA6 / CORE-V), ETH Zurich & University of Bologna (PULP Platform), UC Berkeley (Rocket Chip, BOOM, Gemmini), Georgia Tech (Vortex GPGPU), Princeton (OpenPiton), Enjoy-Digital (LiteX), Alex Forencich (`verilog-axi`, `verilog-pcie`, `verilog-ethernet`), and YosysHQ (`PicoRV32`).
 
 ---

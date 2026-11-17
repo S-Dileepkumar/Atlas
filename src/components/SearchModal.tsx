@@ -5,6 +5,7 @@ import { ALL_IPS } from '../data/ips';
 import { ALL_SOCS } from '../data/socs';
 import { GLOSSARY_TERMS } from '../data/glossary';
 import { AES_CURRICULUM } from '../data/aesCurriculum';
+import { CurriculumPillarId, RTL_SV_UVM_CURRICULUM } from '../data/rtlSvUvmCurriculum';
 import {
   getEntityClassification,
   getEntityRelationships,
@@ -12,8 +13,9 @@ import {
 } from '../utils/entityTaxonomy';
 
 interface SearchResultItem {
-  kind: 'protocol' | 'ip' | 'soc' | 'glossary' | 'aes';
+  kind: 'protocol' | 'ip' | 'soc' | 'glossary' | 'aes' | 'curriculum' | 'guide';
   targetId: string;
+  pillar?: CurriculumPillarId;
   contextLabel: string;
   matchType: string;
   title: string;
@@ -28,6 +30,8 @@ interface SearchModalProps {
   onSelectSoc: () => void;
   onSelectGlossary: () => void;
   onSelectAesSubtopic?: (subtopicId: string) => void;
+  onSelectCurriculum?: (pillar: CurriculumPillarId, moduleId: string) => void;
+  onSelectGuide?: () => void;
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({
@@ -38,6 +42,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onSelectSoc,
   onSelectGlossary,
   onSelectAesSubtopic,
+  onSelectCurriculum,
+  onSelectGuide,
 }) => {
   const [query, setQuery] = useState('');
 
@@ -58,6 +64,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     const q = query.trim().toLowerCase();
     if (!q) {
       return [
+        {
+          kind: 'guide' as const,
+          targetId: 'platform-guide',
+          contextLabel: 'Navigation Map & Playbooks',
+          matchType: 'Platform Guide',
+          title: 'How to Use What & Where to Find Everything',
+          snippet: 'Interactive roadmap across 498 protocols, 42 RTL/SV/UVM modules, 37 silicon IPs, Explainers & Knowledge Graph',
+        },
         ...ALL_IPS.slice(0, 4).map((ip) => ({
           kind: 'ip' as const,
           targetId: ip.id,
@@ -78,6 +92,23 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     }
 
     const out: SearchResultItem[] = [];
+
+    if (
+      'how to use what where to find everything platform guide help navigation roadmap shortcuts workflows'.includes(q) ||
+      q.includes('guide') ||
+      q.includes('how to') ||
+      q.includes('where to') ||
+      q.includes('shortcut')
+    ) {
+      out.push({
+        kind: 'guide',
+        targetId: 'platform-guide',
+        contextLabel: 'Navigation Map & Playbooks',
+        matchType: 'Platform Guide',
+        title: 'How to Use What & Where to Find Everything',
+        snippet: 'Complete walkthrough of every workbench, keyboard shortcut, role workflow, and cross-linked database',
+      });
+    }
 
     for (const ip of ALL_IPS) {
       if (
@@ -210,45 +241,76 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       }
     }
 
-    return out.slice(0, 24);
+    for (const mod of RTL_SV_UVM_CURRICULUM) {
+      const pillarLabel =
+        mod.pillar === 'rtl-design'
+          ? 'RTL Design'
+          : mod.pillar === 'systemverilog'
+          ? 'SystemVerilog'
+          : 'UVM';
+      if (
+        mod.title.toLowerCase().includes(q) ||
+        mod.chapter.toLowerCase().includes(q) ||
+        mod.summary.toLowerCase().includes(q) ||
+        mod.deepTheory.toLowerCase().includes(q) ||
+        pillarLabel.toLowerCase().includes(q)
+      ) {
+        out.push({
+          kind: 'curriculum',
+          targetId: mod.id,
+          pillar: mod.pillar,
+          contextLabel: `${pillarLabel} · ${mod.chapter}`,
+          matchType: mod.scopeBadge,
+          title: `${mod.number} ${mod.title}`,
+          snippet: mod.summary,
+        });
+      }
+    }
+
+    return out.slice(0, 28);
   }, [query]);
 
   if (!isOpen) return null;
 
   const handleSelect = (r: SearchResultItem) => {
-    if (r.kind === 'protocol') onSelectProtocol(r.targetId);
+    if (r.kind === 'guide') onSelectGuide?.();
+    else if (r.kind === 'protocol') onSelectProtocol(r.targetId);
     else if (r.kind === 'ip') onSelectIp(r.targetId);
     else if (r.kind === 'soc') onSelectSoc();
     else if (r.kind === 'aes') onSelectAesSubtopic?.(r.targetId);
+    else if (r.kind === 'curriculum' && r.pillar) onSelectCurriculum?.(r.pillar, r.targetId);
     else onSelectGlossary();
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
-      <div className="w-full max-w-2xl rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-          <Search className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
+      <div className="w-full max-w-2xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--border-subtle)]">
+          <Search className="w-4 h-4 text-[var(--sem-control)] shrink-0" />
           <input
             type="text"
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search IPs (Ibex, Vortex, Gemmini), RTL modules, protocols, signals (AWVALID), SoCs, or glossary..."
-            className="flex-1 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none"
           />
+          <kbd className="hidden sm:inline-flex px-1.5 py-0.5 text-[10px] font-mono tabular-nums rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)]">
+            ESC
+          </kbd>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+            className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="max-h-[440px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="max-h-[440px] overflow-y-auto divide-y divide-[var(--border-subtle)]">
           {results.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500 dark:text-slate-400">
+            <div className="p-8 text-center text-xs text-[var(--text-secondary)]">
               No matching IPs, RTL modules, protocols, signals, or glossary terms found for "{query}".
             </div>
           ) : (
@@ -257,20 +319,20 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 key={`${r.kind}-${r.targetId}-${i}`}
                 type="button"
                 onClick={() => handleSelect(r)}
-                className="w-full px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 flex items-center justify-between gap-4 transition-colors cursor-pointer"
+                className="w-full px-5 py-3.5 text-left hover:bg-[var(--bg-elevated)] flex items-center justify-between gap-4 transition-colors cursor-pointer"
               >
                 <div className="min-w-0">
-                  <div className="text-[11px] text-cyan-700 dark:text-cyan-400 font-medium">
+                  <div className="text-[11px] text-[var(--sem-control)] font-medium font-mono">
                     {r.matchType} · {r.contextLabel}
                   </div>
-                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                  <div className="text-sm font-medium text-[var(--text-primary)] truncate mt-0.5">
                     {r.title}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  <div className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
                     {r.snippet}
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
+                <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] shrink-0" />
               </button>
             ))
           )}

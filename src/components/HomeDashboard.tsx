@@ -37,6 +37,9 @@ export type AppView =
   | 'master-architecture'
   | 'protocol-atlas'
   | 'protocol'
+  | 'rtl-design'
+  | 'systemverilog'
+  | 'uvm-studio'
   | 'ip-universe'
   | 'processors'
   | 'gpus'
@@ -57,7 +60,8 @@ export type AppView =
   | 'soc-map'
   | 'uvm'
   | 'completeness-dashboard'
-  | 'explainer';
+  | 'explainer'
+  | 'guide';
 
 interface HomeDashboardProps {
   recentIds: string[];
@@ -125,93 +129,101 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   const spotlightIpIds = ['ibex', 'opentitan-aes', 'cva6', 'vortex-gpu', 'gemmini'];
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-10 space-y-14">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-10 space-y-14">
       {/* Workspace Utility Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5 text-slate-600 dark:text-slate-400">
-          <span className="font-semibold text-slate-900 dark:text-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[var(--border-subtle)] text-xs">
+        <div className="flex flex-wrap items-center gap-2.5 text-[var(--text-secondary)]">
+          <span className="font-semibold text-[var(--text-primary)]">
             VLSI Protocol Atlas & Open-Source IP Universe
           </span>
           <span aria-hidden="true">·</span>
-          <span className="tabular-nums">{ALL_PROTOCOLS.length} Protocols</span>
+          <span className="font-mono tabular-nums">{ALL_PROTOCOLS.length} Protocols</span>
           <span aria-hidden="true">·</span>
-          <span className="tabular-nums">{ALL_IPS.length} Real Open-Source IPs</span>
+          <span className="font-mono tabular-nums">{ALL_IPS.length} Real Open-Source IPs</span>
           <span aria-hidden="true">·</span>
-          <span className="tabular-nums">{ALL_SOCS.length} SoC Topologies</span>
+          <span className="font-mono tabular-nums">{ALL_SOCS.length} SoC Topologies</span>
           <span aria-hidden="true">·</span>
-          <span className="tabular-nums">100% Checkpoint Audited</span>
+          <span className="font-mono tabular-nums">100% Checkpoint Audited</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => onNavigate('explainer')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--sem-control)]/40 bg-[var(--bg-surface)] text-[var(--sem-control)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer whitespace-nowrap font-medium"
           >
-            <Activity className="w-3.5 h-3.5" />
+            <Activity className="w-4 h-4" />
             Interactive Explainer Studio ({ALL_PROTOCOLS.length + ALL_IPS.length + 9})
           </button>
           <button
             type="button"
             onClick={() => onNavigate('knowledge-graph')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
           >
-            <Network className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            <Network className="w-4 h-4 text-[var(--sem-control)]" />
             Knowledge Graph
           </button>
           <button
             type="button"
             onClick={() => onNavigate('master-architecture')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
           >
-            <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            <Layers className="w-4 h-4 text-[var(--sem-control)]" />
             16-Domain Knowledge Architecture
           </button>
           <button
             type="button"
             onClick={() => onNavigate('completeness-dashboard')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
           >
-            <BarChart3 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            <BarChart3 className="w-4 h-4 text-[var(--sem-control)]" />
             Completeness Dashboard (100%)
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('guide')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <BookOpen className="w-4 h-4 text-[var(--sem-control)]" />
+            How to Use &amp; Guide
           </button>
         </div>
       </div>
 
       {/* Hero Split — Blueprint Engineering Showcase */}
-      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-slate-900/55 bg-engineering-grid p-6 sm:p-10 shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+      <section className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] bg-engineering-grid p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
         <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
+            <div className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--sem-control)]">
               <span>Understand. Visualize. Verify.</span>
               <span aria-hidden="true">·</span>
               <span>Explore Silicon. Reverse Engineer IP.</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-[1.1] [text-wrap:balance]">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[var(--text-primary)] leading-[1.1] [text-wrap:balance]">
               Open-Source Semiconductor IP &amp; Protocol Intelligence Hub
             </h1>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-2xl leading-relaxed">
               Examine complete SoC protocols alongside real reverse-engineered open-source silicon from OpenTitan, Ibex, CVA6, Rocket Chip, Vortex GPGPU, Gemmini, and PULP—with dual IP/Protocol Explorers, RTL module trees, HJSON CSR maps, and upstream UVM verification frameworks.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
                 onClick={onOpenSearch}
-                className="flex-1 min-w-[240px] max-w-md flex items-center justify-between px-4 py-2.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 hover:border-cyan-500 transition-colors cursor-pointer shadow-2xs"
+                className="flex-1 min-w-[240px] max-w-md flex items-center justify-between px-4 py-2.5 text-xs rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer"
               >
                 <span className="inline-flex items-center gap-2">
-                  <Search className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                  <Search className="w-4 h-4 text-[var(--sem-control)]" />
                   Search IPs (Ibex, Vortex), RTL modules, protocols, or glossary...
                 </span>
-                <span className="font-mono text-[11px] text-slate-400">Ctrl K</span>
+                <kbd className="font-mono text-[11px] tabular-nums text-[var(--text-secondary)]">/</kbd>
               </button>
               <button
                 type="button"
                 onClick={() => onNavigate('explainer')}
-                className="px-4 py-2.5 text-xs font-semibold rounded-md bg-cyan-600 hover:bg-cyan-500 text-white transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
+                className="px-4 py-2.5 text-xs font-semibold rounded-md bg-[var(--sem-control)] hover:opacity-90 text-white transition-opacity cursor-pointer whitespace-nowrap"
               >
                 Launch Explainer Studio
               </button>
@@ -271,21 +283,21 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </div>
 
         {/* Right Hero Anchor: Dual Spotlights (Core Protocols & Deep IPs) */}
-        <div className="lg:col-span-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/85 p-5 flex flex-col justify-between space-y-4 shadow-2xs">
+        <div className="lg:col-span-5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-6 flex flex-col justify-between space-y-4">
           <div>
-            <div className="flex items-center justify-between pb-2.5 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
                 Deep-Dive Silicon IP Spotlights
               </h2>
               <button
                 type="button"
                 onClick={() => onNavigate('ip-universe')}
-                className="text-xs font-medium text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
+                className="text-xs font-medium text-[var(--sem-control)] hover:underline cursor-pointer"
               >
                 View All {ALL_IPS.length} →
               </button>
             </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800 mt-1">
+            <div className="divide-y divide-[var(--border-subtle)] mt-1">
               {spotlightIpIds.map((id) => {
                 const ip = getIpById(id);
                 const proj = getProjectById(ip.projectId);
@@ -317,63 +329,63 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       </section>
 
       {/* Start Here: Guided Entry Points for Students & Engineers */}
-      <section className="rounded-lg border border-cyan-500/30 bg-cyan-50/50 dark:bg-cyan-950/20 p-5 space-y-3">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 sm:p-8 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-            <GraduationCap className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
+          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+            <GraduationCap className="w-4 h-4 text-[var(--sem-control)]" />
             New to Chip Design? Start With These 4 Interactive Walkthroughs
           </div>
-          <span className="text-xs text-slate-600 dark:text-slate-400">
+          <span className="text-xs text-[var(--text-secondary)]">
             Every wire, block diagram, and FSM state includes plain-English student analogies
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <button
             type="button"
             onClick={() => onSelectProtocol('axi4')}
-            className="p-3.5 text-left rounded-md border border-cyan-500/30 bg-white/90 dark:bg-slate-900/80 hover:border-cyan-500 transition-colors cursor-pointer"
+            className="p-5 text-left rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--sem-control)] transition-colors cursor-pointer"
           >
-            <div className="font-semibold text-cyan-800 dark:text-cyan-300">1. How AXI4 Highway Works →</div>
-            <div className="text-slate-600 dark:text-slate-400 mt-1">Learn VALID/READY handshakes, 5 channels, signals & waveforms</div>
+            <div className="font-semibold text-[var(--sem-control)]">1. How AXI4 Highway Works →</div>
+            <div className="text-[var(--text-secondary)] mt-1.5 leading-relaxed">Learn VALID/READY handshakes, 5 channels, signals &amp; waveforms</div>
           </button>
           <button
             type="button"
             onClick={() => onSelectIp('ibex')}
-            className="p-3.5 text-left rounded-md border border-cyan-500/30 bg-white/90 dark:bg-slate-900/80 hover:border-cyan-500 transition-colors cursor-pointer"
+            className="p-5 text-left rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--sem-control)] transition-colors cursor-pointer"
           >
-            <div className="font-semibold text-cyan-800 dark:text-cyan-300">2. Inside Ibex RISC-V CPU →</div>
-            <div className="text-slate-600 dark:text-slate-400 mt-1">Click pipeline blocks, RTL ports, CSR registers & FSM states</div>
+            <div className="font-semibold text-[var(--sem-control)]">2. Inside Ibex RISC-V CPU →</div>
+            <div className="text-[var(--text-secondary)] mt-1.5 leading-relaxed">Click pipeline blocks, RTL ports, CSR registers &amp; FSM states</div>
           </button>
           <button
             type="button"
             onClick={() => onNavigate('cdc-analyzer')}
-            className="p-3.5 text-left rounded-md border border-cyan-500/30 bg-white/90 dark:bg-slate-900/80 hover:border-cyan-500 transition-colors cursor-pointer"
+            className="p-5 text-left rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--sem-control)] transition-colors cursor-pointer"
           >
-            <div className="font-semibold text-cyan-800 dark:text-cyan-300">3. Clock Domain Crossing Lab →</div>
-            <div className="text-slate-600 dark:text-slate-400 mt-1">See why multi-clock chips need async FIFOs & synchronizers</div>
+            <div className="font-semibold text-[var(--sem-control)]">3. Clock Domain Crossing Lab →</div>
+            <div className="text-[var(--text-secondary)] mt-1.5 leading-relaxed">See why multi-clock chips need async FIFOs &amp; synchronizers</div>
           </button>
           <button
             type="button"
             onClick={() => onNavigate('aes-deep-dive')}
-            className="p-3.5 text-left rounded-md border border-cyan-500/30 bg-white/90 dark:bg-slate-900/80 hover:border-cyan-500 transition-colors cursor-pointer"
+            className="p-5 text-left rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--sem-control)] transition-colors cursor-pointer"
           >
-            <div className="font-semibold text-cyan-800 dark:text-cyan-300">4. AES 7-Chapter Deep Dive →</div>
-            <div className="text-slate-600 dark:text-slate-400 mt-1">GF(2^8) math, S-Box, DOM masking, UVM & interactive FIPS-197 rounds</div>
+            <div className="font-semibold text-[var(--sem-control)]">4. AES 7-Chapter Deep Dive →</div>
+            <div className="text-[var(--text-secondary)] mt-1.5 leading-relaxed">GF(2^8) math, S-Box, DOM masking, UVM &amp; interactive FIPS-197 rounds</div>
           </button>
         </div>
       </section>
 
       {/* Open-Source IP Universe Workbench */}
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Open-Source IP Universe Modules
           </h2>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-[var(--text-secondary)]">
             3 Interconnected Databases: Protocols · Hardware IPs · SoC Topologies
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { view: 'ip-universe' as AppView, title: 'IP Universe', desc: 'Filter all CPUs, GPUs, AI, crypto & interconnects', icon: Cpu },
             { view: 'soc-explorer' as AppView, title: 'SoC Explorer', desc: 'EarlGrey, Chipyard, PULP, CVA6, LiteX & OpenPiton', icon: Layers },
@@ -390,13 +402,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 key={tool.view}
                 type="button"
                 onClick={() => onNavigate(tool.view)}
-                className="p-4 text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500/60 transition-colors cursor-pointer flex flex-col justify-between gap-2"
+                className="p-6 text-left rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--sem-control)] transition-colors cursor-pointer flex flex-col justify-between gap-2.5"
               >
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  <Icon className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+                  <Icon className="w-4 h-4 text-[var(--sem-control)] shrink-0" />
                   <span>{tool.title}</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{tool.desc}</p>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{tool.desc}</p>
               </button>
             );
           })}
@@ -404,11 +416,11 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       </section>
 
       {/* Protocol Atlas Interactive Workbench */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">
           Protocol Atlas Interactive Workbench
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { view: 'master-architecture' as AppView, title: '16-Domain Architecture', desc: 'Explore CPU ISA, Packaging, Physical Design, FuSa, DFT & Taxonomy', icon: Layers },
             { view: 'completeness-dashboard' as AppView, title: 'Completeness Dashboard', desc: '16-topic MASTER INSTRUCTION checklist & coverage gaps', icon: BarChart3 },
@@ -425,13 +437,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 key={tool.view}
                 type="button"
                 onClick={() => onNavigate(tool.view)}
-                className="p-4 text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500/60 transition-colors cursor-pointer flex flex-col justify-between gap-2"
+                className="p-6 text-left rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--sem-control)] transition-colors cursor-pointer flex flex-col justify-between gap-2.5"
               >
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+                  <Icon className="w-4 h-4 text-[var(--sem-control)] shrink-0" />
                   <span>{tool.title}</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{tool.desc}</p>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{tool.desc}</p>
               </button>
             );
           })}
@@ -654,7 +666,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             return (
               <div
                 key={p.id}
-                className="p-5 sm:p-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500/60 transition-colors flex flex-col justify-between gap-4"
+                className="p-6 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--sem-control)] transition-colors flex flex-col justify-between gap-4"
               >
                 <div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
