@@ -19,6 +19,7 @@ import { IpArchBlock, IpArchLink, IpEntity, RtlModuleNode } from '../types/ipUni
 import { getProjectById } from '../data/ips';
 import { ALL_SOCS } from '../data/socs';
 import { CodeBlock } from './DiagramViewers';
+import { RegisterMemoryMapSvg } from './TechnicalVisualizers';
 import { StudentExplainerCard } from './StudentExplainerCard';
 import { CompletenessTrackerPanel } from './CompletenessTrackerPanel';
 import { auditIpCompleteness } from '../utils/completenessTracker';
@@ -39,6 +40,8 @@ interface IpDetailViewProps {
   onOpenCdc?: (ipId: string) => void;
   onSelectSoc?: () => void;
   onOpenAesDeepDive?: () => void;
+  onOpenKnowledgeGraph?: (nodeId: string) => void;
+  onOpenExplainer?: (topicId?: string) => void;
 }
 
 type ExplorerTab = 'overview' | 'architecture' | 'rtl' | 'registers' | 'parameters' | 'verification' | 'implementation';
@@ -61,6 +64,8 @@ export const IpDetailView: React.FC<IpDetailViewProps> = ({
   onOpenCdc,
   onSelectSoc,
   onOpenAesDeepDive,
+  onOpenKnowledgeGraph,
+  onOpenExplainer,
 }) => {
   const project = getProjectById(ip.projectId);
   const [viewMode, setViewMode] = useState<'ip' | 'protocol'>('ip');
@@ -102,9 +107,9 @@ export const IpDetailView: React.FC<IpDetailViewProps> = ({
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 space-y-8">
       {/* Header & Dual-Mode Toggle (IP Explorer vs Protocol Explorer) */}
-      <div className="flex flex-wrap items-start justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-start justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-start gap-3 min-w-0">
           <button
             type="button"
@@ -179,6 +184,39 @@ export const IpDetailView: React.FC<IpDetailViewProps> = ({
             >
               <Clock className="w-3.5 h-3.5" />
               Clock Domains ({ip.architecture.clocks.length})
+            </button>
+          )}
+
+          {onOpenExplainer && (
+            <button
+              type="button"
+              onClick={() => {
+                const mapped =
+                  ip.id === 'opentitan-hmac'
+                    ? 'opentitan-hmac'
+                    : ip.id === 'gemmini'
+                    ? 'systolic-gemmini'
+                    : ip.id === 'vortex-gpu'
+                    ? 'gpu-warp-simt'
+                    : ip.id === 'rocket-chip'
+                    ? 'riscv-5stage-pipeline'
+                    : `ip-${ip.id}`;
+                onOpenExplainer(mapped);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 cursor-pointer whitespace-nowrap"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Interactive Explainer
+            </button>
+          )}
+
+          {onOpenKnowledgeGraph && (
+            <button
+              type="button"
+              onClick={() => onOpenKnowledgeGraph(`ip:${ip.id}`)}
+              className="px-3 py-2 text-xs font-medium rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 cursor-pointer"
+            >
+              Knowledge Graph
             </button>
           )}
 
@@ -1070,6 +1108,7 @@ export const IpDetailView: React.FC<IpDetailViewProps> = ({
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <RegisterMemoryMapSvg registers={ip.registers} />
                   {ip.registers.map((reg) => (
                     <div key={reg.name} className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
                       <div className="px-4 py-3 bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">

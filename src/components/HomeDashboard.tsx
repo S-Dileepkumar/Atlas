@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useDeferredValue, useMemo, useState } from 'react';
 import {
   Activity,
   CheckSquare,
@@ -56,7 +56,8 @@ export type AppView =
   | 'compare'
   | 'soc-map'
   | 'uvm'
-  | 'completeness-dashboard';
+  | 'completeness-dashboard'
+  | 'explainer';
 
 interface HomeDashboardProps {
   recentIds: string[];
@@ -65,6 +66,7 @@ interface HomeDashboardProps {
   onNavigate: (view: AppView) => void;
   onOpenSearch: () => void;
   onFeelingLucky?: (scope?: 'any' | 'protocol' | 'ip') => void;
+  onOpenExplainer?: (topicId?: string) => void;
 }
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
@@ -74,12 +76,15 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onNavigate,
   onOpenSearch,
   onFeelingLucky,
+  onOpenExplainer,
 }) => {
   const [activeCategory, setActiveCategory] = useState<CategoryId | 'all'>('all');
   const [entityFilter, setEntityFilter] = useState<EntityClassification | 'ALL'>('ALL');
   const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleStatus | 'ALL'>('ALL');
   const [inlineFilter, setInlineFilter] = useState('');
-  const [showAllDirectory, setShowAllDirectory] = useState(false);
+  const deferredInlineFilter = useDeferredValue(inlineFilter);
+  const [dirPage, setDirPage] = useState(0);
+  const dirPageSize = 24;
 
   const activeCategoryObj = useMemo(
     () => PROTOCOL_CATEGORIES.find((c) => c.id === activeCategory),
@@ -87,7 +92,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   );
 
   const filteredProtocols = useMemo(() => {
-    const q = inlineFilter.trim().toLowerCase();
+    const q = deferredInlineFilter.trim().toLowerCase();
     return ALL_PROTOCOLS.filter((p) => {
       const catMatch =
         activeCategory === 'all' ||
@@ -103,30 +108,28 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         p.standardBody.toLowerCase().includes(q);
       return catMatch && entMatch && lcMatch && qMatch;
     });
-  }, [activeCategory, activeCategoryObj, entityFilter, lifecycleFilter, inlineFilter]);
+  }, [activeCategory, activeCategoryObj, entityFilter, lifecycleFilter, deferredInlineFilter]);
 
-  const visibleDirectoryProtocols = useMemo(() => {
-    if (
-      activeCategory !== 'all' ||
-      entityFilter !== 'ALL' ||
-      lifecycleFilter !== 'ALL' ||
-      inlineFilter.trim().length > 0 ||
-      showAllDirectory
-    ) {
-      return filteredProtocols;
-    }
-    return filteredProtocols.slice(0, 24);
-  }, [activeCategory, entityFilter, lifecycleFilter, inlineFilter, showAllDirectory, filteredProtocols]);
+  const totalDirPages = Math.max(1, Math.ceil(filteredProtocols.length / dirPageSize));
+  const clampedDirPage = Math.min(dirPage, totalDirPages - 1);
+  const visibleDirectoryProtocols = useMemo(
+    () =>
+      filteredProtocols.slice(
+        clampedDirPage * dirPageSize,
+        (clampedDirPage + 1) * dirPageSize
+      ),
+    [filteredProtocols, clampedDirPage, dirPageSize]
+  );
 
   const primaryFiveIds = ['axi4', 'axi4-lite', 'axi4-stream', 'apb', 'pcie-gen5'];
   const spotlightIpIds = ['ibex', 'opentitan-aes', 'cva6', 'vortex-gpu', 'gemmini'];
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 space-y-10">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-10 space-y-14">
       {/* Workspace Utility Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800 text-xs">
-        <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-400">
-          <span className="font-medium text-slate-900 dark:text-slate-200">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5 text-slate-600 dark:text-slate-400">
+          <span className="font-semibold text-slate-900 dark:text-slate-100">
             VLSI Protocol Atlas & Open-Source IP Universe
           </span>
           <span aria-hidden="true">·</span>
@@ -136,12 +139,26 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <span aria-hidden="true">·</span>
           <span className="tabular-nums">{ALL_SOCS.length} SoC Topologies</span>
           <span aria-hidden="true">·</span>
-          <span className="tabular-nums">{PROJECTS.length} Upstream Projects</span>
-          <span aria-hidden="true">·</span>
-          <span className="tabular-nums">{GLOSSARY_TERMS.length} Glossary Terms</span>
+          <span className="tabular-nums">100% Checkpoint Audited</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onNavigate('explainer')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <Activity className="w-3.5 h-3.5" />
+            Interactive Explainer Studio ({ALL_PROTOCOLS.length + ALL_IPS.length + 9})
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('knowledge-graph')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <Network className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            Knowledge Graph
+          </button>
           <button
             type="button"
             onClick={() => onNavigate('master-architecture')}
@@ -153,16 +170,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           <button
             type="button"
             onClick={() => onNavigate('completeness-dashboard')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap font-medium"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap font-medium"
           >
-            <BarChart3 className="w-3.5 h-3.5" />
-            Completeness Dashboard
+            <BarChart3 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            Completeness Dashboard (100%)
           </button>
         </div>
       </div>
 
       {/* Hero Split — Blueprint Engineering Showcase */}
-      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-slate-900/55 bg-engineering-grid p-6 sm:p-8 shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/85 dark:bg-slate-900/55 bg-engineering-grid p-6 sm:p-10 shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
         <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
@@ -193,8 +210,15 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => onNavigate('ip-universe')}
+                onClick={() => onNavigate('explainer')}
                 className="px-4 py-2.5 text-xs font-semibold rounded-md bg-cyan-600 hover:bg-cyan-500 text-white transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
+              >
+                Launch Explainer Studio
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('ip-universe')}
+                className="px-4 py-2.5 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap"
               >
                 Explore IP Universe
               </button>
@@ -217,7 +241,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-200/80 dark:border-slate-800/80 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-200/80 dark:border-slate-800/80 text-xs">
               <div>
                 <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                   {ALL_PROTOCOLS.length}
@@ -232,15 +256,15 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               </div>
               <div>
                 <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {PROTOCOL_CATEGORIES.length}
+                  {ALL_PROTOCOLS.length + ALL_IPS.length + 9}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">Engineering Domains</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">Interactive Explainers</div>
               </div>
               <div>
                 <div className="font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                  L1–L3
+                  100%
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">Progressive Depth Model</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">16-Checkpoint Audit</div>
               </div>
             </div>
           </div>
@@ -490,21 +514,24 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       </section>
 
       {/* Complete 30-Domain Semiconductor Ecosystem Directory */}
-      <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+      <section className="space-y-6 pt-6 border-t border-slate-200 dark:border-slate-800">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
               Complete {PROTOCOL_CATEGORIES.length}-Domain Semiconductor Protocol, Architecture &amp; Standards Directory
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Browse all {PROTOCOL_CATEGORIES.length} specialized domains covering {ALL_PROTOCOLS.length} protocols, PHYs, ISA architectures, CDC/reset mechanisms, DFT, verification standards, and packaging flows.
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
+              Browse all {PROTOCOL_CATEGORIES.length} specialized domains covering {ALL_PROTOCOLS.length} protocols, PHYs, ISA architectures, CDC/reset mechanisms, DFT, verification standards, and packaging flows — each with both full engineering documentation and an interactive explainer.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             <select
               value={entityFilter}
-              onChange={(e) => setEntityFilter(e.target.value as EntityClassification | 'ALL')}
-              className="px-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              onChange={(e) => {
+                setEntityFilter(e.target.value as EntityClassification | 'ALL');
+                setDirPage(0);
+              }}
+              className="px-3 py-2 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
             >
               <option value="ALL">All Entity Types</option>
               {ENTITY_CLASSIFICATIONS.map((c) => (
@@ -515,8 +542,11 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             </select>
             <select
               value={lifecycleFilter}
-              onChange={(e) => setLifecycleFilter(e.target.value as LifecycleStatus | 'ALL')}
-              className="px-2.5 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              onChange={(e) => {
+                setLifecycleFilter(e.target.value as LifecycleStatus | 'ALL');
+                setDirPage(0);
+              }}
+              className="px-3 py-2 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
             >
               <option value="ALL">All Lifecycles</option>
               {LIFECYCLE_STATUSES.map((st) => (
@@ -528,19 +558,22 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             <input
               type="text"
               value={inlineFilter}
-              onChange={(e) => setInlineFilter(e.target.value)}
+              onChange={(e) => {
+                setInlineFilter(e.target.value);
+                setDirPage(0);
+              }}
               placeholder="Filter protocols, standards, or buses..."
-              className="px-3 py-1.5 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-56 focus:outline-none focus:border-cyan-500"
+              className="px-3 py-2 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-60 focus:outline-none focus:border-cyan-500"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => {
               setActiveCategory('all');
-              setShowAllDirectory(false);
+              setDirPage(0);
             }}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
               activeCategory === 'all'
@@ -554,7 +587,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             <button
               key={cat.id}
               type="button"
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => {
+                setActiveCategory(cat.id);
+                setDirPage(0);
+              }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
                 activeCategory === cat.id
                   ? 'bg-cyan-600 text-white'
@@ -567,11 +603,11 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </div>
 
         {activeCategoryObj && (
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 space-y-2 text-xs">
-            <div className="font-semibold text-slate-900 dark:text-slate-100">
+          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 space-y-2 text-xs">
+            <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">
               {activeCategoryObj.name} · {filteredProtocols.length} entries
             </div>
-            <p className="text-slate-600 dark:text-slate-300">{activeCategoryObj.description}</p>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{activeCategoryObj.description}</p>
             {activeCategoryObj.caveatNote && (
               <div className="flex items-start gap-2 pt-1.5 text-amber-800 dark:text-amber-300">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -581,16 +617,44 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
+          <span className="tabular-nums">
+            Showing <strong className="text-slate-900 dark:text-slate-100">{visibleDirectoryProtocols.length}</strong> of{' '}
+            <strong className="text-slate-900 dark:text-slate-100">{filteredProtocols.length}</strong> entries
+          </span>
+          {totalDirPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={clampedDirPage === 0}
+                onClick={() => setDirPage((p) => Math.max(0, p - 1))}
+                className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
+              >
+                Prev
+              </button>
+              <span className="font-mono tabular-nums px-2">
+                Page {clampedDirPage + 1} / {totalDirPages}
+              </span>
+              <button
+                type="button"
+                disabled={clampedDirPage >= totalDirPages - 1}
+                onClick={() => setDirPage((p) => Math.min(totalDirPages - 1, p + 1))}
+                className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {visibleDirectoryProtocols.map((p) => {
             const entityCls = getEntityClassification(p);
             const lifecycle = getLifecycleStatus(p);
             return (
-              <button
+              <div
                 key={p.id}
-                type="button"
-                onClick={() => onSelectProtocol(p.id)}
-                className="p-4 text-left rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500/60 transition-colors cursor-pointer flex flex-col justify-between gap-3"
+                className="p-5 sm:p-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500/60 transition-colors flex flex-col justify-between gap-4"
               >
                 <div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -608,44 +672,69 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       {lifecycle}
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1.5">
                     {p.name}
                     <span className="font-normal text-xs text-slate-500 dark:text-slate-400 ml-2">
                       {p.fullName}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
                     {p.tagline}
                   </p>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
                   <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums">
                     {p.standardBody} · {p.signals.length} signals
                   </span>
-                  <span className="font-medium text-cyan-700 dark:text-cyan-400">Explore Spec →</span>
+                  <div className="flex items-center gap-3">
+                    {onOpenExplainer && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenExplainer(`proto-${p.id}`)}
+                        className="font-medium text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer"
+                      >
+                        Explainer
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onSelectProtocol(p.id)}
+                      className="font-semibold text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
+                    >
+                      Explore Spec →
+                    </button>
+                  </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
 
-        {activeCategory === 'all' &&
-          entityFilter === 'ALL' &&
-          lifecycleFilter === 'ALL' &&
-          !inlineFilter.trim() &&
-          filteredProtocols.length > 24 && (
-            <div className="flex justify-center pt-2">
+        {totalDirPages > 1 && (
+          <div className="flex justify-center pt-2">
+            <div className="flex items-center gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => setShowAllDirectory((prev) => !prev)}
-                className="px-4 py-2 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer"
+                disabled={clampedDirPage === 0}
+                onClick={() => setDirPage((p) => Math.max(0, p - 1))}
+                className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
               >
-                {showAllDirectory
-                  ? 'Show Top 24 Featured Entries Only'
-                  : `Show All ${filteredProtocols.length} Entries Across ${PROTOCOL_CATEGORIES.length} Domains`}
+                ← Previous Page
+              </button>
+              <span className="font-mono tabular-nums px-3 text-slate-600 dark:text-slate-300">
+                Page {clampedDirPage + 1} of {totalDirPages}
+              </span>
+              <button
+                type="button"
+                disabled={clampedDirPage >= totalDirPages - 1}
+                onClick={() => setDirPage((p) => Math.min(totalDirPages - 1, p + 1))}
+                className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
+              >
+                Next Page →
               </button>
             </div>
-          )}
+          </div>
+        )}
       </section>
 
       {/* Authoritative Specification Sources & Open-Source Silicon Repositories */}

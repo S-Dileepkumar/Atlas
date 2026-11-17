@@ -2,6 +2,7 @@ import { IpEntity, ProjectAttribution } from '../../types/ipUniverse';
 import { IBEX_IP, OPENTITAN_AES_IP, OPENTITAN_EXTRA_IPS } from './opentitanIps';
 import { PROCESSOR_GPU_AI_IPS } from './processorsAndGpuAi';
 import { INTERCONNECT_MEM_PERIPH_IPS } from './interconnectMemoryPeriph';
+import { enrichIpEntity } from './enrichIp';
 
 export const PROJECTS: ProjectAttribution[] = [
   {
@@ -221,7 +222,7 @@ export const ALL_IPS: IpEntity[] = [
   ...OPENTITAN_EXTRA_IPS,
   ...PROCESSOR_GPU_AI_IPS,
   ...INTERCONNECT_MEM_PERIPH_IPS,
-];
+].map(enrichIpEntity);
 
 export const IP_MAP: Record<string, IpEntity> = Object.fromEntries(ALL_IPS.map((ip) => [ip.id, ip]));
 

@@ -1,33 +1,58 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Dices, Moon, Sun, X } from 'lucide-react';
 import { AppView, HomeDashboard } from './components/HomeDashboard';
-import { ProtocolDocView } from './components/ProtocolDocView';
-import { SimulatorLab } from './components/SimulatorLab';
-import { ComplianceChecker } from './components/ComplianceChecker';
-import { ComparisonEngine } from './components/ComparisonEngine';
-import { SocConnectivityMap, UvmGeneratorView } from './components/SocMapAndUvm';
 import { SearchModal } from './components/SearchModal';
-import { GlossaryView } from './components/GlossaryView';
-import { IpUniverseExplorer } from './components/IpUniverseExplorer';
-import { IpDetailView } from './components/IpDetailView';
-import { SocExplorerView } from './components/SocExplorerView';
-import { RtlSourceEngineView } from './components/RtlSourceEngineView';
-import { VerificationHubView } from './components/VerificationHubView';
-import { IpComparisonView } from './components/IpComparisonView';
-import { KnowledgeGraphView } from './components/KnowledgeGraphView';
-import { RepoIngestionView } from './components/RepoIngestionView';
-import { ClockDomainAnalyzerView } from './components/ClockDomainAnalyzerView';
-import { AesDeepDiveView } from './components/AesDeepDiveView';
-import { DocumentationCompletenessDashboard } from './components/DocumentationCompletenessDashboard';
-import { MasterArchitectureView } from './components/MasterArchitectureView';
 import { ALL_PROTOCOLS, getProtocolById } from './data/protocols';
 import { ALL_IPS, getIpById } from './data/ips';
 import { AES_CURRICULUM } from './data/aesCurriculum';
 
+const ProtocolDocView = lazy(() => import('./components/ProtocolDocView').then((m) => ({ default: m.ProtocolDocView })));
+const SimulatorLab = lazy(() => import('./components/SimulatorLab').then((m) => ({ default: m.SimulatorLab })));
+const ComplianceChecker = lazy(() => import('./components/ComplianceChecker').then((m) => ({ default: m.ComplianceChecker })));
+const ComparisonEngine = lazy(() => import('./components/ComparisonEngine').then((m) => ({ default: m.ComparisonEngine })));
+const SocConnectivityMap = lazy(() => import('./components/SocMapAndUvm').then((m) => ({ default: m.SocConnectivityMap })));
+const UvmGeneratorView = lazy(() => import('./components/SocMapAndUvm').then((m) => ({ default: m.UvmGeneratorView })));
+const GlossaryView = lazy(() => import('./components/GlossaryView').then((m) => ({ default: m.GlossaryView })));
+const IpUniverseExplorer = lazy(() => import('./components/IpUniverseExplorer').then((m) => ({ default: m.IpUniverseExplorer })));
+const IpDetailView = lazy(() => import('./components/IpDetailView').then((m) => ({ default: m.IpDetailView })));
+const SocExplorerView = lazy(() => import('./components/SocExplorerView').then((m) => ({ default: m.SocExplorerView })));
+const RtlSourceEngineView = lazy(() => import('./components/RtlSourceEngineView').then((m) => ({ default: m.RtlSourceEngineView })));
+const VerificationHubView = lazy(() => import('./components/VerificationHubView').then((m) => ({ default: m.VerificationHubView })));
+const IpComparisonView = lazy(() => import('./components/IpComparisonView').then((m) => ({ default: m.IpComparisonView })));
+const KnowledgeGraphView = lazy(() => import('./components/KnowledgeGraphView').then((m) => ({ default: m.KnowledgeGraphView })));
+const RepoIngestionView = lazy(() => import('./components/RepoIngestionView').then((m) => ({ default: m.RepoIngestionView })));
+const ClockDomainAnalyzerView = lazy(() => import('./components/ClockDomainAnalyzerView').then((m) => ({ default: m.ClockDomainAnalyzerView })));
+const AesDeepDiveView = lazy(() => import('./components/AesDeepDiveView').then((m) => ({ default: m.AesDeepDiveView })));
+const DocumentationCompletenessDashboard = lazy(() =>
+  import('./components/DocumentationCompletenessDashboard').then((m) => ({ default: m.DocumentationCompletenessDashboard }))
+);
+const MasterArchitectureView = lazy(() => import('./components/MasterArchitectureView').then((m) => ({ default: m.MasterArchitectureView })));
+const InteractiveExplainerView = lazy(() =>
+  import('./components/explainer/InteractiveExplainerView').then((m) => ({ default: m.InteractiveExplainerView }))
+);
+
+function parseExplainerHash(): { active: boolean; topicId?: string; sceneIdx?: number; step?: number } {
+  if (typeof window === 'undefined') return { active: false };
+  const h = window.location.hash;
+  if (!h.startsWith('#explainer')) return { active: false };
+  const parts = h.replace(/^#explainer\/?/, '').split('/').filter(Boolean);
+  const topicId = parts[0];
+  const sceneIdx = parts[1]?.startsWith('s') ? Math.max(0, Number.parseInt(parts[1].slice(1), 10) - 1 || 0) : 0;
+  const step = parts[2]?.startsWith('t') ? Math.max(0, Number.parseInt(parts[2].slice(1), 10) || 0) : 0;
+  return { active: true, topicId, sceneIdx, step };
+}
+
 export default function App() {
-  const [view, setView] = useState<AppView>('home');
+  const initialHash = parseExplainerHash();
+  const [view, setView] = useState<AppView>(() => (initialHash.active ? 'explainer' : 'home'));
+  const [explainerDeepLink, setExplainerDeepLink] = useState<{ topicId?: string; sceneIdx?: number; step?: number }>(() => ({
+    topicId: initialHash.topicId,
+    sceneIdx: initialHash.sceneIdx,
+    step: initialHash.step,
+  }));
   const [selectedProtocolId, setSelectedProtocolId] = useState<string>('axi4');
   const [selectedIpId, setSelectedIpId] = useState<string>('ibex');
+  const [kgInitialNodeId, setKgInitialNodeId] = useState<string | undefined>(undefined);
   const [cdcIpId, setCdcIpId] = useState<string>('opentitan-aes');
   const [aesSubtopicId, setAesSubtopicId] = useState<string | undefined>(undefined);
   const [simProtocolId, setSimProtocolId] = useState<string>('axi4');
@@ -98,6 +123,23 @@ export default function App() {
   const navigate = (v: AppView) => {
     setLuckyPick(null);
     setView(v);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openKnowledgeGraph = (nodeId?: string) => {
+    setKgInitialNodeId(nodeId);
+    setLuckyPick(null);
+    setView('knowledge-graph');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openExplainer = (topicId?: string) => {
+    setLuckyPick(null);
+    setExplainerDeepLink({ topicId, sceneIdx: 0, step: 0 });
+    setView('explainer');
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', topicId ? `#explainer/${topicId}/s1/t0` : '#explainer');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -172,9 +214,10 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Top Header Navigation: 5 clean concise hub items adhering strictly to Top Bar Contract
+  // Top Header Navigation: clean concise single-line links adhering to Top Bar Contract
   const headerNavItems: Array<{ id: AppView; label: string; matchViews: AppView[] }> = [
     { id: 'home', label: 'Home', matchViews: ['home'] },
+    { id: 'explainer', label: 'Explainers', matchViews: ['explainer'] },
     {
       id: 'protocol-atlas',
       label: 'Protocol Atlas',
@@ -232,7 +275,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 dark:bg-[#0B1120] dark:text-slate-100">
       {/* Strict 3-Zone Top Bar Contract */}
       <header className="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6">
           <button
             type="button"
             onClick={() => navigate('home')}
@@ -395,163 +438,199 @@ export default function App() {
           </div>
         )}
 
-        {(view === 'home' || view === 'protocol-atlas') && (
-          <HomeDashboard
-            recentIds={recentIds}
-            onSelectProtocol={openProtocol}
-            onSelectIp={openIp}
-            onNavigate={navigate}
-            onOpenSearch={() => setSearchOpen(true)}
-            onFeelingLucky={handleFeelingLucky}
-          />
-        )}
+        <Suspense
+          fallback={
+            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-12 space-y-4">
+              <div className="h-7 w-64 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+              <div className="h-4 w-96 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                <div className="h-44 rounded-lg bg-slate-200/70 dark:bg-slate-800/70 animate-pulse" />
+                <div className="h-44 rounded-lg bg-slate-200/70 dark:bg-slate-800/70 animate-pulse" />
+                <div className="h-44 rounded-lg bg-slate-200/70 dark:bg-slate-800/70 animate-pulse" />
+              </div>
+            </div>
+          }
+        >
+          <div key={view} className="view-transition">
+            {(view === 'home' || view === 'protocol-atlas') && (
+              <HomeDashboard
+                recentIds={recentIds}
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+                onNavigate={navigate}
+                onOpenSearch={() => setSearchOpen(true)}
+                onFeelingLucky={handleFeelingLucky}
+                onOpenExplainer={openExplainer}
+              />
+            )}
 
-        {view === 'protocol' && (
-          <ProtocolDocView
-            protocol={getProtocolById(selectedProtocolId)}
-            onBack={() => navigate('home')}
-            onOpenLab={(simId) => {
-              setSimProtocolId(simId);
-              navigate('simulator');
-            }}
-            onCompare={(pid) => {
-              setCompareProtoId(pid);
-              navigate('compare');
-            }}
-            onSelectIp={openIp}
-            onOpenAesDeepDive={() => navigate('aes-deep-dive')}
-          />
-        )}
+            {view === 'protocol' && (
+              <ProtocolDocView
+                protocol={getProtocolById(selectedProtocolId)}
+                onBack={() => navigate('home')}
+                onOpenLab={(simId) => {
+                  setSimProtocolId(simId);
+                  navigate('simulator');
+                }}
+                onCompare={(pid) => {
+                  setCompareProtoId(pid);
+                  navigate('compare');
+                }}
+                onSelectIp={openIp}
+                onOpenAesDeepDive={() => navigate('aes-deep-dive')}
+                onOpenKnowledgeGraph={openKnowledgeGraph}
+                onOpenExplainer={openExplainer}
+              />
+            )}
 
-        {view === 'ip-universe' && (
-          <IpUniverseExplorer
-            presetCategory="ALL"
-            onSelectIp={openIp}
-            onSelectProtocol={openProtocol}
-          />
-        )}
+            {view === 'ip-universe' && (
+              <IpUniverseExplorer
+                presetCategory="ALL"
+                onSelectIp={openIp}
+                onSelectProtocol={openProtocol}
+                onOpenExplainer={openExplainer}
+              />
+            )}
 
-        {view === 'processors' && (
-          <IpUniverseExplorer
-            presetCategory="CPU & Processor"
-            heading="Open-Source Processor Explorer"
-            subheading="Inspect RISC-V and application processor RTL across Ibex, CVA6, Rocket Chip, SonicBOOM, VexRiscv, SERV, PicoRV32, and CORE-V CV32E40P."
-            onSelectIp={openIp}
-            onSelectProtocol={openProtocol}
-          />
-        )}
+            {view === 'processors' && (
+              <IpUniverseExplorer
+                presetCategory="CPU & Processor"
+                heading="Open-Source Processor Explorer"
+                subheading="Inspect RISC-V and application processor RTL across Ibex, CVA6, Rocket Chip, SonicBOOM, VexRiscv, SERV, PicoRV32, and CORE-V CV32E40P."
+                onSelectIp={openIp}
+                onSelectProtocol={openProtocol}
+                onOpenExplainer={openExplainer}
+              />
+            )}
 
-        {view === 'gpus' && (
-          <IpUniverseExplorer
-            presetCategory="GPU & Graphics"
-            heading="Open-Source GPU Explorer"
-            subheading="Compare complete SIMT GPGPU stacks (Vortex), research Southern Islands compute units (MIAOW), and many-core SIMD GPUs (Nyuzi) with explicit distinction of architectural scope."
-            onSelectIp={openIp}
-            onSelectProtocol={openProtocol}
-          />
-        )}
+            {view === 'gpus' && (
+              <IpUniverseExplorer
+                presetCategory="GPU & Graphics"
+                heading="Open-Source GPU Explorer"
+                subheading="Compare complete SIMT GPGPU stacks (Vortex), research Southern Islands compute units (MIAOW), and many-core SIMD GPUs (Nyuzi) with explicit distinction of architectural scope."
+                onSelectIp={openIp}
+                onSelectProtocol={openProtocol}
+                onOpenExplainer={openExplainer}
+              />
+            )}
 
-        {view === 'ai-accelerators' && (
-          <IpUniverseExplorer
-            presetCategory="AI & ML Accelerator"
-            heading="Open-Source AI & ML Accelerators"
-            subheading="Explore systolic-array DNN engines (Gemmini), modular CNN inference pipelines (NVIDIA NVDLA), and low-power FP16 matrix units (PULP RedMulE)."
-            onSelectIp={openIp}
-            onSelectProtocol={openProtocol}
-          />
-        )}
+            {view === 'ai-accelerators' && (
+              <IpUniverseExplorer
+                presetCategory="AI & ML Accelerator"
+                heading="Open-Source AI & ML Accelerators"
+                subheading="Explore systolic-array DNN engines (Gemmini), modular CNN inference pipelines (NVIDIA NVDLA), and low-power FP16 matrix units (PULP RedMulE)."
+                onSelectIp={openIp}
+                onSelectProtocol={openProtocol}
+                onOpenExplainer={openExplainer}
+              />
+            )}
 
-        {view === 'ip-detail' && (
-          <IpDetailView
-            ip={getIpById(selectedIpId)}
-            onBack={() => navigate('ip-universe')}
-            onSelectProtocol={openProtocol}
-            onCompareIp={(ipId) => {
-              setCompareIpAId(ipId);
-              navigate('ip-compare');
-            }}
-            onOpenCdc={(ipId) => {
-              setCdcIpId(ipId);
-              navigate('cdc-analyzer');
-            }}
-            onSelectSoc={() => navigate('soc-explorer')}
-            onOpenAesDeepDive={() => navigate('aes-deep-dive')}
-          />
-        )}
+            {view === 'ip-detail' && (
+              <IpDetailView
+                ip={getIpById(selectedIpId)}
+                onBack={() => navigate('ip-universe')}
+                onSelectProtocol={openProtocol}
+                onCompareIp={(ipId) => {
+                  setCompareIpAId(ipId);
+                  navigate('ip-compare');
+                }}
+                onOpenCdc={(ipId) => {
+                  setCdcIpId(ipId);
+                  navigate('cdc-analyzer');
+                }}
+                onSelectSoc={() => navigate('soc-explorer')}
+                onOpenAesDeepDive={() => navigate('aes-deep-dive')}
+                onOpenKnowledgeGraph={openKnowledgeGraph}
+                onOpenExplainer={openExplainer}
+              />
+            )}
 
-        {view === 'cdc-analyzer' && (
-          <ClockDomainAnalyzerView initialIpId={cdcIpId} onSelectIp={openIp} />
-        )}
+            {view === 'cdc-analyzer' && (
+              <ClockDomainAnalyzerView initialIpId={cdcIpId} onSelectIp={openIp} />
+            )}
 
-        {view === 'aes-deep-dive' && (
-          <AesDeepDiveView
-            initialSubtopicId={aesSubtopicId}
-            onBack={() => navigate('home')}
-            onSelectIp={openIp}
-            onSelectProtocol={openProtocol}
-            onOpenCdc={(ipId) => {
-              setCdcIpId(ipId);
-              navigate('cdc-analyzer');
-            }}
-          />
-        )}
+            {view === 'aes-deep-dive' && (
+              <AesDeepDiveView
+                initialSubtopicId={aesSubtopicId}
+                onBack={() => navigate('home')}
+                onSelectIp={openIp}
+                onSelectProtocol={openProtocol}
+                onOpenCdc={(ipId) => {
+                  setCdcIpId(ipId);
+                  navigate('cdc-analyzer');
+                }}
+              />
+            )}
 
-        {view === 'soc-explorer' && (
-          <SocExplorerView onSelectIp={openIp} onSelectProtocol={openProtocol} />
-        )}
+            {view === 'soc-explorer' && (
+              <SocExplorerView onSelectIp={openIp} onSelectProtocol={openProtocol} />
+            )}
 
-        {view === 'rtl-explorer' && <RtlSourceEngineView onSelectIp={openIp} />}
+            {view === 'rtl-explorer' && <RtlSourceEngineView onSelectIp={openIp} />}
 
-        {view === 'verification-hub' && <VerificationHubView onSelectIp={openIp} />}
+            {view === 'verification-hub' && <VerificationHubView onSelectIp={openIp} />}
 
-        {view === 'ip-compare' && (
-          <IpComparisonView
-            initialIpA={compareIpAId}
-            onSelectIp={openIp}
-            onSelectProtocol={openProtocol}
-          />
-        )}
+            {view === 'ip-compare' && (
+              <IpComparisonView
+                initialIpA={compareIpAId}
+                onSelectIp={openIp}
+                onSelectProtocol={openProtocol}
+              />
+            )}
 
-        {view === 'knowledge-graph' && (
-          <KnowledgeGraphView
-            onSelectIp={openIp}
-            onSelectProtocol={openProtocol}
-            onOpenSocExplorer={() => navigate('soc-explorer')}
-          />
-        )}
+            {view === 'knowledge-graph' && (
+              <KnowledgeGraphView
+                initialNodeId={kgInitialNodeId}
+                onSelectIp={openIp}
+                onSelectProtocol={openProtocol}
+                onOpenSocExplorer={() => navigate('soc-explorer')}
+              />
+            )}
 
-        {view === 'repo-ingestion' && <RepoIngestionView />}
+            {view === 'repo-ingestion' && <RepoIngestionView />}
 
-        {view === 'glossary' && (
-          <GlossaryView onSelectProtocol={openProtocol} onSelectIp={openIp} />
-        )}
+            {view === 'glossary' && (
+              <GlossaryView onSelectProtocol={openProtocol} onSelectIp={openIp} />
+            )}
 
-        {view === 'simulator' && <SimulatorLab initialProtocol={simProtocolId} />}
+            {view === 'simulator' && <SimulatorLab initialProtocol={simProtocolId} />}
 
-        {view === 'checker' && <ComplianceChecker />}
+            {view === 'checker' && <ComplianceChecker />}
 
-        {view === 'compare' && (
-          <ComparisonEngine initialProtoA={compareProtoId} onSelectProtocol={openProtocol} />
-        )}
+            {view === 'compare' && (
+              <ComparisonEngine initialProtoA={compareProtoId} onSelectProtocol={openProtocol} />
+            )}
 
-        {view === 'soc-map' && <SocConnectivityMap onSelectProtocol={openProtocol} />}
+            {view === 'soc-map' && <SocConnectivityMap onSelectProtocol={openProtocol} />}
 
-        {view === 'uvm' && <UvmGeneratorView />}
+            {view === 'uvm' && <UvmGeneratorView />}
 
-        {view === 'completeness-dashboard' && (
-          <DocumentationCompletenessDashboard
-            onSelectProtocol={openProtocol}
-            onSelectIp={openIp}
-          />
-        )}
+            {view === 'completeness-dashboard' && (
+              <DocumentationCompletenessDashboard
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+              />
+            )}
 
-        {view === 'master-architecture' && (
-          <MasterArchitectureView
-            onSelectProtocol={openProtocol}
-            onSelectIp={openIp}
-            onNavigate={navigate}
-          />
-        )}
+            {view === 'master-architecture' && (
+              <MasterArchitectureView
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+                onNavigate={navigate}
+              />
+            )}
+
+            {view === 'explainer' && (
+              <InteractiveExplainerView
+                initialTopicId={explainerDeepLink.topicId}
+                initialSceneIndex={explainerDeepLink.sceneIdx}
+                initialStep={explainerDeepLink.step}
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+              />
+            )}
+          </div>
+        </Suspense>
       </main>
 
       {/* Quiet Engineering Footer */}

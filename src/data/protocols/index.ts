@@ -9,6 +9,7 @@ import { COMPREHENSIVE_CATALOG_PROTOCOLS } from './comprehensiveCatalog';
 import { EXPANDED_PART1_PROTOCOLS } from './expandedProtocolPart1';
 import { EXPANDED_PART2_PROTOCOLS } from './expandedProtocolPart2';
 import { EXPANDED_PART3_PROTOCOLS } from './expandedProtocolPart3';
+import { enrichProtocolDocument } from './enrichProtocol';
 
 const RAW_PROTOCOLS: ProtocolDocument[] = [
   axi4Protocol,
@@ -28,7 +29,7 @@ export const ALL_PROTOCOLS: ProtocolDocument[] = RAW_PROTOCOLS.filter((p) => {
   if (seenIds.has(p.id)) return false;
   seenIds.add(p.id);
   return true;
-});
+}).map(enrichProtocolDocument);
 
 export const PROTOCOL_MAP: Record<string, ProtocolDocument> = Object.fromEntries(
   ALL_PROTOCOLS.map((p) => [p.id, p])

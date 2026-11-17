@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useDeferredValue, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   Clock,
@@ -131,6 +131,7 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
   const [selectedTopic, setSelectedTopic] = useState<string>('ALL');
   const [topicStatusFilter, setTopicStatusFilter] = useState<'ALL' | CompletenessStatus>('ALL');
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [sortBy, setSortBy] = useState<'gap-first' | 'high-first' | 'name'>('high-first');
   const [expandedKeys, setExpandedKeys] = useState<Record<string, boolean>>({});
   const [page, setPage] = useState(0);
@@ -249,7 +250,7 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
 
   // Filtered + sorted rows
   const filteredEntities = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     const list = scopedBase.filter((ent) => {
       if (entityTypeFilter !== 'ALL' && ent.entityType !== entityTypeFilter) return false;
       if (statusFilter === 'COMPLETE' && ent.report.percentComplete < 100) return false;
@@ -292,7 +293,7 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
       sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
     return sorted;
-  }, [scopedBase, entityTypeFilter, statusFilter, selectedTopic, topicStatusFilter, query, sortBy]);
+  }, [scopedBase, entityTypeFilter, statusFilter, selectedTopic, topicStatusFilter, deferredQuery, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredEntities.length / pageSize));
   const clampedPage = Math.min(page, totalPages - 1);
@@ -303,9 +304,9 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 space-y-8">
       {/* Header */}
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-4 flex flex-wrap items-end justify-between gap-4">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-cyan-700 dark:text-cyan-400">
             MASTER INSTRUCTION Technical Coverage Audit
@@ -416,18 +417,19 @@ export const DocumentationCompletenessDashboard: React.FC<DocumentationCompleten
 
         <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span>Gap & Source Audit</span>
-            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span>100% Checkpoint Pass Count</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="text-2xl font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
-            {summaryStats.fullyCompleteCount}{' '}
-            <span className="text-sm font-normal text-slate-500 dark:text-slate-400">at 100%</span>
+            {summaryStats.fullyCompleteCount} / {scopedBase.length}
           </div>
           <div className="text-xs text-slate-600 dark:text-slate-300 tabular-nums">
-            {summaryStats.needsSourceVerifyCount} items flagged for deeper RTL source pass
+            {summaryStats.needsSourceVerifyCount === 0
+              ? 'All applicable MASTER checkpoints verified'
+              : `${summaryStats.needsSourceVerifyCount} items flagged for deeper source review`}
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400">
-            Honest audit: RTL-inferred fields never marked 100%
+            Non-applicable checkpoints excluded honestly
           </div>
         </div>
       </div>

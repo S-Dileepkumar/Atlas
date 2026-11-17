@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useDeferredValue, useMemo, useState } from 'react';
 import { ShieldCheck, Terminal, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { ALL_IPS, getProjectById } from '../data/ips';
 import { IpVerificationInfo } from '../types/ipUniverse';
+import { UvmArchitectureFlowSvg } from './TechnicalVisualizers';
 
 interface VerificationHubViewProps {
   onSelectIp: (ipId: string) => void;
@@ -18,9 +19,10 @@ const MATURITIES: Array<'ALL' | IpVerificationInfo['maturity']> = [
 export const VerificationHubView: React.FC<VerificationHubViewProps> = ({ onSelectIp }) => {
   const [maturity, setMaturity] = useState<'ALL' | IpVerificationInfo['maturity']>('ALL');
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
 
   const filteredIps = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     return ALL_IPS.filter((ip) => {
       if (maturity !== 'ALL' && ip.verification.maturity !== maturity) return false;
       if (!q) return true;
@@ -31,7 +33,7 @@ export const VerificationHubView: React.FC<VerificationHubViewProps> = ({ onSele
         ip.verification.existingInfra.agentsAndComponents.some((a) => a.toLowerCase().includes(q))
       );
     });
-  }, [maturity, query]);
+  }, [maturity, deferredQuery]);
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -56,6 +58,8 @@ export const VerificationHubView: React.FC<VerificationHubViewProps> = ({ onSele
           className="px-3 py-2 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-72 focus:outline-none focus:border-cyan-500"
         />
       </div>
+
+      <UvmArchitectureFlowSvg title="Interactive Open-Source UVM, ISS Lockstep & Co-Simulation Flow" />
 
       {/* Maturity Filter Tabs */}
       <div className="flex flex-wrap items-center gap-1.5">

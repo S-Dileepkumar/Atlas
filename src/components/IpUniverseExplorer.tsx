@@ -9,6 +9,7 @@ interface IpUniverseExplorerProps {
   subheading?: string;
   onSelectIp: (ipId: string) => void;
   onSelectProtocol: (protoId: string) => void;
+  onOpenExplainer?: (topicId?: string) => void;
 }
 
 export const IpUniverseExplorer: React.FC<IpUniverseExplorerProps> = ({
@@ -17,6 +18,7 @@ export const IpUniverseExplorer: React.FC<IpUniverseExplorerProps> = ({
   subheading = 'Explore Silicon. Understand Architecture. Reverse Engineer IP. Source-traceable semiconductor IPs across RISC-V, OpenTitan, GPUs, AI accelerators, and interconnects.',
   onSelectIp,
   onSelectProtocol,
+  onOpenExplainer,
 }) => {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>(presetCategory);
@@ -74,8 +76,8 @@ export const IpUniverseExplorer: React.FC<IpUniverseExplorerProps> = ({
   }, [query, category, projectFilter, langFilter, licenseFilter, protoFilter, maturityFilter]);
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-4 flex flex-wrap items-end justify-between gap-4">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-cyan-700 dark:text-cyan-400">
             Open-Source Silicon Intelligence
@@ -199,13 +201,13 @@ export const IpUniverseExplorer: React.FC<IpUniverseExplorerProps> = ({
           No open-source IPs match the active filters.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((ip) => {
             const proj = getProjectById(ip.projectId);
             return (
               <div
                 key={ip.id}
-                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 flex flex-col justify-between gap-4 hover:border-cyan-500/50 transition-colors"
+                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 flex flex-col justify-between gap-4 hover:border-cyan-500/50 transition-colors"
               >
                 <div className="space-y-2">
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -223,7 +225,7 @@ export const IpUniverseExplorer: React.FC<IpUniverseExplorerProps> = ({
                   </p>
                 </div>
 
-                <div className="space-y-2.5 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
                   <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                     <span className="font-mono tabular-nums">{ip.modules.length} RTL modules</span>
                     <span aria-hidden="true">·</span>
@@ -244,13 +246,24 @@ export const IpUniverseExplorer: React.FC<IpUniverseExplorerProps> = ({
                       ))}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => onSelectIp(ip.id)}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
-                    >
-                      Inspect IP <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {onOpenExplainer && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenExplainer(`ip-${ip.id}`)}
+                          className="text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer"
+                        >
+                          Explainer
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onSelectIp(ip.id)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
+                      >
+                        Inspect RTL <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

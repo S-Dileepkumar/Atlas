@@ -22,6 +22,7 @@ import {
 import { ProtocolDocument, SignalDefinition } from '../types/protocol';
 import { WaveformViewer } from './WaveformViewer';
 import { BlockDiagramSvg, CodeBlock, FsmDiagramSvg } from './DiagramViewers';
+import { PacketLayerInspectorSvg, UvmArchitectureFlowSvg } from './TechnicalVisualizers';
 import { StudentExplainerCard } from './StudentExplainerCard';
 import { CompletenessTrackerPanel } from './CompletenessTrackerPanel';
 import { auditProtocolCompleteness } from '../utils/completenessTracker';
@@ -48,6 +49,8 @@ interface ProtocolDocViewProps {
   onCompare: (protoId: string) => void;
   onSelectIp?: (ipId: string) => void;
   onOpenAesDeepDive?: () => void;
+  onOpenKnowledgeGraph?: (nodeId: string) => void;
+  onOpenExplainer?: (topicId?: string) => void;
 }
 
 type DocSection =
@@ -80,6 +83,8 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
   onCompare,
   onSelectIp,
   onOpenAesDeepDive,
+  onOpenKnowledgeGraph,
+  onOpenExplainer,
 }) => {
   const [activeSection, setActiveSection] = useState<DocSection>('overview');
   const [depthLevel, setDepthLevel] = useState<'all' | 'l1' | 'l2' | 'l3'>('all');
@@ -157,9 +162,9 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 space-y-6">
       {/* Top Breadcrumb & Quick Actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
@@ -198,6 +203,26 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {onOpenExplainer && (
+            <button
+              type="button"
+              onClick={() => {
+                const mapped =
+                  protocol.id === 'axi4'
+                    ? 'axi4-handshakes'
+                    : protocol.id === 'pcie-gen5'
+                    ? 'pcie-ltssm-tlp'
+                    : protocol.id === 'ddr5'
+                    ? 'ddr5-bank-refresh'
+                    : `proto-${protocol.id}`;
+                onOpenExplainer(mapped);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              Interactive Explainer
+            </button>
+          )}
           {(protocol.id === 'tl-ul' || protocol.id === 'tl-ul-integrity' || protocol.id === 'entropy-if') && onOpenAesDeepDive && (
             <button
               type="button"
@@ -214,6 +239,15 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
           >
             Compare Protocol
           </button>
+          {onOpenKnowledgeGraph && (
+            <button
+              type="button"
+              onClick={() => onOpenKnowledgeGraph(`proto:${protocol.id}`)}
+              className="px-3 py-2 text-xs font-medium rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              Knowledge Graph
+            </button>
+          )}
           {simMapping[protocol.id] && (
             <button
               type="button"
@@ -276,7 +310,7 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
       </div>
 
       {/* Main Split Workspace: Left Protocol-to-RTL Tree + Right Doc Canvas */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6 items-start">
         {/* Left Sidebar: Protocol-to-RTL Signal Tree */}
         <aside className="lg:col-span-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 lg:sticky lg:top-20">
           <div className="mb-3 pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -813,6 +847,8 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
                 <span><strong className="text-cyan-800 dark:text-cyan-300">Student Guide:</strong> {SECTION_STUDENT_GUIDES.transactions}</span>
               </div>
 
+              <PacketLayerInspectorSvg protocol={protocol} />
+
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-4">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Transaction Lifecycle</h2>
                 <div className="space-y-3">
@@ -901,6 +937,13 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
                 <GraduationCap className="w-4 h-4 text-cyan-700 dark:text-cyan-400 shrink-0 mt-0.5" />
                 <span><strong className="text-cyan-800 dark:text-cyan-300">Student Guide:</strong> {SECTION_STUDENT_GUIDES.verification}</span>
               </div>
+
+              <UvmArchitectureFlowSvg
+                title={`${protocol.name} UVM Testbench & Scoreboard Flow`}
+                driverNote={protocol.verification.driverStrategy}
+                monitorNote={protocol.verification.monitorStrategy}
+                scoreboardNote={protocol.verification.scoreboardStrategy}
+              />
 
               <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-4">
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">UVM Verification Architecture</h2>
