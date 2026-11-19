@@ -160,7 +160,7 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 
 ```text
 ├── .github/workflows/
-│   └── deploy-pages.yml               # Automated GitHub Actions build & GitHub Pages deploy
+│   └── deploy.yml                     # Automated GitHub Actions build & GitHub Pages deploy
 ├── public/assets/aistudio/
 │   └── gemini-svg_07b7b86a.svg        # Official VLSI Protocol Atlas SVG brand logo (README only)
 ├── src/
@@ -242,7 +242,7 @@ This project is a Vite + TypeScript React SPA, so **raw repository source (`inde
 
 ### Option A: Automated GitHub Actions Deployment (Recommended)
 
-This repository includes `.github/workflows/deploy-pages.yml` configured with `enablement: true` and fallback relative asset paths (`./`).
+This repository includes `.github/workflows/deploy.yml` configured with `enablement: true`, `NODE_ENV=production`, and automatic `VITE_BASE_PATH` resolution (falling back to `/<repo-name>/` or `/` for user sites, and `./` for local subpath-agnostic static builds).
 
 1. **Set GitHub Pages Source to GitHub Actions:**
    - Open your GitHub repository → **Settings → Pages → Build and deployment → Source**
@@ -285,9 +285,9 @@ npx vite preview --port 4173 --base /vlsi-protocol-atlas/
 | Symptom | Root Cause | Fix |
 |---|---|---|
 | **Blank white page & 404 on `/src/main.tsx`** | GitHub Pages is set to *Deploy from a branch -> `main`* instead of the compiled bundle. | Switch **Settings → Pages → Source** to **GitHub Actions** (or deploy `dist/` to `gh-pages`). |
-| **Blank page & 404 on `/assets/*.js`** | Asset base path mismatch on project subpath (`/<repo-name>/`). | Pull latest `vite.config.ts` (defaults production builds to `./`) and `.github/workflows/deploy-pages.yml` (`VITE_BASE_PATH`). |
+| **Blank page & 404 on `/assets/*.js`** | Asset base path mismatch on project subpath (`/<repo-name>/`). | Pull latest `vite.config.ts` and `.github/workflows/deploy.yml` (`VITE_BASE_PATH` is auto-derived from the repository name). |
 | **`actions/configure-pages` fails (404 / Not Found)** | GitHub Pages was never enabled or workflow lacks permissions. | Enable **Read and write permissions** under **Settings → Actions → General** and set **Settings → Pages → Source** to **GitHub Actions**. |
-| **Workflow never runs on push** | Default branch is neither `main` nor `master`. | Add your branch under `on.push.branches` in `.github/workflows/deploy-pages.yml` or trigger manually via **Run workflow**. |
+| **Workflow never runs on push** | Default branch is neither `main` nor `master`. | Add your branch under `on.push.branches` in `.github/workflows/deploy.yml` or trigger manually via **Run workflow**. |
 
 ---
 

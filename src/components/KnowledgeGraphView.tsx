@@ -1,4 +1,4 @@
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Network,
   Search,
@@ -22,6 +22,7 @@ import {
   Upload,
   X,
   Plus,
+  Map as MapIcon,
 } from 'lucide-react';
 import { PROJECTS } from '../data/ips';
 import {
@@ -213,7 +214,7 @@ export const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   const [pathEndId, setPathEndId] = useState('ip:opentitan-sram-ctrl');
   const [activePath, setActivePath] = useState<{ found: boolean; nodeIds: string[]; edgeIds: string[] } | null>(null);
 
-  // Canvas Interaction (Zoom, Pan, Drag Nodes, Fullscreen)
+  // Canvas Interaction (Zoom, Pan, Drag Nodes, Mini-Map, Fullscreen)
   const [zoom, setZoom] = useState(0.92);
   const [pan, setPan] = useState({ x: 30, y: 20 });
   const [nodePositions, setNodePositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -221,7 +222,35 @@ export const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   const [isPanning, setIsPanning] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; origX: number; origY: number } | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const kgCanvasRef = useRef<HTMLDivElement | null>(null);
+  const kgMinimapSvgRef = useRef<SVGSVGElement | null>(null);
+  const kgMinimapDragRef = useRef(false);
+  const [kgVpSize, setKgVpSize] = useState<{ w: number; h: number }>({ w: 720, h: 620 });
+  const [showKgMiniMap, setShowKgMiniMap] = useState(true);
   const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    const el = kgCanvasRef.current;
+    if (!el) return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setKgVpSize((prev) =>
+          Math.abs(prev.w - rect.width) > 2 || Math.abs(prev.h - rect.height) > 2
+            ? { w: rect.width, h: rect.height }
+            : prev
+        );
+      }
+    };
+    measure();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(measure);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [fullscreen]);
 
   // Inspector Tabs & Ingestion Drawer
   const [inspectorTab, setInspectorTab] = useState<'overview' | 'links' | 'provenance'>('overview');
@@ -398,10 +427,82 @@ endmodule`
     img.src = url;
   };
 
-  const fitToScreen = () => {
-    setZoom(0.9);
-    setPan({ x: 30, y: 20 });
-  };
+  const kgWorldBounds = useMemo(() => {
+    const pts = subgraph.nodes
+      .map((n) => nodePositions[n.id])
+      .filter((p): p is { x: number; y: number } => Boolean(p));
+    if (pts.length === 0) return { minX: 0, minY: 0, width: 1200, height: 720 };
+    const padX = 150;
+    const padY = 100;
+    const minX = Math.min(...pts.map((p) => p.x - 83)) - padX;
+    const minY = Math.min(...pts.map((p) => p.y - 28)) - padY;
+    const maxX = Math.max(...pts.map((p) => p.x + 83)) + padX;
+    const maxY = Math.max(...pts.map((p) => p.y + 28)) + padY;
+    return {
+      minX,
+      minY,
+      width: Math.max(480, maxX - minX),
+      height: Math.max(320, maxY - minY),
+    };
+  }, [subgraph.nodes, nodePositions]);
+
+  const kgVpWorld = useMemo(() => {
+    const safeZoom = Math.max(0.1, zoom);
+    return {
+      x: -pan.x / safeZoom,
+      y: -pan.y / safeZoom,
+      w: kgVpSize.w / safeZoom,
+      h: kgVpSize.h / safeZoom,
+    };
+  }, [pan.x, pan.y, zoom, kgVpSize.w, kgVpSize.h]);
+
+  const fitToScreen = useCallback(() => {
+    const targetZoom = Math.min(
+      1.05,
+      Math.max(
+        0.38,
+        Math.min((kgVpSize.w - 32) / kgWorldBounds.width, (kgVpSize.h - 32) / kgWorldBounds.height)
+      )
+    );
+    const centerX = kgWorldBounds.minX + kgWorldBounds.width / 2;
+    const centerY = kgWorldBounds.minY + kgWorldBounds.height / 2;
+    setZoom(+targetZoom.toFixed(2));
+    setPan({
+      x: kgVpSize.w / 2 - centerX * targetZoom,
+      y: kgVpSize.h / 2 - centerY * targetZoom,
+    });
+  }, [kgVpSize.h, kgVpSize.w, kgWorldBounds.height, kgWorldBounds.minX, kgWorldBounds.minY, kgWorldBounds.width]);
+
+  const jumpKgMiniMap = useCallback(
+    (clientX: number, clientY: number) => {
+      const svg = kgMinimapSvgRef.current;
+      if (!svg) return;
+      let worldX = kgWorldBounds.minX + kgWorldBounds.width / 2;
+      let worldY = kgWorldBounds.minY + kgWorldBounds.height / 2;
+
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const transformed = pt.matrixTransform(ctm.inverse());
+        worldX = transformed.x;
+        worldY = transformed.y;
+      } else {
+        const rect = svg.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          worldX = kgWorldBounds.minX + ((clientX - rect.left) / rect.width) * kgWorldBounds.width;
+          worldY = kgWorldBounds.minY + ((clientY - rect.top) / rect.height) * kgWorldBounds.height;
+        }
+      }
+
+      setPan({
+        x: kgVpSize.w / 2 - worldX * zoom,
+        y: kgVpSize.h / 2 - worldY * zoom,
+      });
+    },
+    [kgVpSize.h, kgVpSize.w, kgWorldBounds.height, kgWorldBounds.minX, kgWorldBounds.minY, kgWorldBounds.width, zoom]
+  );
 
   const toggleNodeTypeFilter = (t: KgNodeType) => {
     setFilters((prev) => {
@@ -849,8 +950,23 @@ endmodule`
                 type="button"
                 onClick={fitToScreen}
                 className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 hover:border-cyan-500 text-[11px] cursor-pointer"
+                title="Fit and center Knowledge Graph"
               >
                 Fit
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowKgMiniMap((v) => !v)}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded border text-[11px] cursor-pointer ${
+                  showKgMiniMap
+                    ? 'border-cyan-500/60 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-cyan-500 text-slate-600 dark:text-slate-300'
+                }`}
+                title={showKgMiniMap ? 'Hide Mini-Map Navigator' : 'Show Mini-Map Navigator'}
+                aria-label="Toggle Knowledge Graph mini-map navigator"
+              >
+                <MapIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Map</span>
               </button>
               <button
                 type="button"
@@ -920,8 +1036,8 @@ endmodule`
             </div>
           </div>
 
-          {/* Interactive SVG Viewport */}
-          <div className="relative flex-1 bg-engineering-grid overflow-hidden select-none">
+          {/* Interactive Infinite-Mesh SVG Viewport */}
+          <div ref={kgCanvasRef} className="relative flex-1 bg-[var(--mesh-bg)] overflow-hidden select-none">
             <svg
               ref={svgRef}
               className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -931,7 +1047,8 @@ endmodule`
                 setZoom((z) => Math.min(2.2, Math.max(0.35, +(z + delta).toFixed(2))));
               }}
               onPointerDown={(e) => {
-                if ((e.target as Element).tagName === 'svg') {
+                const target = e.target as Element;
+                if (target.tagName === 'svg' || target.getAttribute('data-bg-mesh') === 'true') {
                   setIsPanning(true);
                   dragStartRef.current = { x: e.clientX, y: e.clientY, origX: pan.x, origY: pan.y };
                 }
@@ -941,6 +1058,60 @@ endmodule`
               onPointerLeave={handleSvgPointerUp}
             >
               <defs>
+                <pattern
+                  id="kg-mesh-subminor"
+                  width="8"
+                  height="8"
+                  patternUnits="userSpaceOnUse"
+                  patternTransform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}
+                >
+                  <path
+                    d="M 8 0 L 0 0 0 8"
+                    fill="none"
+                    stroke="var(--mesh-subminor-line)"
+                    strokeWidth={0.6 / Math.max(0.55, zoom)}
+                  />
+                </pattern>
+                <pattern
+                  id="kg-mesh-minor"
+                  width="32"
+                  height="32"
+                  patternUnits="userSpaceOnUse"
+                  patternTransform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}
+                >
+                  <path
+                    d="M 32 0 L 0 0 0 32"
+                    fill="none"
+                    stroke="var(--mesh-minor-line)"
+                    strokeWidth={0.85 / Math.max(0.45, zoom)}
+                  />
+                </pattern>
+                <pattern
+                  id="kg-mesh-major"
+                  width="160"
+                  height="160"
+                  patternUnits="userSpaceOnUse"
+                  patternTransform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}
+                >
+                  <path
+                    d="M 160 0 L 0 0 0 160"
+                    fill="none"
+                    stroke="var(--mesh-major-line)"
+                    strokeWidth={1.15 / Math.max(0.45, zoom)}
+                  />
+                  <path
+                    d="M 0 0 H 6 M 0 0 V 6"
+                    fill="none"
+                    stroke="var(--mesh-crosshair)"
+                    strokeWidth={1.25 / Math.max(0.55, zoom)}
+                  />
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r={1.5 / Math.max(0.6, zoom)}
+                    fill="var(--mesh-node-dot)"
+                  />
+                </pattern>
                 <marker id="kg-arrow-confirmed" markerWidth="7" markerHeight="6" refX="7" refY="3" orient="auto">
                   <polygon points="0 0, 7 3, 0 6" fill="#06b6d4" />
                 </marker>
@@ -951,6 +1122,14 @@ endmodule`
                   <polygon points="0 0, 8 3.5, 0 7" fill="#38bdf8" />
                 </marker>
               </defs>
+
+              {/* Infinite Engineering Mesh Background */}
+              <rect width="100%" height="100%" fill="var(--mesh-bg)" data-bg-mesh="true" />
+              {zoom >= 0.55 && (
+                <rect width="100%" height="100%" fill="url(#kg-mesh-subminor)" data-bg-mesh="true" />
+              )}
+              <rect width="100%" height="100%" fill="url(#kg-mesh-minor)" data-bg-mesh="true" />
+              <rect width="100%" height="100%" fill="url(#kg-mesh-major)" data-bg-mesh="true" />
 
               <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
                 {/* Edges */}
@@ -1113,7 +1292,7 @@ endmodule`
             </svg>
 
             {/* Bottom-Left Color & Edge Legend */}
-            <div className="absolute bottom-2.5 left-2.5 right-36 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 px-2.5 py-1.5 rounded border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 text-[10px] text-slate-600 dark:text-slate-300">
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 sm:right-48 pointer-events-none flex flex-wrap items-center gap-x-3 gap-y-1 px-2.5 py-1.5 rounded border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 text-[10px] text-slate-600 dark:text-slate-300">
               <span><strong>Solid</strong> Confirmed</span>
               <span><strong>Dashed</strong> Inferred</span>
               <span><strong>Dotted</strong> Association</span>
@@ -1127,25 +1306,132 @@ endmodule`
               <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-pink-500" /> Standard</span>
             </div>
 
-            {/* Bottom-Right Live SVG Minimap */}
-            <div className="hidden sm:block absolute bottom-2.5 right-2.5 w-32 h-20 rounded border border-slate-300 dark:border-slate-700 bg-white/90 dark:bg-slate-950/90 overflow-hidden pointer-events-none">
-              <svg viewBox="0 0 1200 720" className="w-full h-full">
-                {subgraph.nodes.map((n) => {
-                  const p = nodePositions[n.id];
-                  if (!p) return null;
-                  return (
-                    <circle
-                      key={n.id}
-                      cx={p.x}
-                      cy={p.y}
-                      r={n.id === selectedNodeId ? 18 : 11}
-                      fill={NODE_STYLE[n.nodeType].color}
-                      opacity={n.id === selectedNodeId ? 1 : 0.75}
-                    />
-                  );
-                })}
-              </svg>
-            </div>
+            {/* Bottom-Right Interactive Mini-Map Navigator Overlay */}
+            {showKgMiniMap && (
+              <div
+                onPointerDown={(e) => e.stopPropagation()}
+                className="hidden sm:flex flex-col absolute bottom-2.5 right-2.5 z-10 w-44 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)]/92 backdrop-blur-sm shadow-sm overflow-hidden"
+              >
+                <div className="px-2 py-1 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/80 flex items-center justify-between text-[10px] font-mono text-[var(--text-secondary)]">
+                  <span>Mini-Map · Click/Drag</span>
+                  <button
+                    type="button"
+                    onClick={fitToScreen}
+                    className="text-[var(--sem-control)] hover:underline cursor-pointer"
+                    title="Center viewport on Knowledge Graph"
+                  >
+                    Center
+                  </button>
+                </div>
+                <svg
+                  ref={kgMinimapSvgRef}
+                  viewBox={`${kgWorldBounds.minX} ${kgWorldBounds.minY} ${kgWorldBounds.width} ${kgWorldBounds.height}`}
+                  className="w-full h-24 bg-[var(--mesh-bg)] cursor-crosshair touch-none"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    kgMinimapDragRef.current = true;
+                    try {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    } catch {
+                      // Ignore in synthetic environments
+                    }
+                    jumpKgMiniMap(e.clientX, e.clientY);
+                  }}
+                  onPointerMove={(e) => {
+                    if (!kgMinimapDragRef.current) return;
+                    e.stopPropagation();
+                    jumpKgMiniMap(e.clientX, e.clientY);
+                  }}
+                  onPointerUp={(e) => {
+                    kgMinimapDragRef.current = false;
+                    try {
+                      e.currentTarget.releasePointerCapture(e.pointerId);
+                    } catch {
+                      // Ignore
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    kgMinimapDragRef.current = false;
+                  }}
+                  aria-label="Interactive Knowledge Graph mini-map navigator"
+                >
+                  {/* Graph bounds box */}
+                  <rect
+                    x={kgWorldBounds.minX + 20}
+                    y={kgWorldBounds.minY + 20}
+                    width={Math.max(40, kgWorldBounds.width - 40)}
+                    height={Math.max(40, kgWorldBounds.height - 40)}
+                    fill="none"
+                    stroke="var(--mesh-major-line)"
+                    strokeDasharray="12 10"
+                    strokeWidth={Math.max(1.5, kgWorldBounds.width * 0.0025)}
+                  />
+
+                  {/* Edge topology lines */}
+                  {subgraph.edges.map((edge) => {
+                    const p1 = nodePositions[edge.source];
+                    const p2 = nodePositions[edge.target];
+                    if (!p1 || !p2) return null;
+                    const isActiveEdge =
+                      pathEdgeSet.has(edge.id) ||
+                      selectedEdgeId === edge.id ||
+                      edge.source === selectedNodeId ||
+                      edge.target === selectedNodeId;
+                    return (
+                      <line
+                        key={edge.id}
+                        x1={p1.x}
+                        y1={p1.y}
+                        x2={p2.x}
+                        y2={p2.y}
+                        stroke={isActiveEdge ? '#06b6d4' : 'var(--text-secondary)'}
+                        strokeOpacity={isActiveEdge ? 0.65 : 0.25}
+                        strokeWidth={Math.max(2, kgWorldBounds.width * 0.003)}
+                      />
+                    );
+                  })}
+
+                  {/* Node footprints */}
+                  {subgraph.nodes.map((n) => {
+                    const p = nodePositions[n.id];
+                    if (!p) return null;
+                    const color = NODE_STYLE[n.nodeType].color;
+                    const isSel = n.id === selectedNodeId;
+                    return (
+                      <rect
+                        key={n.id}
+                        x={p.x - 83}
+                        y={p.y - 28}
+                        width={166}
+                        height={56}
+                        rx={8}
+                        fill={color}
+                        fillOpacity={isSel ? 0.72 : 0.34}
+                        stroke={isSel ? '#06b6d4' : color}
+                        strokeWidth={
+                          isSel
+                            ? Math.max(5, kgWorldBounds.width * 0.0065)
+                            : Math.max(2, kgWorldBounds.width * 0.003)
+                        }
+                      />
+                    );
+                  })}
+
+                  {/* Live Active Viewport Position Rectangle */}
+                  <rect
+                    x={kgVpWorld.x}
+                    y={kgVpWorld.y}
+                    width={Math.max(28, kgVpWorld.w)}
+                    height={Math.max(20, kgVpWorld.h)}
+                    rx={8}
+                    fill="var(--sem-control)"
+                    fillOpacity={0.14}
+                    stroke="var(--sem-control)"
+                    strokeWidth={Math.max(4, kgWorldBounds.width * 0.0075)}
+                  />
+                </svg>
+              </div>
+            )}
           </div>
 
           {selectedEdge && (

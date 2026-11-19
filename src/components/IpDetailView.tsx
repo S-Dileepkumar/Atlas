@@ -19,6 +19,7 @@ import { IpArchBlock, IpArchLink, IpEntity, RtlModuleNode } from '../types/ipUni
 import { getProjectById } from '../data/ips';
 import { ALL_SOCS } from '../data/socs';
 import { CodeBlock } from './DiagramViewers';
+import { InfiniteMeshViewport } from './InfiniteMeshViewport';
 import { RegisterMemoryMapSvg } from './TechnicalVisualizers';
 import { StudentExplainerCard } from './StudentExplainerCard';
 import { CompletenessTrackerPanel } from './CompletenessTrackerPanel';
@@ -309,87 +310,233 @@ export const IpDetailView: React.FC<IpDetailViewProps> = ({
               )}
             </div>
 
-            {/* Interactive SVG Protocol Connectivity Diagram */}
-            <div className="overflow-x-auto rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#080E1A] p-3 bg-engineering-grid">
-              <svg
-                viewBox={`0 0 760 ${Math.max(180, ip.interfaces.length * 64 + 30)}`}
-                className="w-full min-w-[600px] h-auto select-none"
-              >
-                <defs>
-                  <marker id="bus-hub-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-                    <polygon points="0 0, 8 3, 0 6" fill="#06b6d4" />
-                  </marker>
-                </defs>
+            {/* Interactive Infinite-Mesh Protocol Connectivity Schematic */}
+            {(() => {
+              const ifaceCount = Math.max(1, ip.interfaces.length);
+              const dieH = Math.max(190, ifaceCount * 76 - 10);
+              const hubBounds = {
+                minX: 0,
+                minY: 0,
+                width: 820,
+                height: Math.max(250, dieH + 64),
+              };
+              const hubMarkerId = `bus-hub-arr-${ip.id.replace(/[^a-zA-Z0-9]/g, '')}`;
 
-                {/* Central IP Core Box */}
-                <rect
-                  x={28}
-                  y={24}
-                  width={215}
-                  height={Math.max(120, ip.interfaces.length * 64 - 18)}
-                  rx={10}
-                  className="fill-white dark:fill-slate-900"
-                  stroke="#06b6d4"
-                  strokeWidth={2}
-                />
-                <rect x={29} y={25} width={213} height={6} rx={3} fill="#06b6d4" />
-                <text x={135} y={62} textAnchor="middle" className="font-display text-[14px] font-bold fill-slate-900 dark:fill-slate-100">
-                  {ip.name}
-                </text>
-                <text x={135} y={82} textAnchor="middle" className="font-mono text-[10px] fill-slate-500 dark:fill-slate-400">
-                  {ip.rtlLanguage}
-                </text>
-                <text x={135} y={102} textAnchor="middle" className="font-mono text-[10px] fill-cyan-700 dark:fill-cyan-400">
-                  Clocks: {ip.architecture.clocks[0] || 'clk_i'}
-                </text>
+              const hubMiniItems = [
+                {
+                  id: 'dut-core',
+                  x: 30,
+                  y: 30,
+                  width: 233,
+                  height: dieH - 12,
+                  color: '#06b6d4',
+                  active: true,
+                },
+                ...ip.interfaces.map((iface, idx) => ({
+                  id: iface.name,
+                  x: 440,
+                  y: 32 + idx * 76,
+                  width: 346,
+                  height: 60,
+                  color: iface.role.includes('Initiator')
+                    ? '#3b82f6'
+                    : iface.role.includes('Target')
+                    ? '#10b981'
+                    : '#f59e0b',
+                })),
+              ];
+              const hubMiniLinks = ip.interfaces.map((_iface, idx) => ({
+                x1: 263,
+                y1: 32 + idx * 76 + 30,
+                x2: 440,
+                y2: 32 + idx * 76 + 30,
+              }));
 
-                {/* Connected External Interface Cards */}
-                {ip.interfaces.map((iface, idx) => {
-                  const iy = 24 + idx * 64;
-                  const cy = iy + 25;
-                  const isInitiator = iface.role.includes('Initiator');
-                  const stroke = isInitiator ? '#3b82f6' : iface.role.includes('Target') ? '#10b981' : '#f59e0b';
-                  return (
-                    <g
-                      key={iface.name}
-                      onClick={() => onSelectProtocol(iface.protocolId)}
-                      className="cursor-pointer"
-                    >
-                      <path
-                        d={
-                          isInitiator
-                            ? `M 243 ${cy} C 310 ${cy}, 330 ${cy}, 395 ${cy}`
-                            : `M 395 ${cy} C 330 ${cy}, 310 ${cy}, 243 ${cy}`
-                        }
-                        fill="none"
-                        stroke={stroke}
-                        strokeWidth={2}
-                        markerEnd="url(#bus-hub-arrow)"
-                      />
-                      <text x={320} y={cy - 7} textAnchor="middle" className="font-mono text-[9.5px] fill-slate-600 dark:fill-slate-300">
-                        {iface.clockDomain.split(' ')[0]}
-                      </text>
-                      <rect
-                        x={400}
-                        y={iy}
-                        width={330}
-                        height={50}
-                        rx={7}
-                        className="fill-white dark:fill-slate-900 hover:fill-cyan-50 dark:hover:fill-slate-800"
-                        stroke={stroke}
-                        strokeWidth={1.6}
-                      />
-                      <text x={414} y={iy + 20} className="font-mono text-[11.5px] font-bold fill-slate-900 dark:fill-slate-100">
-                        {iface.name} · {iface.protocolLabel}
-                      </text>
-                      <text x={414} y={iy + 38} className="text-[10px] fill-slate-500 dark:fill-slate-400">
-                        {iface.role} · Click to open {iface.protocolId.toUpperCase()} spec →
-                      </text>
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
+              return (
+                <InfiniteMeshViewport
+                  bounds={hubBounds}
+                  title={`External Pin & Bus Topology (${ip.interfaces.length} Interface Port${ip.interfaces.length === 1 ? '' : 's'})`}
+                  subtitle="Click any connected protocol card to open its full protocol specification"
+                  minHeightClass="h-[340px] sm:h-[400px]"
+                  showMiniMap={true}
+                  minimapItems={hubMiniItems}
+                  minimapLinks={hubMiniLinks}
+                  legend={
+                    <>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-blue-500" /> Initiator Port
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500" /> Target Port
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-amber-500" /> Host / Sub Bidirectional
+                      </span>
+                    </>
+                  }
+                  renderDefs={() => (
+                    <>
+                      <marker id={`${hubMarkerId}-init`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
+                      </marker>
+                      <marker id={`${hubMarkerId}-tgt`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+                      </marker>
+                      <marker id={`${hubMarkerId}-bi`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                        <polygon points="0 0, 8 3, 0 6" fill="#f59e0b" />
+                      </marker>
+                    </>
+                  )}
+                >
+                  {/* Central Silicon Die Package */}
+                  <rect
+                    x={24}
+                    y={24}
+                    width={245}
+                    height={dieH}
+                    rx={12}
+                    fill="none"
+                    stroke="#06b6d4"
+                    strokeOpacity={0.35}
+                    strokeWidth={1.25}
+                    strokeDasharray="5 4"
+                  />
+                  <rect
+                    x={30}
+                    y={30}
+                    width={233}
+                    height={dieH - 12}
+                    rx={9}
+                    fill="var(--bg-surface)"
+                    stroke="#06b6d4"
+                    strokeWidth={2}
+                  />
+                  <path
+                    d={`M 39 30 H 254 Q 263 30 263 39 V 54 H 30 V 39 Q 30 30 39 30 Z`}
+                    fill="#06b6d4"
+                    fillOpacity={0.18}
+                  />
+                  <line x1={30} y1={54} x2={263} y2={54} stroke="#06b6d4" strokeOpacity={0.4} strokeWidth={1} />
+                  <text x={42} y={45.5} className="font-mono text-[9.5px] font-semibold tracking-wider uppercase" fill="#06b6d4">
+                    DUT SILICON CORE · {ip.category.toUpperCase()}
+                  </text>
+                  <polygon
+                    points="244,37 253,42 244,47"
+                    fill="none"
+                    stroke="#06b6d4"
+                    strokeWidth={1.3}
+                  />
+
+                  <text x={146} y={dieH / 2 + 10} textAnchor="middle" className="font-display text-[15px] font-bold" fill="var(--text-primary)">
+                    {ip.name.length > 24 ? `${ip.name.slice(0, 22)}..` : ip.name}
+                  </text>
+                  <text x={146} y={dieH / 2 + 29} textAnchor="middle" className="font-mono text-[10px]" fill="var(--text-secondary)">
+                    {ip.rtlLanguage} · {ip.modules.length} RTL Modules
+                  </text>
+                  <text x={146} y={dieH / 2 + 47} textAnchor="middle" className="font-mono text-[9.5px]" fill="var(--sem-control)">
+                    Clk: {ip.architecture.clocks[0] || 'clk_i'} · Rst: {ip.architecture.resets[0] || 'rst_ni'}
+                  </text>
+
+                  {/* Bottom Die Package I/O Pins */}
+                  {[0, 1, 2, 3, 4, 5].map((pinIdx) => (
+                    <rect
+                      key={pinIdx}
+                      x={56 + pinIdx * 34}
+                      y={dieH + 18}
+                      width={12}
+                      height={5}
+                      rx={1.5}
+                      fill="#06b6d4"
+                      fillOpacity={0.6}
+                    />
+                  ))}
+
+                  {/* Connected External Interface Bus Cards */}
+                  {ip.interfaces.map((iface, idx) => {
+                    const iy = 32 + idx * 76;
+                    const cy = iy + 30;
+                    const isInitiator = iface.role.includes('Initiator');
+                    const isTarget = iface.role.includes('Target');
+                    const stroke = isInitiator ? '#3b82f6' : isTarget ? '#10b981' : '#f59e0b';
+                    const marker = isInitiator
+                      ? `${hubMarkerId}-init`
+                      : isTarget
+                      ? `${hubMarkerId}-tgt`
+                      : `${hubMarkerId}-bi`;
+                    const pathD = isInitiator
+                      ? `M 263 ${cy} C 335 ${cy}, 360 ${cy}, 436 ${cy}`
+                      : `M 436 ${cy} C 360 ${cy}, 335 ${cy}, 263 ${cy}`;
+
+                    return (
+                      <g
+                        key={iface.name}
+                        onClick={() => onSelectProtocol(iface.protocolId)}
+                        className="cursor-pointer svg-glide"
+                      >
+                        <path
+                          d={pathD}
+                          fill="none"
+                          stroke={stroke}
+                          strokeWidth={2.3}
+                          markerEnd={`url(#${marker})`}
+                        />
+                        <path
+                          d={pathD}
+                          fill="none"
+                          stroke="#ffffff"
+                          strokeOpacity={0.35}
+                          strokeWidth={1.2}
+                          className="schematic-flow-active"
+                        />
+                        <circle cx={263} cy={cy} r={3.5} fill={stroke} stroke="var(--bg-canvas)" strokeWidth={1} />
+                        <circle cx={438} cy={cy} r={3.5} fill={stroke} stroke="var(--bg-canvas)" strokeWidth={1} />
+
+                        {/* Domain & Signal Tag */}
+                        <rect
+                          x={306}
+                          y={cy - 18}
+                          width={94}
+                          height={17}
+                          rx={4}
+                          fill="var(--bg-elevated)"
+                          stroke="var(--border-subtle)"
+                          strokeWidth={1}
+                        />
+                        <text x={353} y={cy - 6.5} textAnchor="middle" className="font-mono text-[9px] font-medium" fill="var(--text-secondary)">
+                          {iface.clockDomain.split(' ')[0]}
+                        </text>
+
+                        {/* External Interface Card */}
+                        <rect
+                          x={440}
+                          y={iy}
+                          width={346}
+                          height={60}
+                          rx={8}
+                          fill="var(--bg-surface)"
+                          stroke={stroke}
+                          strokeWidth={1.6}
+                        />
+                        <path
+                          d={`M 448 ${iy} H 778 Q 786 ${iy} 786 ${iy + 8} V ${iy + 19} H 440 V ${iy + 8} Q 440 ${iy} 448 ${iy} Z`}
+                          fill={stroke}
+                          fillOpacity={0.16}
+                        />
+                        <text x={452} y={iy + 13} className="font-mono text-[8.5px] font-semibold uppercase tracking-wider" fill={stroke}>
+                          {iface.role} · RST: {iface.resetDomain.split(' ')[0]}
+                        </text>
+                        <text x={452} y={iy + 36} className="font-mono text-[12px] font-bold" fill="var(--text-primary)">
+                          {iface.name} · {iface.protocolLabel}
+                        </text>
+                        <text x={452} y={iy + 51} className="text-[10px]" fill="var(--text-secondary)">
+                          Click card to inspect {iface.protocolId.toUpperCase()} protocol spec →
+                        </text>
+                      </g>
+                    );
+                  })}
+                </InfiniteMeshViewport>
+              );
+            })()}
           </div>
 
           <div className="rounded-md border border-cyan-500/30 bg-cyan-50/50 dark:bg-cyan-950/20 px-4 py-3 text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2.5">
@@ -651,8 +798,16 @@ export const IpDetailView: React.FC<IpDetailViewProps> = ({
 
               {(() => {
                 const blocks = ip.architecture.blocks;
-                const maxX = Math.max(...blocks.map((b) => b.x + b.width), 620) + 28;
-                const maxY = Math.max(...blocks.map((b) => b.y + b.height), 230) + 28;
+                const minBlockX = blocks.length > 0 ? Math.min(...blocks.map((b) => b.x)) : 0;
+                const minBlockY = blocks.length > 0 ? Math.min(...blocks.map((b) => b.y)) : 0;
+                const maxX = Math.max(...blocks.map((b) => b.x + b.width), 620);
+                const maxY = Math.max(...blocks.map((b) => b.y + b.height), 260);
+                const archBounds = {
+                  minX: minBlockX - 36,
+                  minY: minBlockY - 32,
+                  width: maxX - minBlockX + 72,
+                  height: maxY - minBlockY + 68,
+                };
                 const roleStroke: Record<IpArchBlock['role'], string> = {
                   fetch: '#06b6d4',
                   decode: '#3b82f6',
@@ -662,178 +817,325 @@ export const IpDetailView: React.FC<IpDetailViewProps> = ({
                   crypto: '#f43f5e',
                   interface: '#64748b',
                 };
+                const markerId = `ip-arr-${ip.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+                const archMiniItems = blocks.map((blk) => ({
+                  id: blk.id,
+                  x: blk.x,
+                  y: blk.y,
+                  width: blk.width,
+                  height: blk.height,
+                  color: roleStroke[blk.role] || '#3b82f6',
+                  active: selectedArchBlock?.id === blk.id,
+                }));
+                const archMiniLinks = ip.architecture.links
+                  .map((lk) => {
+                    const a = blocks.find((b) => b.id === lk.from);
+                    const b = blocks.find((bl) => bl.id === lk.to);
+                    if (!a || !b) return null;
+                    return {
+                      x1: a.x + a.width / 2,
+                      y1: a.y + a.height / 2,
+                      x2: b.x + b.width / 2,
+                      y2: b.y + b.height / 2,
+                    };
+                  })
+                  .filter((x): x is { x1: number; y1: number; x2: number; y2: number } => Boolean(x));
 
                 return (
-                  <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#080E1A] p-4 space-y-3 overflow-x-auto bg-engineering-grid">
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                      <span>Click any block OR wire label below to read its plain-English student explanation</span>
-                      <span className="font-mono">Clk: {ip.architecture.clocks[0] || 'clk_i'}</span>
-                    </div>
-
-                    <svg viewBox={`0 0 ${maxX} ${maxY}`} className="w-full min-w-[540px] h-auto max-h-[300px] select-none">
-                      <defs>
-                        <marker id="ip-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                  <InfiniteMeshViewport
+                    bounds={archBounds}
+                    title={`Microarchitecture Schematic (${blocks.length} Functional Units · ${ip.architecture.links.length} Internal Datapaths)`}
+                    subtitle={`Clk: ${ip.architecture.clocks.join(', ')} · Click any unit or wire tag to inspect its RTL role`}
+                    minHeightClass="h-[430px] sm:h-[490px]"
+                    showMiniMap={true}
+                    minimapItems={archMiniItems}
+                    minimapLinks={archMiniLinks}
+                    legend={
+                      <>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-xs bg-violet-500" /> Control / Sync
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-xs bg-cyan-500" /> Fetch / Interface
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500" /> Datapath / Compute
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-xs bg-amber-500" /> Memory / FIFO
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-xs bg-rose-500" /> Crypto / Security
+                        </span>
+                      </>
+                    }
+                    renderDefs={() => (
+                      <>
+                        <marker id={`${markerId}-act`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                           <polygon points="0 0, 8 3, 0 6" fill="#06b6d4" />
                         </marker>
-                      </defs>
+                        <marker id={`${markerId}-sel`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                          <polygon points="0 0, 8 3, 0 6" fill="#f59e0b" />
+                        </marker>
+                        <marker id={`${markerId}-dim`} markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                          <polygon points="0 0, 8 3, 0 6" fill="#64748b" />
+                        </marker>
+                      </>
+                    )}
+                    footer={
+                      (selectedArchBlock || selectedArchLink) && (
+                        <div className="space-y-3">
+                          {selectedArchBlock && (
+                            <div className="flex flex-wrap items-start justify-between gap-4 text-xs">
+                              <div className="space-y-1.5 max-w-3xl">
+                                <div className="font-semibold text-[var(--text-primary)]">
+                                  Block: {selectedArchBlock.label}{' '}
+                                  <span className="font-mono text-[var(--sem-control)] font-normal">
+                                    ({selectedArchBlock.role} · {selectedArchBlock.moduleName || 'subsystem'})
+                                  </span>
+                                </div>
+                                <p className="text-[var(--text-secondary)] leading-relaxed">
+                                  {selectedArchBlock.description}
+                                </p>
+                                <p className="text-cyan-800 dark:text-cyan-300 leading-relaxed">
+                                  <strong>In Simple Words:</strong> {BLOCK_ROLE_STUDENT_HELP[selectedArchBlock.role]}
+                                </p>
+                              </div>
+                              {selectedArchBlock.moduleName && (
+                                <button
+                                  type="button"
+                                  onClick={() => jumpToModule(selectedArchBlock.moduleName)}
+                                  className="px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shrink-0"
+                                >
+                                  Open {selectedArchBlock.moduleName} RTL →
+                                </button>
+                              )}
+                            </div>
+                          )}
 
-                      {ip.architecture.links.map((lk, idx) => {
-                        const a = blocks.find((b) => b.id === lk.from);
-                        const b = blocks.find((bl) => bl.id === lk.to);
-                        if (!a || !b) return null;
-                        const acx = a.x + a.width / 2;
-                        const acy = a.y + a.height / 2;
-                        const bcx = b.x + b.width / 2;
-                        const bcy = b.y + b.height / 2;
-                        const horiz = Math.abs(bcx - acx) >= Math.abs(bcy - acy);
-                        const x1 = horiz ? (bcx >= acx ? a.x + a.width : a.x) : acx;
-                        const y1 = horiz ? acy : (bcy >= acy ? a.y + a.height : a.y);
-                        const x2 = horiz ? (bcx >= acx ? b.x : b.x + b.width) : bcx;
-                        const y2 = horiz ? bcy : (bcy >= acy ? b.y : b.y + b.height);
-                        const curve = (idx % 2 === 0 ? -18 : 18);
-                        const mx = (x1 + x2) / 2;
-                        const my = (y1 + y2) / 2 + (horiz ? curve : 0);
-                        const active =
-                          !selectedArchBlock ||
-                          selectedArchBlock.id === lk.from ||
-                          selectedArchBlock.id === lk.to;
-                        const isLinkSel =
-                          selectedArchLink?.from === lk.from &&
-                          selectedArchLink?.to === lk.to &&
-                          selectedArchLink?.label === lk.label;
+                          {selectedArchLink && (
+                            <div className="pt-2.5 border-t border-[var(--border-subtle)] text-xs">
+                              <span className="font-mono font-semibold text-amber-700 dark:text-amber-300">
+                                Wire: {selectedArchLink.label}
+                              </span>{' '}
+                              <span className="text-[var(--text-secondary)]">
+                                ({blocks.find((b) => b.id === selectedArchLink.from)?.label || selectedArchLink.from} →{' '}
+                                {blocks.find((b) => b.id === selectedArchLink.to)?.label || selectedArchLink.to})
+                              </span>
+                              <p className="text-[var(--text-secondary)] mt-0.5">
+                                {explainSignalLikeStudent(selectedArchLink.label)}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+                  >
+                    {/* Routed Internal Signal Buses */}
+                    {ip.architecture.links.map((lk, idx) => {
+                      const a = blocks.find((b) => b.id === lk.from);
+                      const b = blocks.find((bl) => bl.id === lk.to);
+                      if (!a || !b) return null;
 
-                        return (
-                          <g
-                            key={idx}
-                            opacity={active || isLinkSel ? 1 : 0.4}
-                            onClick={() => setSelectedArchLink(lk)}
-                            className="cursor-pointer"
-                          >
+                      const acx = a.x + a.width / 2;
+                      const acy = a.y + a.height / 2;
+                      const bcx = b.x + b.width / 2;
+                      const bcy = b.y + b.height / 2;
+                      const horiz = Math.abs(bcx - acx) >= Math.abs(bcy - acy) * 0.85;
+                      const laneOffset = idx % 3 === 0 ? -12 : idx % 3 === 1 ? 0 : 12;
+
+                      let x1: number, y1: number, x2: number, y2: number, cx1: number, cy1: number, cx2: number, cy2: number;
+                      if (horiz) {
+                        x1 = bcx >= acx ? a.x + a.width : a.x;
+                        x2 = bcx >= acx ? b.x : b.x + b.width;
+                        y1 = acy + laneOffset;
+                        y2 = bcy + laneOffset;
+                        cx1 = x1 + (x2 - x1) * 0.48;
+                        cy1 = y1;
+                        cx2 = x2 - (x2 - x1) * 0.48;
+                        cy2 = y2;
+                      } else {
+                        x1 = acx + laneOffset;
+                        x2 = bcx + laneOffset;
+                        y1 = bcy >= acy ? a.y + a.height : a.y;
+                        y2 = bcy >= acy ? b.y : b.y + b.height;
+                        cx1 = x1;
+                        cy1 = y1 + (y2 - y1) * 0.48;
+                        cx2 = x2;
+                        cy2 = y2 - (y2 - y1) * 0.48;
+                      }
+
+                      const mx = (x1 + x2) / 2;
+                      const my = (y1 + y2) / 2;
+                      const active =
+                        !selectedArchBlock ||
+                        selectedArchBlock.id === lk.from ||
+                        selectedArchBlock.id === lk.to;
+                      const isLinkSel =
+                        selectedArchLink?.from === lk.from &&
+                        selectedArchLink?.to === lk.to &&
+                        selectedArchLink?.label === lk.label;
+                      const stroke = isLinkSel ? '#f59e0b' : active ? '#06b6d4' : '#64748b';
+                      const labelText = lk.label.length > 20 ? `${lk.label.slice(0, 18)}..` : lk.label;
+                      const tagW = Math.max(76, Math.min(126, labelText.length * 5.8 + 16));
+
+                      return (
+                        <g
+                          key={idx}
+                          opacity={active || isLinkSel ? 1 : 0.35}
+                          onClick={() => setSelectedArchLink(lk)}
+                          className="cursor-pointer svg-glide"
+                        >
+                          <path
+                            d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
+                            fill="none"
+                            stroke={stroke}
+                            strokeWidth={isLinkSel ? 2.6 : active ? 2.1 : 1.3}
+                            markerEnd={`url(#${isLinkSel ? `${markerId}-sel` : active ? `${markerId}-act` : `${markerId}-dim`})`}
+                          />
+                          {(active || isLinkSel) && (
                             <path
-                              d={`M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`}
+                              d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
                               fill="none"
-                              stroke={isLinkSel ? '#f59e0b' : active ? '#06b6d4' : '#64748b'}
-                              strokeWidth={isLinkSel ? 2.6 : active ? 1.9 : 1.3}
-                              markerEnd="url(#ip-arrow)"
+                              stroke="#ffffff"
+                              strokeOpacity={0.35}
+                              strokeWidth={1.2}
+                              className="schematic-flow-active"
                             />
-                            <rect
-                              x={mx - 44}
-                              y={my - 9}
-                              width={88}
-                              height={16}
-                              rx={3}
-                              className={
-                                isLinkSel
-                                  ? 'fill-amber-50 dark:fill-amber-950/80 stroke-amber-500'
-                                  : 'fill-white dark:fill-slate-900 stroke-slate-300 dark:stroke-slate-700'
-                              }
-                            />
-                            <text
-                              x={mx}
-                              y={my + 2}
-                              textAnchor="middle"
-                              className="font-mono text-[9px] fill-cyan-700 dark:fill-cyan-300"
-                            >
-                              {lk.label.length > 15 ? `${lk.label.slice(0, 14)}..` : lk.label}
-                            </text>
-                          </g>
-                        );
-                      })}
-
-                      {blocks.map((blk) => {
-                        const stroke = roleStroke[blk.role] || '#3b82f6';
-                        const isSel = selectedArchBlock?.id === blk.id;
-                        return (
-                          <g
-                            key={blk.id}
-                            onClick={() => setSelectedArchBlock(blk)}
-                            className="cursor-pointer"
+                          )}
+                          <circle cx={x1} cy={y1} r={3} fill={stroke} stroke="var(--bg-canvas)" strokeWidth={1} />
+                          <rect
+                            x={mx - tagW / 2}
+                            y={my - 9.5}
+                            width={tagW}
+                            height={18}
+                            rx={4}
+                            fill="var(--bg-elevated)"
+                            stroke={isLinkSel ? '#f59e0b' : active ? '#06b6d4' : 'var(--border-subtle)'}
+                            strokeWidth={isLinkSel ? 1.3 : 1}
+                          />
+                          <text
+                            x={mx}
+                            y={my + 2.5}
+                            textAnchor="middle"
+                            className="font-mono text-[9px] font-medium"
+                            fill={isLinkSel ? '#f59e0b' : active ? 'var(--sem-control)' : 'var(--text-secondary)'}
                           >
+                            {labelText}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Silicon Sub-Modules / CAD Hardware Blocks */}
+                    {blocks.map((blk) => {
+                      const stroke = roleStroke[blk.role] || '#3b82f6';
+                      const isSel = selectedArchBlock?.id === blk.id;
+                      const hasClockGlyph = blk.role === 'control' || blk.id.includes('clk');
+
+                      return (
+                        <g
+                          key={blk.id}
+                          onClick={() => setSelectedArchBlock(blk)}
+                          className="cursor-pointer svg-glide"
+                        >
+                          {isSel && (
                             <rect
-                              x={blk.x}
-                              y={blk.y}
-                              width={blk.width}
-                              height={blk.height}
-                              rx={8}
-                              className={isSel ? 'fill-cyan-50/90 dark:fill-slate-800' : 'fill-white dark:fill-slate-900'}
+                              x={blk.x - 4}
+                              y={blk.y - 4}
+                              width={blk.width + 8}
+                              height={blk.height + 8}
+                              rx={11}
+                              fill="none"
                               stroke={stroke}
-                              strokeWidth={isSel ? 2.5 : 1.6}
+                              strokeWidth={1.25}
+                              strokeDasharray="4 3"
+                              opacity={0.78}
                             />
-                            <rect
-                              x={blk.x + 1}
-                              y={blk.y + 1}
-                              width={blk.width - 2}
-                              height={5}
-                              rx={3}
-                              fill={stroke}
-                              opacity={0.85}
-                            />
-                            <text
-                              x={blk.x + blk.width / 2}
-                              y={blk.y + 30}
-                              textAnchor="middle"
-                              className="font-display text-[12px] font-semibold fill-slate-900 dark:fill-slate-100"
-                            >
-                              {blk.label}
-                            </text>
-                            <text
-                              x={blk.x + blk.width / 2}
-                              y={blk.y + 50}
-                              textAnchor="middle"
-                              className="font-mono text-[9.5px] fill-cyan-700 dark:fill-cyan-400"
-                            >
-                              {blk.moduleName ? `${blk.moduleName}` : blk.role.toUpperCase()}
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </svg>
+                          )}
 
-                    {selectedArchBlock && (
-                      <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-start justify-between gap-4 text-xs">
-                        <div className="space-y-1.5 max-w-3xl">
-                          <div className="font-semibold text-slate-900 dark:text-slate-100">
-                            Block: {selectedArchBlock.label}{' '}
-                            <span className="font-mono text-cyan-700 dark:text-cyan-400 font-normal">
-                              ({selectedArchBlock.role} · {selectedArchBlock.moduleName || 'subsystem'})
-                            </span>
-                          </div>
-                          <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                            {selectedArchBlock.description}
-                          </p>
-                          <p className="text-cyan-800 dark:text-cyan-300 leading-relaxed">
-                            <strong>In Simple Words:</strong> {BLOCK_ROLE_STUDENT_HELP[selectedArchBlock.role]}
-                          </p>
-                        </div>
-                        {selectedArchBlock.moduleName && (
-                          <button
-                            type="button"
-                            onClick={() => jumpToModule(selectedArchBlock.moduleName)}
-                            className="px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer shrink-0"
+                          <rect
+                            x={blk.x}
+                            y={blk.y}
+                            width={blk.width}
+                            height={blk.height}
+                            rx={8}
+                            fill={isSel ? 'var(--bg-elevated)' : 'var(--bg-surface)'}
+                            stroke={stroke}
+                            strokeWidth={isSel ? 2.2 : 1.5}
+                          />
+
+                          {/* Header Band */}
+                          <path
+                            d={`M ${blk.x + 8} ${blk.y} H ${blk.x + blk.width - 8} Q ${blk.x + blk.width} ${blk.y} ${blk.x + blk.width} ${blk.y + 8} V ${blk.y + 20} H ${blk.x} V ${blk.y + 8} Q ${blk.x} ${blk.y} ${blk.x + 8} ${blk.y} Z`}
+                            fill={stroke}
+                            fillOpacity={isSel ? 0.24 : 0.14}
+                          />
+                          <line
+                            x1={blk.x}
+                            y1={blk.y + 20}
+                            x2={blk.x + blk.width}
+                            y2={blk.y + 20}
+                            stroke={stroke}
+                            strokeOpacity={0.4}
+                            strokeWidth={1}
+                          />
+                          <text
+                            x={blk.x + 9}
+                            y={blk.y + 13}
+                            className="font-mono text-[8.5px] font-semibold uppercase tracking-wider"
+                            fill={stroke}
                           >
-                            Open {selectedArchBlock.moduleName} RTL →
-                          </button>
-                        )}
-                      </div>
-                    )}
+                            {blk.role}
+                          </text>
 
-                    {selectedArchLink && (
-                      <div className="pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 text-xs flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <span className="font-mono font-semibold text-amber-700 dark:text-amber-300">
-                            Wire: {selectedArchLink.label}
-                          </span>{' '}
-                          <span className="text-slate-500 dark:text-slate-400">
-                            ({blocks.find((b) => b.id === selectedArchLink.from)?.label || selectedArchLink.from} →{' '}
-                            {blocks.find((b) => b.id === selectedArchLink.to)?.label || selectedArchLink.to})
-                          </span>
-                          <p className="text-slate-700 dark:text-slate-300 mt-0.5">
-                            {explainSignalLikeStudent(selectedArchLink.label)}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                          {hasClockGlyph && (
+                            <polygon
+                              points={`${blk.x + blk.width - 17},${blk.y + 6} ${blk.x + blk.width - 9},${blk.y + 10.5} ${blk.x + blk.width - 17},${blk.y + 15}`}
+                              fill="none"
+                              stroke={stroke}
+                              strokeWidth={1.2}
+                            />
+                          )}
+
+                          <text
+                            x={blk.x + blk.width / 2}
+                            y={blk.y + 42}
+                            textAnchor="middle"
+                            className="font-display text-[12px] font-semibold"
+                            fill="var(--text-primary)"
+                          >
+                            {blk.label.length > 24 ? `${blk.label.slice(0, 22)}..` : blk.label}
+                          </text>
+
+                          <text
+                            x={blk.x + blk.width / 2}
+                            y={blk.y + 60}
+                            textAnchor="middle"
+                            className="font-mono text-[9.5px]"
+                            fill="var(--sem-control)"
+                          >
+                            {blk.moduleName ? `${blk.moduleName}` : `${blk.role.toUpperCase()} UNIT`}
+                          </text>
+
+                          {/* Edge Pin Solder Stubs */}
+                          {[0.25, 0.5, 0.75].map((ratio, pIdx) => (
+                            <rect
+                              key={pIdx}
+                              x={blk.x + blk.width * ratio - 4}
+                              y={blk.y + blk.height - 2.5}
+                              width={8}
+                              height={4}
+                              rx={1}
+                              fill={stroke}
+                              fillOpacity={0.6}
+                            />
+                          ))}
+                        </g>
+                      );
+                    })}
+                  </InfiniteMeshViewport>
                 );
               })()}
 

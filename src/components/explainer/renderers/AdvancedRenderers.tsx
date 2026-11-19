@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { RendererProps } from './CoreRenderers';
+import { InfiniteMeshViewport } from '../../InfiniteMeshViewport';
 
 /* ============================================================================
  * 8. HIERARCHY / FLOORPLAN VIEW WITH CLOCK, RESET & POWER OVERLAYS
@@ -36,6 +37,13 @@ export const HierarchyFloorplanRenderer: React.FC<RendererProps> = ({
     return b.powerDomain.includes('AON') ? 'var(--sem-data)' : 'var(--sem-active)';
   };
 
+  const bounds = useMemo(() => {
+    if (blocks.length === 0) return { minX: 0, minY: 0, width: 680, height: 240 };
+    const maxX = Math.max(...blocks.map((b) => b.x + b.w), 664) + 24;
+    const maxY = Math.max(...blocks.map((b) => b.y + b.h), 224) + 24;
+    return { minX: 0, minY: 0, width: maxX, height: maxY };
+  }, [blocks]);
+
   return (
     <div className="space-y-2.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -58,49 +66,71 @@ export const HierarchyFloorplanRenderer: React.FC<RendererProps> = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 p-3 bg-engineering-grid">
-        <svg viewBox="0 0 680 240" className="w-full min-w-[540px] h-auto select-none" role="img" aria-label="SoC hierarchy floorplan with clock, reset, and power overlays">
-          <rect x={8} y={8} width={664} height={224} rx={8} fill="none" stroke="var(--sem-border)" strokeDasharray="6 4" strokeWidth={1.5} />
-          <text x={20} y={24} fontSize="10" fontFamily="var(--font-mono)" fill="currentColor" className="text-slate-500 dark:text-slate-400">
-            TOP_SOC_DIE · Overlay = {overlay.toUpperCase()}
-          </text>
+      <InfiniteMeshViewport
+        bounds={bounds}
+        title={`TOP_SOC_DIE · Overlay = ${overlay.toUpperCase()}`}
+        subtitle="Pan & zoom die hierarchy floorplan with clock, reset, and UPF power domain overlays"
+        minHeightClass="h-[310px] sm:h-[360px]"
+      >
+        <rect
+          x={8}
+          y={8}
+          width={bounds.width - 16}
+          height={bounds.height - 16}
+          rx={10}
+          fill="none"
+          stroke="var(--sem-border)"
+          strokeDasharray="6 4"
+          strokeWidth={1.5}
+        />
+        <text x={20} y={25} fontSize="10" fontFamily="var(--font-mono)" fill="var(--text-secondary)">
+          TOP_SOC_DIE · Overlay = {overlay.toUpperCase()}
+        </text>
 
-          {blocks.map((b) => {
-            const isGated = Boolean(b.gatedOnSteps?.includes(currentStep));
-            const col = isGated ? 'var(--sem-error)' : overlayColor(b);
-            const domainLabel =
-              overlay === 'clock' ? b.clockDomain : overlay === 'reset' ? b.resetDomain : b.powerDomain;
+        {blocks.map((b) => {
+          const isGated = Boolean(b.gatedOnSteps?.includes(currentStep));
+          const col = isGated ? 'var(--sem-error)' : overlayColor(b);
+          const domainLabel =
+            overlay === 'clock' ? b.clockDomain : overlay === 'reset' ? b.resetDomain : b.powerDomain;
 
-            return (
-              <g key={b.id}>
-                <rect
-                  x={b.x}
-                  y={b.y}
-                  width={b.w}
-                  height={b.h}
-                  rx={6}
-                  fill={col}
-                  fillOpacity={isGated ? 0.08 : 0.14}
-                  stroke={col}
-                  strokeWidth={isGated ? 2 : 1.5}
-                  strokeDasharray={isGated ? '5 3' : undefined}
-                />
-                <text x={b.x + 10} y={b.y + 20} fontSize="12" fontWeight="700" fill="currentColor" className="text-slate-900 dark:text-slate-100">
-                  {b.label}
+          return (
+            <g key={b.id}>
+              <rect
+                x={b.x}
+                y={b.y}
+                width={b.w}
+                height={b.h}
+                rx={7}
+                fill="var(--bg-surface)"
+                stroke={col}
+                strokeWidth={isGated ? 2 : 1.5}
+                strokeDasharray={isGated ? '5 3' : undefined}
+              />
+              <rect
+                x={b.x}
+                y={b.y}
+                width={b.w}
+                height={b.h}
+                rx={7}
+                fill={col}
+                fillOpacity={isGated ? 0.08 : 0.14}
+                stroke="none"
+              />
+              <text x={b.x + 12} y={b.y + 22} fontSize="12" fontWeight="700" fill="var(--text-primary)">
+                {b.label}
+              </text>
+              <text x={b.x + 12} y={b.y + 39} fontSize="10" fontFamily="var(--font-mono)" fill="var(--text-secondary)">
+                {domainLabel}
+              </text>
+              {b.h >= 72 && (
+                <text x={b.x + 12} y={b.y + 56} fontSize="9.5" fontFamily="var(--font-mono)" fill={isGated ? 'var(--sem-error)' : 'var(--sem-data)'}>
+                  {isGated ? 'ISOLATED / POWER-GATED' : 'POWERED · CLOCK ACTIVE'}
                 </text>
-                <text x={b.x + 10} y={b.y + 36} fontSize="10" fontFamily="var(--font-mono)" fill="currentColor" className="text-slate-600 dark:text-slate-300">
-                  {domainLabel}
-                </text>
-                {b.h >= 72 && (
-                  <text x={b.x + 10} y={b.y + 52} fontSize="9.5" fontFamily="var(--font-mono)" fill={isGated ? 'var(--sem-error)' : 'var(--sem-data)'}>
-                    {isGated ? 'ISOLATED / POWER-GATED' : 'POWERED · CLOCK ACTIVE'}
-                  </text>
-                )}
-              </g>
-            );
-          })}
-        </svg>
-      </div>
+              )}
+            </g>
+          );
+        })}
+      </InfiniteMeshViewport>
     </div>
   );
 };

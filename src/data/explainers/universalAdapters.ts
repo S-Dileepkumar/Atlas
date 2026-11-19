@@ -80,53 +80,77 @@ function parseBitRange(bitsStr: string): { msb: number; lsb: number } {
 export function buildProtocolExplainer(p: ProtocolDocument): ExplainerTopic {
   const domain = mapCategoryToExplainerDomain(p.categoryId);
 
-  // Build Block Nodes scaled smoothly into 700x220 viewbox
-  const nodes = (p.architecture.nodes.length >= 2
-    ? p.architecture.nodes.slice(0, 4)
-    : [
-        { id: 'mgr', label: `${p.name} Initiator`, role: 'manager' as const, x: 40, y: 65, width: 175, height: 85 },
-        { id: 'sub', label: `${p.name} Target`, role: 'subordinate' as const, x: 460, y: 65, width: 175, height: 85 },
-      ]
-  ).map((n, idx, arr) => {
-    const spacing = Math.floor(540 / Math.max(1, arr.length - 1));
-    const x = arr.length === 2 ? (idx === 0 ? 48 : 472) : Math.min(520, 32 + idx * Math.min(205, spacing));
-    return {
-      id: n.id,
-      label: n.label,
-      sublabel: n.role.toUpperCase(),
-      x,
-      y: 65,
-      w: 155,
-      h: 84,
-      kind: n.role === 'manager' ? ('control' as const) : ('data' as const),
-    };
-  });
+  // Preserve full 2D multi-component schematic coordinates from protocol architecture
+  const rawNodes =
+    p.architecture.nodes.length >= 2
+      ? p.architecture.nodes
+      : [
+          { id: 'mgr', label: `${p.name} Initiator`, role: 'manager' as const, x: 40, y: 80, width: 200, height: 110 },
+          { id: 'sub', label: `${p.name} Target`, role: 'subordinate' as const, x: 460, y: 80, width: 200, height: 110 },
+        ];
 
-  const wires = p.architecture.links.slice(0, 4).map((lnk, idx) => {
+  const nodes = rawNodes.map((n) => ({
+    id: n.id,
+    label: n.label,
+    sublabel: n.sublabel || n.role.toUpperCase(),
+    domain: n.domain,
+    ports: n.ports,
+    componentKind: n.componentKind,
+    x: n.x,
+    y: n.y,
+    w: n.width || 210,
+    h: n.height || 104,
+    kind:
+      n.role === 'manager'
+        ? ('control' as const)
+        : n.role === 'phy'
+        ? ('active' as const)
+        : ('data' as const),
+  }));
+
+  const maxBlockW = Math.max(920, ...nodes.map((n) => n.x + n.w)) + 36;
+  const maxBlockH = Math.max(420, ...nodes.map((n) => n.y + n.h)) + 36;
+
+  const wires = p.architecture.links.map((lnk, idx) => {
     const n1 = nodes.find((n) => n.id === lnk.from) || nodes[0];
     const n2 = nodes.find((n) => n.id === lnk.to) || nodes[nodes.length - 1];
-    const reverse = n2.x < n1.x;
+    const n1cx = n1.x + n1.w / 2;
+    const n1cy = n1.y + n1.h / 2;
+    const n2cx = n2.x + n2.w / 2;
+    const n2cy = n2.y + n2.h / 2;
+    const vertical = Math.abs(n2cx - n1cx) < Math.max(n1.w, n2.w) * 0.65 && Math.abs(n2cy - n1cy) > 30;
+    const laneOffset = idx % 2 === 0 ? -12 : 12;
+
+    const fromX = vertical ? n1cx + laneOffset : n2cx >= n1cx ? n1.x + n1.w : n1.x;
+    const fromY = vertical ? (n2cy >= n1cy ? n1.y + n1.h : n1.y) : n1cy + laneOffset;
+    const toX = vertical ? n2cx + laneOffset : n2cx >= n1cx ? n2.x : n2.x + n2.w;
+    const toY = vertical ? (n2cy >= n1cy ? n2.y : n2.y + n2.h) : n2cy + laneOffset;
+
     return {
       id: `w${idx}`,
-      fromX: reverse ? n1.x : n1.x + n1.w,
-      fromY: 85 + (idx % 3) * 20,
-      toX: reverse ? n2.x + n2.w : n2.x,
-      toY: 85 + (idx % 3) * 20,
+      fromX,
+      fromY,
+      toX,
+      toY,
       label: lnk.label,
-      kind: (idx % 2 === 0 ? 'control' : 'data') as 'control' | 'data',
+      kind:
+        lnk.channelKind === 'error'
+          ? ('error' as const)
+          : lnk.channelKind === 'data'
+          ? ('data' as const)
+          : ('control' as const),
     };
   });
 
   const phases = p.transactionFlow.nominal.slice(0, 5);
-  const packets = phases.map((ph, idx) => ({
-    step: idx,
-    wireId: wires[idx % Math.max(1, wires.length)]?.id || 'w0',
-    label: ph.phase.slice(0, 14),
-    kind: (idx === phases.length - 1 ? 'active' : idx % 2 === 0 ? 'control' : 'data') as 'control' | 'data' | 'active',
-    progress: 0.55,
-  }));
-
   const seqSteps = Math.max(4, phases.length);
+  const packets = wires.map((w, idx) => ({
+    step: idx % seqSteps,
+    wireId: w.id,
+    label: w.label.slice(0, 16),
+    kind: (w.kind === 'error' ? 'error' : idx % 2 === 0 ? 'control' : 'data') as 'control' | 'data' | 'active' | 'error',
+    progress: 0.52,
+  }));
   const wNom = p.waveforms[0];
   const wAlt = p.waveforms[1];
   const waveSignals = (wNom?.signals || []).slice(0, 6).map((s, sIdx) => {
@@ -260,7 +284,7 @@ export function buildProtocolExplainer(p: ProtocolDocument): ExplainerTopic {
           {
             kind: 'block_packet',
             title: `${p.name} Architectural Datapath & Active Signals`,
-            config: { width: 700, height: 220, nodes, wires, packets },
+            config: { width: maxBlockW, height: maxBlockH, nodes, wires, packets },
           },
           {
             kind: 'sequence_flow',
@@ -355,30 +379,38 @@ export function buildProtocolExplainer(p: ProtocolDocument): ExplainerTopic {
 export function buildIpExplainer(ip: IpEntity): ExplainerTopic {
   const domain = mapIpCategoryToExplainerDomain(ip.category);
 
-  // Architecture blocks mapped cleanly to 700x220 SVG coordinate space
-  const nodes = ip.architecture.blocks.slice(0, 5).map((b, idx, arr) => {
-    const stepX = Math.floor(520 / Math.max(1, arr.length - 1));
-    return {
-      id: b.id,
-      label: b.label.slice(0, 22),
-      sublabel: b.moduleName || b.role.toUpperCase(),
-      x: 28 + idx * Math.min(150, stepX),
-      y: idx % 2 === 0 ? 45 : 105,
-      w: 138,
-      h: 72,
-      kind: (b.role === 'control' || b.role === 'interface' ? 'control' : 'data') as 'control' | 'data',
-    };
-  });
+  // Preserve full 2D schematic coordinates from IP architecture
+  const nodes = ip.architecture.blocks.map((b) => ({
+    id: b.id,
+    label: b.label,
+    sublabel: b.moduleName || b.role.toUpperCase(),
+    domain: b.role.toUpperCase(),
+    x: b.x,
+    y: b.y,
+    w: b.width || 215,
+    h: b.height || 92,
+    kind: (b.role === 'control' || b.role === 'interface' ? 'control' : 'data') as 'control' | 'data',
+  }));
 
-  const wires = ip.architecture.links.slice(0, 5).map((l, idx) => {
+  const ipBlockW = Math.max(840, ...nodes.map((n) => n.x + n.w)) + 36;
+  const ipBlockH = Math.max(440, ...nodes.map((n) => n.y + n.h)) + 36;
+
+  const wires = ip.architecture.links.map((l, idx) => {
     const n1 = nodes.find((n) => n.id === l.from) || nodes[0];
     const n2 = nodes.find((n) => n.id === l.to) || nodes[Math.min(nodes.length - 1, 1)];
+    const n1cx = n1.x + n1.w / 2;
+    const n1cy = n1.y + n1.h / 2;
+    const n2cx = n2.x + n2.w / 2;
+    const n2cy = n2.y + n2.h / 2;
+    const vertical = Math.abs(n2cx - n1cx) < Math.max(n1.w, n2.w) * 0.65 && Math.abs(n2cy - n1cy) > 30;
+    const laneOffset = idx % 2 === 0 ? -10 : 10;
+
     return {
       id: `iw${idx}`,
-      fromX: n1.x + n1.w,
-      fromY: n1.y + n1.h / 2,
-      toX: n2.x,
-      toY: n2.y + n2.h / 2,
+      fromX: vertical ? n1cx + laneOffset : n2cx >= n1cx ? n1.x + n1.w : n1.x,
+      fromY: vertical ? (n2cy >= n1cy ? n1.y + n1.h : n1.y) : n1cy + laneOffset,
+      toX: vertical ? n2cx + laneOffset : n2cx >= n1cx ? n2.x : n2.x + n2.w,
+      toY: vertical ? (n2cy >= n1cy ? n2.y : n2.y + n2.h) : n2cy + laneOffset,
       label: l.label,
       kind: (idx % 2 === 0 ? 'control' : 'data') as 'control' | 'data',
     };
@@ -522,8 +554,8 @@ export function buildIpExplainer(ip: IpEntity): ExplainerTopic {
             kind: 'block_packet',
             title: `${ip.name} Internal Hardware Datapath`,
             config: {
-              width: 700,
-              height: 220,
+              width: ipBlockW,
+              height: ipBlockH,
               nodes,
               wires,
               packets: wires.map((w, idx) => ({

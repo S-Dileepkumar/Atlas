@@ -7,6 +7,7 @@ import {
 } from '../../types/protocol';
 import { getEntityClassification } from '../../utils/entityTaxonomy';
 import { resolveOfficialSpecificationMetadata } from './specificationMetadata';
+import { buildCompleteProtocolDiagram } from './architectureBuilder';
 
 /**
  * Ensures every ProtocolDocument in ALL_PROTOCOLS contains complete, specification-grounded
@@ -261,8 +262,17 @@ export function enrichProtocolDocument(p: ProtocolDocument): ProtocolDocument {
     categoryId: p.categoryId,
   });
 
+  const enrichedArchitecture =
+    p.architecture.nodes.length <= 4
+      ? {
+          ...p.architecture,
+          ...buildCompleteProtocolDiagram({ ...p, signals }),
+        }
+      : p.architecture;
+
   return {
     ...p,
+    architecture: enrichedArchitecture,
     revision: p.revision?.trim() || resolvedMeta.revision,
     officialSpecificationUrl: p.officialSpecificationUrl?.trim() || resolvedMeta.officialSpecificationUrl,
     specifications,

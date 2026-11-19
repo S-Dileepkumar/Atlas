@@ -24,6 +24,15 @@
     --sem-surface: #ffffff;
     --sem-canvas: #f8fafc;
     --sem-border: #e2e8f0;
+
+    /* Infinity-Mesh Engineering Grid Tokens (Light Mode) */
+    --mesh-bg: #f8fafc;
+    --mesh-subminor-line: rgba(15, 23, 42, 0.032);
+    --mesh-minor-line: rgba(15, 23, 42, 0.068);
+    --mesh-major-line: rgba(15, 23, 42, 0.12);
+    --mesh-crosshair: rgba(8, 145, 178, 0.24);
+    --mesh-node-dot: rgba(8, 145, 178, 0.34);
+    --mesh-vignette: rgba(15, 23, 42, 0.045);
   }
 
   .dark {
@@ -44,6 +53,15 @@
     --sem-surface: #111827;
     --sem-canvas: #0b0f19;
     --sem-border: #1e293b;
+
+    /* Infinity-Mesh Engineering Grid Tokens (Dark Mode) */
+    --mesh-bg: #080d18;
+    --mesh-subminor-line: rgba(148, 163, 184, 0.042);
+    --mesh-minor-line: rgba(148, 163, 184, 0.09);
+    --mesh-major-line: rgba(148, 163, 184, 0.165);
+    --mesh-crosshair: rgba(56, 189, 248, 0.28);
+    --mesh-node-dot: rgba(6, 182, 212, 0.42);
+    --mesh-vignette: rgba(2, 6, 23, 0.42);
   }
 
   body {
@@ -119,18 +137,19 @@
   box-shadow: 0 4px 16px rgba(2, 6, 23, 0.14);
 }
 
-/* Subtle hairline engineering grid background for waveform/diagram stages */
+/* Detailed CSS-variable Infinity-Mesh grid background for engineering stages */
 .bg-engineering-grid {
-  background-size: 24px 24px;
+  background-color: var(--mesh-bg);
+  background-size:
+    120px 120px,
+    120px 120px,
+    24px 24px,
+    24px 24px;
   background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
-}
-
-.dark .bg-engineering-grid {
-  background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, var(--mesh-major-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--mesh-major-line) 1px, transparent 1px),
+    linear-gradient(to right, var(--mesh-minor-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--mesh-minor-line) 1px, transparent 1px);
 }
 
 html {
@@ -152,6 +171,17 @@ html {
   animation: viewEnter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes schematicFlow {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+.schematic-flow-active {
+  stroke-dasharray: 8 6;
+  animation: schematicFlow 1.15s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -161,5 +191,8 @@ html {
   }
   .svg-glide {
     transition: none;
+  }
+  .schematic-flow-active {
+    animation: none;
   }
 }

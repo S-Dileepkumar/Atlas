@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { DepthLevel } from '../../../engine/explainerSchema';
+import { InfiniteMeshViewport } from '../../InfiniteMeshViewport';
 
 export interface RendererProps {
   config: Record<string, unknown>;
@@ -51,6 +52,9 @@ interface BlockNodeCfg {
   id: string;
   label: string;
   sublabel?: string;
+  domain?: string;
+  ports?: string[];
+  componentKind?: string;
   x: number;
   y: number;
   w: number;
@@ -82,8 +86,8 @@ export const BlockPacketRenderer: React.FC<RendererProps> = ({
   reducedMotion,
   tryItValues,
 }) => {
-  const width = (config.width as number) ?? 720;
-  const height = (config.height as number) ?? 230;
+  const uid = useId().replace(/:/g, '');
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const nodes = (config.nodes as BlockNodeCfg[]) ?? [];
   const wires = (config.wires as BlockWireCfg[]) ?? [];
   const packets = (config.packets as BlockPacketCfg[]) ?? [];
@@ -92,145 +96,248 @@ export const BlockPacketRenderer: React.FC<RendererProps> = ({
 
   const activePackets = packets.filter((p) => p.step === currentStep);
 
+  const bounds = useMemo(() => {
+    const fallbackW = (config.width as number) ?? 720;
+    const fallbackH = (config.height as number) ?? 260;
+    if (nodes.length === 0) return { minX: -20, minY: -20, width: fallbackW, height: fallbackH };
+    const minX = Math.min(...nodes.map((n) => n.x)) - 36;
+    const minY = Math.min(...nodes.map((n) => n.y)) - 32;
+    const maxX = Math.max(fallbackW, ...nodes.map((n) => n.x + n.w)) + 36;
+    const maxY = Math.max(fallbackH, ...nodes.map((n) => n.y + n.h)) + 36;
+    return { minX, minY, width: maxX - minX, height: maxY - minY };
+  }, [config.height, config.width, nodes]);
+
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/80 p-3 bg-engineering-grid">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full min-w-[600px] h-auto select-none"
-        role="img"
-        aria-label="Block diagram with animated signal and data packets"
-      >
-        <defs>
-          <marker id="bp-arrow-control" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+    <InfiniteMeshViewport
+      bounds={bounds}
+      title={`Interactive Datapath Schematic (${nodes.length} Components · ${wires.length} Buses)`}
+      subtitle="Step timeline or click any block to trace active transactions & packets across the chip"
+      minHeightClass="h-[380px] sm:h-[440px]"
+      legend={
+        <>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: 'var(--sem-control)' }} /> Control
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: 'var(--sem-data)' }} /> Data
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: 'var(--sem-active)' }} /> Active
+          </span>
+        </>
+      }
+      renderDefs={() => (
+        <>
+          <marker id={`bp-arrow-control-${uid}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
             <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-control)" />
           </marker>
-          <marker id="bp-arrow-data" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <marker id={`bp-arrow-data-${uid}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
             <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-data)" />
           </marker>
-          <marker id="bp-arrow-error" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <marker id={`bp-arrow-error-${uid}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
             <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-error)" />
           </marker>
-        </defs>
+        </>
+      )}
+    >
+      {wires.map((w) => {
+        const matchingPacket = activePackets.find((p) => p.wireId === w.id);
+        const isStalledWire = backpressureActive && w.label.toLowerCase().includes('ready');
+        const effectiveKind =
+          errorInjected && matchingPacket
+            ? 'error'
+            : isStalledWire
+            ? 'error'
+            : matchingPacket
+            ? matchingPacket.kind
+            : w.kind;
 
-        {wires.map((w) => {
-          const matchingPacket = activePackets.find((p) => p.wireId === w.id);
-          const isStalledWire = backpressureActive && w.label.toLowerCase().includes('ready');
-          const effectiveKind =
-            errorInjected && matchingPacket
-              ? 'error'
-              : isStalledWire
-              ? 'error'
-              : matchingPacket
-              ? matchingPacket.kind
-              : w.kind;
+        const strokeColor = semHex(effectiveKind);
+        const isVertical = Math.abs(w.toX - w.fromX) < Math.abs(w.toY - w.fromY) * 0.7;
+        const cx1 = isVertical ? w.fromX : w.fromX + (w.toX - w.fromX) * 0.48;
+        const cy1 = isVertical ? w.fromY + (w.toY - w.fromY) * 0.48 : w.fromY;
+        const cx2 = isVertical ? w.toX : w.toX - (w.toX - w.fromX) * 0.48;
+        const cy2 = isVertical ? w.toY - (w.toY - w.fromY) * 0.48 : w.toY;
 
-          const strokeColor = semHex(effectiveKind);
-          const midX = (w.fromX + w.toX) / 2;
-          const midY = (w.fromY + w.toY) / 2;
-          const frac = reducedMotion ? 0.5 : matchingPacket?.progress ?? 0.55;
-          const px = w.fromX + (w.toX - w.fromX) * frac;
-          const py = w.fromY + (w.toY - w.fromY) * frac;
+        const midX = (w.fromX + w.toX) / 2;
+        const midY = (w.fromY + w.toY) / 2;
+        const frac = reducedMotion ? 0.5 : matchingPacket?.progress ?? 0.55;
+        const px = w.fromX + (w.toX - w.fromX) * frac;
+        const py = w.fromY + (w.toY - w.fromY) * frac;
+        const labelTxt = w.label.length > 22 ? `${w.label.slice(0, 20)}..` : w.label;
+        const badgeW = Math.max(80, Math.min(134, labelTxt.length * 6 + 16));
 
-          return (
-            <g key={w.id}>
-              <line
-                x1={w.fromX}
-                y1={w.fromY}
-                x2={w.toX}
-                y2={w.toY}
-                stroke={strokeColor}
-                strokeWidth={matchingPacket ? 3 : 1.75}
-                strokeDasharray={isStalledWire ? '5 4' : undefined}
-                markerEnd={`url(#bp-arrow-${effectiveKind === 'active' ? 'control' : effectiveKind})`}
-                opacity={matchingPacket || isStalledWire ? 1 : 0.65}
+        return (
+          <g key={w.id}>
+            <path
+              d={`M ${w.fromX} ${w.fromY} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${w.toX} ${w.toY}`}
+              fill="none"
+              stroke={strokeColor}
+              strokeWidth={matchingPacket ? 2.8 : 1.6}
+              strokeDasharray={isStalledWire ? '5 4' : undefined}
+              markerEnd={`url(#bp-arrow-${effectiveKind === 'active' ? 'control' : effectiveKind}-${uid})`}
+              opacity={matchingPacket || isStalledWire ? 1 : 0.62}
+            />
+            {matchingPacket && !reducedMotion && (
+              <path
+                d={`M ${w.fromX} ${w.fromY} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${w.toX} ${w.toY}`}
+                fill="none"
+                stroke="#ffffff"
+                strokeOpacity={0.35}
+                strokeWidth={1.3}
+                className="schematic-flow-active"
               />
-              <text
-                x={midX}
-                y={midY - 8}
-                textAnchor="middle"
-                fontSize="10"
-                fontFamily="var(--font-mono)"
-                fill="currentColor"
-                className="text-slate-600 dark:text-slate-400"
-              >
-                {w.label}
-              </text>
+            )}
+            <circle cx={w.fromX} cy={w.fromY} r={3} fill={strokeColor} stroke="var(--bg-canvas)" strokeWidth={1} />
 
-              {matchingPacket && (
-                <g transform={`translate(${px}, ${py})`} className={reducedMotion ? '' : 'transition-transform duration-300'}>
-                  <rect
-                    x={-48}
-                    y={-12}
-                    width={96}
-                    height={22}
-                    rx={4}
-                    fill={semHex(errorInjected ? 'error' : matchingPacket.kind)}
-                    stroke="var(--sem-surface)"
-                    strokeWidth={1.5}
-                  />
-                  <text
-                    x={0}
-                    y={3}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fontWeight="600"
-                    fontFamily="var(--font-mono)"
-                    fill="#ffffff"
-                  >
-                    {errorInjected ? 'ERR/STALL' : matchingPacket.label}
-                  </text>
-                </g>
-              )}
-            </g>
-          );
-        })}
+            {!matchingPacket && (
+              <g>
+                <rect
+                  x={midX - badgeW / 2}
+                  y={midY - 9}
+                  width={badgeW}
+                  height={17}
+                  rx={4}
+                  fill="var(--bg-elevated)"
+                  stroke="var(--border-subtle)"
+                />
+                <text
+                  x={midX}
+                  y={midY + 2.5}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fontFamily="var(--font-mono)"
+                  fill="var(--text-secondary)"
+                >
+                  {labelTxt}
+                </text>
+              </g>
+            )}
 
-        {nodes.map((n) => {
-          const activeTarget = activePackets.some((p) => {
-            const wire = wires.find((w) => w.id === p.wireId);
-            return wire && Math.abs(wire.toX - n.x) < 40;
-          });
-          return (
-            <g key={n.id}>
+            {matchingPacket && (
+              <g transform={`translate(${px}, ${py})`} className={reducedMotion ? '' : 'transition-transform duration-300'}>
+                <rect
+                  x={-52}
+                  y={-12}
+                  width={104}
+                  height={22}
+                  rx={4}
+                  fill={semHex(errorInjected ? 'error' : matchingPacket.kind)}
+                  stroke="var(--bg-canvas)"
+                  strokeWidth={1.5}
+                />
+                <text
+                  x={0}
+                  y={3}
+                  textAnchor="middle"
+                  fontSize="9.5"
+                  fontWeight="600"
+                  fontFamily="var(--font-mono)"
+                  fill="#ffffff"
+                >
+                  {errorInjected ? 'ERR/STALL' : matchingPacket.label}
+                </text>
+              </g>
+            )}
+          </g>
+        );
+      })}
+
+      {nodes.map((n) => {
+        const activeTarget = activePackets.some((p) => {
+          const wire = wires.find((w) => w.id === p.wireId);
+          return wire && wire.toX >= n.x - 16 && wire.toX <= n.x + n.w + 16 && wire.toY >= n.y - 16 && wire.toY <= n.y + n.h + 16;
+        });
+        const isSel = selectedBlockId === n.id;
+        const stroke = activeTarget ? 'var(--sem-active)' : n.kind ? semHex(n.kind) : 'var(--sem-control)';
+        const ports = n.ports || [];
+
+        return (
+          <g
+            key={n.id}
+            onClick={() => setSelectedBlockId((prev) => (prev === n.id ? null : n.id))}
+            className="cursor-pointer"
+          >
+            {isSel && (
               <rect
-                x={n.x}
-                y={n.y}
-                width={n.w}
-                height={n.h}
-                rx={6}
-                fill="var(--sem-surface)"
-                stroke={activeTarget ? 'var(--sem-active)' : n.kind ? semHex(n.kind) : 'var(--sem-border)'}
-                strokeWidth={activeTarget ? 2.5 : 1.5}
+                x={n.x - 4}
+                y={n.y - 4}
+                width={n.w + 8}
+                height={n.h + 8}
+                rx={10}
+                fill="none"
+                stroke={stroke}
+                strokeWidth={1.25}
+                strokeDasharray="4 3"
               />
+            )}
+            <rect
+              x={n.x}
+              y={n.y}
+              width={n.w}
+              height={n.h}
+              rx={7}
+              fill={isSel ? 'var(--bg-elevated)' : 'var(--bg-surface)'}
+              stroke={stroke}
+              strokeWidth={activeTarget || isSel ? 2.3 : 1.5}
+            />
+            <path
+              d={`M ${n.x + 7} ${n.y} H ${n.x + n.w - 7} Q ${n.x + n.w} ${n.y} ${n.x + n.w} ${n.y + 7} V ${n.y + 20} H ${n.x} V ${n.y + 7} Q ${n.x} ${n.y} ${n.x + 7} ${n.y} Z`}
+              fill={stroke}
+              fillOpacity={activeTarget ? 0.25 : 0.14}
+            />
+            <text
+              x={n.x + 10}
+              y={n.y + 13.5}
+              fontSize="8.5"
+              fontWeight="600"
+              fontFamily="var(--font-mono)"
+              fill={stroke}
+            >
+              {(n.domain || (n.kind || 'BLOCK')).toUpperCase()}
+            </text>
+
+            <text
+              x={n.x + n.w / 2}
+              y={n.y + (ports.length > 0 ? 41 : n.h / 2 + 2)}
+              textAnchor="middle"
+              fontSize="12"
+              fontWeight="700"
+              fill="var(--text-primary)"
+            >
+              {n.label.length > 25 ? `${n.label.slice(0, 23)}..` : n.label}
+            </text>
+            {n.sublabel && (
               <text
                 x={n.x + n.w / 2}
-                y={n.y + (n.sublabel ? n.h / 2 - 4 : n.h / 2 + 4)}
+                y={n.y + (ports.length > 0 ? 57 : n.h / 2 + 18)}
                 textAnchor="middle"
-                fontSize="12"
-                fontWeight="700"
-                fill="currentColor"
-                className="text-slate-900 dark:text-slate-100"
+                fontSize="9.5"
+                fontFamily="var(--font-mono)"
+                fill="var(--text-secondary)"
               >
-                {n.label}
+                {n.sublabel.length > 29 ? `${n.sublabel.slice(0, 27)}..` : n.sublabel}
               </text>
-              {n.sublabel && (
-                <text
-                  x={n.x + n.w / 2}
-                  y={n.y + n.h / 2 + 13}
-                  textAnchor="middle"
-                  fontSize="10"
-                  fontFamily="var(--font-mono)"
-                  fill="currentColor"
-                  className="text-slate-500 dark:text-slate-400"
-                >
-                  {n.sublabel}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
+            )}
+            {ports.slice(0, 3).map((pin, pIdx) => {
+              const count = Math.min(3, ports.length);
+              const slotW = (n.w - 16) / count;
+              const px = n.x + 8 + pIdx * slotW;
+              const pw = slotW - 4;
+              const py = n.y + n.h - 21;
+              return (
+                <g key={`${n.id}-p-${pIdx}`}>
+                  <rect x={px} y={py} width={pw} height={15} rx={3} fill="var(--bg-canvas)" stroke="var(--border-subtle)" />
+                  <text x={px + pw / 2} y={py + 10.5} textAnchor="middle" fontSize="8" fontFamily="var(--font-mono)" fill="var(--text-secondary)">
+                    {pin.length > 8 ? `${pin.slice(0, 7)}.` : pin}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </InfiniteMeshViewport>
   );
 };
 
@@ -696,6 +803,7 @@ export const FsmStateRenderer: React.FC<RendererProps> = ({
   currentStep,
   tryItValues,
 }) => {
+  const uid = useId().replace(/:/g, '');
   const states = (config.states as FsmStateNode[]) ?? [];
   const transitions = (config.transitions as FsmEdge[]) ?? [];
   const activeStateByStep = (config.activeStateByStep as string[]) ?? [];
@@ -708,96 +816,104 @@ export const FsmStateRenderer: React.FC<RendererProps> = ({
   const activeTransition = transitions.find((t) => t.stepTrigger === currentStep);
   const svgW = (config.width as number) ?? 680;
   const svgH = (config.height as number) ?? 230;
+  const bounds = { minX: -20, minY: -20, width: svgW + 40, height: svgH + 40 };
 
   return (
-    <div className="space-y-3">
-      <div className="overflow-x-auto rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4 bg-engineering-grid">
-        <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full min-w-[540px] h-auto select-none" role="img" aria-label="Finite state machine diagram">
-          <defs>
-            <marker id="fsm-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-              <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-control)" />
-            </marker>
-            <marker id="fsm-arrow-active" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-              <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-active)" />
-            </marker>
-            <marker id="fsm-arrow-error" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-              <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-error)" />
-            </marker>
-          </defs>
-
-          {transitions.map((tr, i) => {
-            const s1 = states.find((s) => s.id === tr.from);
-            const s2 = states.find((s) => s.id === tr.to);
-            if (!s1 || !s2) return null;
-            const isActive = tr.stepTrigger === currentStep;
-            const isErr = tr.kind === 'error' || (errorInjected && tr.to === 'ERROR');
-            const color = isErr ? 'var(--sem-error)' : isActive ? 'var(--sem-active)' : 'var(--sem-control)';
-            const marker = isErr ? 'url(#fsm-arrow-error)' : isActive ? 'url(#fsm-arrow-active)' : 'url(#fsm-arrow)';
-
-            const mx = (s1.x + s2.x) / 2;
-            const curveLift = s1.id === s2.id ? -42 : i % 2 === 0 ? -24 : 24;
-            const my = (s1.y + s2.y) / 2 + curveLift;
-
-            const pathD =
-              s1.id === s2.id
-                ? `M ${s1.x - 16} ${s1.y - 24} C ${s1.x - 32} ${s1.y - 68}, ${s1.x + 32} ${s1.y - 68}, ${s1.x + 16} ${s1.y - 24}`
-                : `M ${s1.x} ${s1.y} Q ${mx} ${my} ${s2.x} ${s2.y}`;
-
-            return (
-              <g key={`${tr.from}-${tr.to}-${i}`} opacity={isActive ? 1 : 0.45} className="svg-glide">
-                <path d={pathD} fill="none" stroke={color} strokeWidth={isActive ? 2.4 : 1.4} markerEnd={marker} className="svg-glide" />
-                <rect x={mx - 52} y={my - 10} width={104} height={18} rx={3} fill="var(--bg-surface)" stroke={color} strokeWidth={0.8} />
-                <text x={mx} y={my + 2} textAnchor="middle" fontSize="9" fontFamily="var(--font-mono)" fill="var(--text-primary)">
-                  {tr.guard}
-                </text>
-              </g>
-            );
-          })}
-
-          {states.map((st) => {
-            const isCur = st.id === activeStateId;
-            const stroke = st.kind === 'error' ? 'var(--sem-error)' : isCur ? 'var(--sem-active)' : 'var(--sem-control)';
-            return (
-              <g key={st.id} className="svg-glide">
-                <circle
-                  cx={st.x}
-                  cy={st.y}
-                  r={isCur ? 30 : 26}
-                  fill={isCur ? stroke : 'var(--bg-surface)'}
-                  fillOpacity={isCur ? 0.18 : 1}
-                  stroke={stroke}
-                  strokeWidth={isCur ? 2.8 : 1.5}
-                  className="svg-glide"
-                />
-                <text
-                  x={st.x}
-                  y={st.y + 4}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fontWeight="700"
-                  fontFamily="var(--font-mono)"
-                  fill="var(--text-primary)"
-                >
-                  {st.label}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 text-xs">
-        <div>
-          <span className="text-slate-500 dark:text-slate-400">Current State:</span>{' '}
-          <strong className="font-mono text-amber-600 dark:text-amber-400">{activeStateId}</strong>
+    <InfiniteMeshViewport
+      bounds={bounds}
+      title="Protocol Control State Machine"
+      subtitle="Step timeline or inject error to watch active state transitions"
+      minHeightClass="h-[290px] sm:h-[320px]"
+      renderDefs={() => (
+        <>
+          <marker id={`fsm-arrow-${uid}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-control)" />
+          </marker>
+          <marker id={`fsm-arrow-active-${uid}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-active)" />
+          </marker>
+          <marker id={`fsm-arrow-error-${uid}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <polygon points="0 0, 7 3.5, 0 7" fill="var(--sem-error)" />
+          </marker>
+        </>
+      )}
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div>
+            <span className="text-[var(--text-secondary)]">Current State:</span>{' '}
+            <strong className="font-mono text-amber-600 dark:text-amber-400">{activeStateId}</strong>
+          </div>
+          <div className="font-mono text-[var(--text-primary)]">
+            {activeTransition
+              ? `Guard Fired: ${activeTransition.guard} (${activeTransition.from} -> ${activeTransition.to})`
+              : 'Holding state until next guard condition'}
+          </div>
         </div>
-        <div className="font-mono text-slate-700 dark:text-slate-300">
-          {activeTransition
-            ? `Guard Fired: ${activeTransition.guard} (${activeTransition.from} -> ${activeTransition.to})`
-            : 'Holding state until next guard condition'}
-        </div>
-      </div>
-    </div>
+      }
+    >
+      {transitions.map((tr, i) => {
+        const s1 = states.find((s) => s.id === tr.from);
+        const s2 = states.find((s) => s.id === tr.to);
+        if (!s1 || !s2) return null;
+        const isActive = tr.stepTrigger === currentStep;
+        const isErr = tr.kind === 'error' || (errorInjected && tr.to === 'ERROR');
+        const color = isErr ? 'var(--sem-error)' : isActive ? 'var(--sem-active)' : 'var(--sem-control)';
+        const marker = isErr
+          ? `url(#fsm-arrow-error-${uid})`
+          : isActive
+          ? `url(#fsm-arrow-active-${uid})`
+          : `url(#fsm-arrow-${uid})`;
+
+        const mx = (s1.x + s2.x) / 2;
+        const curveLift = s1.id === s2.id ? -42 : i % 2 === 0 ? -24 : 24;
+        const my = (s1.y + s2.y) / 2 + curveLift;
+
+        const pathD =
+          s1.id === s2.id
+            ? `M ${s1.x - 16} ${s1.y - 24} C ${s1.x - 32} ${s1.y - 68}, ${s1.x + 32} ${s1.y - 68}, ${s1.x + 16} ${s1.y - 24}`
+            : `M ${s1.x} ${s1.y} Q ${mx} ${my} ${s2.x} ${s2.y}`;
+
+        return (
+          <g key={`${tr.from}-${tr.to}-${i}`} opacity={isActive ? 1 : 0.45} className="svg-glide">
+            <path d={pathD} fill="none" stroke={color} strokeWidth={isActive ? 2.4 : 1.4} markerEnd={marker} className="svg-glide" />
+            <rect x={mx - 52} y={my - 10} width={104} height={18} rx={3} fill="var(--bg-surface)" stroke={color} strokeWidth={0.8} />
+            <text x={mx} y={my + 2} textAnchor="middle" fontSize="9" fontFamily="var(--font-mono)" fill="var(--text-primary)">
+              {tr.guard}
+            </text>
+          </g>
+        );
+      })}
+
+      {states.map((st) => {
+        const isCur = st.id === activeStateId;
+        const stroke = st.kind === 'error' ? 'var(--sem-error)' : isCur ? 'var(--sem-active)' : 'var(--sem-control)';
+        return (
+          <g key={st.id} className="svg-glide">
+            <circle
+              cx={st.x}
+              cy={st.y}
+              r={isCur ? 30 : 26}
+              fill={isCur ? stroke : 'var(--bg-surface)'}
+              fillOpacity={isCur ? 0.18 : 1}
+              stroke={stroke}
+              strokeWidth={isCur ? 2.8 : 1.5}
+              className="svg-glide"
+            />
+            <text
+              x={st.x}
+              y={st.y + 4}
+              textAnchor="middle"
+              fontSize="11"
+              fontWeight="700"
+              fontFamily="var(--font-mono)"
+              fill="var(--text-primary)"
+            >
+              {st.label}
+            </text>
+          </g>
+        );
+      })}
+    </InfiniteMeshViewport>
   );
 };
 

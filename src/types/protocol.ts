@@ -107,6 +107,19 @@ export interface BlockDiagramNode {
   y: number;
   width: number;
   height: number;
+  sublabel?: string;
+  domain?: string;
+  ports?: string[];
+  componentKind?:
+    | 'clock_reset'
+    | 'scheduler'
+    | 'buffer'
+    | 'arbiter'
+    | 'csr'
+    | 'phy'
+    | 'memory'
+    | 'monitor'
+    | 'core';
 }
 
 export interface BlockDiagramLink {
@@ -114,6 +127,8 @@ export interface BlockDiagramLink {
   to: string;
   label: string;
   bidirectional?: boolean;
+  channelKind?: 'control' | 'data' | 'clock' | 'error' | 'verify';
+  widthTag?: string;
 }
 
 export type EntityClassification =

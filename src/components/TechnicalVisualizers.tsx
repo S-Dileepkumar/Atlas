@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Play, Pause, SkipForward, RotateCcw, Layers, ShieldCheck, Cpu } from 'lucide-react';
 import { ProtocolDocument } from '../types/protocol';
 import { IpRegister } from '../types/ipUniverse';
+import { InfiniteMeshViewport } from './InfiniteMeshViewport';
 
 interface PacketField {
   name: string;
@@ -321,78 +322,102 @@ export const UvmArchitectureFlowSvg: React.FC<{
         ))}
       </div>
 
-      <div className="overflow-x-auto">
-        <svg viewBox="0 0 820 270" className="w-full min-w-[640px] h-auto max-h-[260px] select-none">
-          <defs>
-            <marker id="uvm-arr" markerWidth="7" markerHeight="6" refX="7" refY="3" orient="auto">
-              <polygon points="0 0, 7 3, 0 6" fill="#06b6d4" />
-            </marker>
-          </defs>
+      <InfiniteMeshViewport
+        bounds={{ minX: 0, minY: 0, width: 820, height: 270 }}
+        title="IEEE 1800.2 UVM Verification Environment Topology"
+        subtitle="Pan & zoom testbench architecture · Use controls above to animate verification phases"
+        minHeightClass="h-[310px] sm:h-[360px]"
+        renderDefs={() => (
+          <marker id="uvm-arr" markerWidth="7" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 7 3, 0 6" fill="#06b6d4" />
+          </marker>
+        )}
+      >
+        {/* Container Env Box */}
+        <rect x="14" y="12" width="792" height="246" rx="10" fill="none" stroke="var(--border-subtle)" strokeDasharray="5 4" strokeWidth={1.5} />
+        <text x="28" y="30" className="font-mono text-[10px] font-semibold" fill="var(--text-secondary)">
+          uvm_test / uvm_env Hierarchy · TLM + SVA + Scoreboard
+        </text>
 
-          {/* Container Env Box */}
-          <rect x="14" y="12" width="792" height="246" rx="10" fill="none" stroke="#475569" strokeDasharray="5 4" />
-          <text x="28" y="30" className="font-mono text-[10px] font-semibold fill-slate-500 dark:fill-slate-400">
-            uvm_test / uvm_env Hierarchy
-          </text>
-
-          {/* Arrows */}
-          <path d="M 155 82 L 210 82" stroke="#06b6d4" strokeWidth="1.8" markerEnd="url(#uvm-arr)" />
-          <path d="M 350 82 L 405 82" stroke="#06b6d4" strokeWidth="1.8" markerEnd="url(#uvm-arr)" />
-          <path d="M 475 110 L 475 148" stroke="#06b6d4" strokeWidth="1.8" markerEnd="url(#uvm-arr)" />
-          <path d="M 555 182 L 620 182" stroke="#10b981" strokeWidth="1.8" markerEnd="url(#uvm-arr)" />
-          <path d="M 405 182 L 350 182" stroke="#eab308" strokeWidth="1.8" markerEnd="url(#uvm-arr)" />
-          <path d="M 210 182 L 155 182" stroke="#ec4899" strokeWidth="1.8" markerEnd="url(#uvm-arr)" />
-
-          {/* uvm_test / Sequences */}
-          <g {...boxStyle('test', '#8b5cf6')}>
-            <rect x="28" y="52" width="126" height="58" rx="6" className="fill-white dark:fill-slate-900" />
-            <text x="91" y="76" textAnchor="middle" className="font-mono text-[11px] font-bold fill-slate-900 dark:fill-slate-100">uvm_sequence</text>
-            <text x="91" y="94" textAnchor="middle" className="font-mono text-[9.5px] fill-slate-500">Constrained Random</text>
+        {/* Arrows */}
+        {[
+          { d: 'M 154 84 L 210 84', color: '#06b6d4', active: isActive('test') || isActive('seqr') },
+          { d: 'M 348 84 L 404 84', color: '#06b6d4', active: isActive('seqr') || isActive('drv') },
+          { d: 'M 479 114 L 479 148', color: '#06b6d4', active: isActive('drv') || isActive('vif') },
+          { d: 'M 552 183 L 620 183', color: '#10b981', active: isActive('vif') || isActive('dut') },
+          { d: 'M 406 183 L 350 183', color: '#eab308', active: isActive('mon') || isActive('vif') },
+          { d: 'M 212 183 L 156 183', color: '#ec4899', active: isActive('sb') || isActive('mon') },
+        ].map((edge, idx) => (
+          <g key={idx} opacity={edge.active ? 1 : 0.45}>
+            <path d={edge.d} stroke={edge.color} strokeWidth={edge.active ? 2.2 : 1.5} markerEnd="url(#uvm-arr)" />
+            {edge.active && (
+              <path
+                d={edge.d}
+                stroke="#ffffff"
+                strokeOpacity={0.35}
+                strokeWidth={1.2}
+                className="schematic-flow-active"
+              />
+            )}
           </g>
+        ))}
 
-          {/* uvm_sequencer */}
-          <g {...boxStyle('seqr', '#3b82f6')}>
-            <rect x="212" y="52" width="136" height="58" rx="6" className="fill-white dark:fill-slate-900" />
-            <text x="280" y="76" textAnchor="middle" className="font-mono text-[11px] font-bold fill-slate-900 dark:fill-slate-100">uvm_sequencer</text>
-            <text x="280" y="94" textAnchor="middle" className="font-mono text-[9.5px] fill-slate-500">TLM Seq Arbitration</text>
-          </g>
-
-          {/* uvm_driver */}
-          <g {...boxStyle('drv', '#06b6d4')}>
-            <rect x="406" y="52" width="146" height="58" rx="6" className="fill-white dark:fill-slate-900" />
-            <text x="479" y="76" textAnchor="middle" className="font-mono text-[11px] font-bold fill-slate-900 dark:fill-slate-100">uvm_driver</text>
-            <text x="479" y="94" textAnchor="middle" className="font-mono text-[9.5px] fill-slate-500">BFM Pin Driving</text>
-          </g>
-
-          {/* Virtual Interface + SVA */}
-          <g {...boxStyle('vif', '#0ea5e9')}>
-            <rect x="406" y="150" width="146" height="62" rx="6" className="fill-white dark:fill-slate-900" />
-            <text x="479" y="173" textAnchor="middle" className="font-mono text-[11px] font-bold fill-slate-900 dark:fill-slate-100">virtual interface</text>
-            <text x="479" y="191" textAnchor="middle" className="font-mono text-[9.5px] fill-cyan-600 dark:fill-cyan-400">+ SVA Bind Checker</text>
-          </g>
-
-          {/* DUT RTL */}
-          <g {...boxStyle('dut', '#10b981')}>
-            <rect x="622" y="140" width="165" height="82" rx="8" className="fill-emerald-50/70 dark:fill-emerald-950/30" />
-            <text x="704" y="172" textAnchor="middle" className="font-display text-[13px] font-bold fill-slate-900 dark:fill-slate-100">DUT (RTL)</text>
-            <text x="704" y="191" textAnchor="middle" className="font-mono text-[9.5px] fill-emerald-700 dark:fill-emerald-400">SystemVerilog / Verilator</text>
-          </g>
-
-          {/* uvm_monitor */}
-          <g {...boxStyle('mon', '#eab308')}>
-            <rect x="212" y="150" width="136" height="62" rx="6" className="fill-white dark:fill-slate-900" />
-            <text x="280" y="175" textAnchor="middle" className="font-mono text-[11px] font-bold fill-slate-900 dark:fill-slate-100">uvm_monitor</text>
-            <text x="280" y="193" textAnchor="middle" className="font-mono text-[9.5px] fill-slate-500">Passive Pin Sampler</text>
-          </g>
-
-          {/* Scoreboard + Coverage */}
-          <g {...boxStyle('sb', '#ec4899')}>
-            <rect x="28" y="150" width="126" height="62" rx="6" className="fill-white dark:fill-slate-900" />
-            <text x="91" y="173" textAnchor="middle" className="font-mono text-[10.5px] font-bold fill-slate-900 dark:fill-slate-100">Scoreboard +</text>
-            <text x="91" y="191" textAnchor="middle" className="font-mono text-[9.5px] fill-pink-600 dark:fill-pink-400">Ref Model &amp; Cov</text>
-          </g>
-        </svg>
-      </div>
+        {/* UVM Component CAD Blocks */}
+        {[
+          { id: 'test', x: 26, y: 52, w: 128, h: 62, accent: '#8b5cf6', tag: 'STIMULUS', title: 'uvm_sequence', sub: 'Constrained Random' },
+          { id: 'seqr', x: 212, y: 52, w: 136, h: 62, accent: '#3b82f6', tag: 'TLM ARBITER', title: 'uvm_sequencer', sub: 'TLM Seq Arbitration' },
+          { id: 'drv', x: 406, y: 52, w: 146, h: 62, accent: '#06b6d4', tag: 'ACTIVE BFM', title: 'uvm_driver', sub: 'Pin Timing Driver' },
+          { id: 'vif', x: 406, y: 150, w: 146, h: 64, accent: '#0ea5e9', tag: 'SV INTERFACE', title: 'virtual interface', sub: '+ SVA Bind Checker' },
+          { id: 'dut', x: 622, y: 140, w: 165, h: 84, accent: '#10b981', tag: 'DESIGN UNDER TEST', title: 'DUT (RTL)', sub: 'SystemVerilog / Verilator' },
+          { id: 'mon', x: 212, y: 150, w: 136, h: 64, accent: '#eab308', tag: 'PASSIVE', title: 'uvm_monitor', sub: 'Passive Pin Sampler' },
+          { id: 'sb', x: 26, y: 150, w: 128, h: 64, accent: '#ec4899', tag: 'CHECKER', title: 'Scoreboard +', sub: 'Ref Model & Cov' },
+        ].map((blk) => {
+          const st = boxStyle(blk.id, blk.accent);
+          const active = isActive(blk.id);
+          return (
+            <g key={blk.id} opacity={st.opacity}>
+              {active && (
+                <rect
+                  x={blk.x - 3}
+                  y={blk.y - 3}
+                  width={blk.w + 6}
+                  height={blk.h + 6}
+                  rx={10}
+                  fill="none"
+                  stroke={blk.accent}
+                  strokeWidth={1.2}
+                  strokeDasharray="4 3"
+                  opacity={0.75}
+                />
+              )}
+              <rect
+                x={blk.x}
+                y={blk.y}
+                width={blk.w}
+                height={blk.h}
+                rx={7}
+                fill={active ? 'var(--bg-elevated)' : 'var(--bg-surface)'}
+                stroke={st.stroke}
+                strokeWidth={st.strokeWidth}
+              />
+              <path
+                d={`M ${blk.x + 7} ${blk.y} H ${blk.x + blk.w - 7} Q ${blk.x + blk.w} ${blk.y} ${blk.x + blk.w} ${blk.y + 7} V ${blk.y + 18} H ${blk.x} V ${blk.y + 7} Q ${blk.x} ${blk.y} ${blk.x + 7} ${blk.y} Z`}
+                fill={blk.accent}
+                fillOpacity={active ? 0.24 : 0.12}
+              />
+              <text x={blk.x + 8} y={blk.y + 12} className="font-mono text-[8px] font-semibold uppercase tracking-wider" fill={blk.accent}>
+                {blk.tag}
+              </text>
+              <text x={blk.x + blk.w / 2} y={blk.y + 37} textAnchor="middle" className="font-mono text-[11px] font-bold" fill="var(--text-primary)">
+                {blk.title}
+              </text>
+              <text x={blk.x + blk.w / 2} y={blk.y + 53} textAnchor="middle" className="font-mono text-[9px]" fill="var(--text-secondary)">
+                {blk.sub}
+              </text>
+            </g>
+          );
+        })}
+      </InfiniteMeshViewport>
 
       <div className="p-3 rounded border border-cyan-500/30 bg-cyan-50/60 dark:bg-cyan-950/20 text-xs space-y-1">
         <div className="font-semibold text-cyan-800 dark:text-cyan-300">{current.title}</div>

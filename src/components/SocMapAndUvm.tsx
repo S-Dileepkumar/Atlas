@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { SOC_EDGES, SOC_NODES } from '../data/socGraph';
 import { getProtocolById } from '../data/protocols';
 import { CodeBlock } from './DiagramViewers';
+import { InfiniteMeshViewport } from './InfiniteMeshViewport';
 
 export const SocConnectivityMap: React.FC<{ onSelectProtocol: (id: string) => void }> = ({ onSelectProtocol }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string>('noc');
@@ -9,7 +10,50 @@ export const SocConnectivityMap: React.FC<{ onSelectProtocol: (id: string) => vo
 
   const activeNode = SOC_NODES.find((n) => n.id === selectedNodeId) || SOC_NODES[0];
   const activeEdge = SOC_EDGES.find((e) => e.id === selectedEdgeId) || null;
-  const nodeMap = new Map(SOC_NODES.map((n) => [n.id, n]));
+  const nodeMap = useMemo(() => new Map(SOC_NODES.map((n) => [n.id, n])), []);
+
+  const bounds = useMemo(() => {
+    const minX = Math.min(...SOC_NODES.map((n) => n.x), 0);
+    const minY = Math.min(...SOC_NODES.map((n) => n.y), 0);
+    const maxX = Math.max(...SOC_NODES.map((n) => n.x + n.width), 880);
+    const maxY = Math.max(...SOC_NODES.map((n) => n.y + n.height), 420);
+    return {
+      minX: minX - 36,
+      minY: minY - 32,
+      width: maxX - minX + 72,
+      height: maxY - minY + 64,
+    };
+  }, []);
+
+  const minimapItems = useMemo(
+    () =>
+      SOC_NODES.map((n) => ({
+        id: n.id,
+        x: n.x,
+        y: n.y,
+        width: n.width,
+        height: n.height,
+        color: selectedNodeId === n.id && !selectedEdgeId ? '#06b6d4' : '#3b82f6',
+        active: selectedNodeId === n.id && !selectedEdgeId,
+      })),
+    [selectedNodeId, selectedEdgeId]
+  );
+
+  const minimapLinks = useMemo(
+    () =>
+      SOC_EDGES.map((edge) => {
+        const a = nodeMap.get(edge.from);
+        const b = nodeMap.get(edge.to);
+        if (!a || !b) return null;
+        return {
+          x1: a.x + a.width / 2,
+          y1: a.y + a.height / 2,
+          x2: b.x + b.width / 2,
+          y2: b.y + b.height / 2,
+        };
+      }).filter((x): x is { x1: number; y1: number; x2: number; y2: number } => Boolean(x)),
+    [nodeMap]
+  );
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -23,15 +67,22 @@ export const SocConnectivityMap: React.FC<{ onSelectProtocol: (id: string) => vo
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Interactive SVG Graph */}
-        <div className="lg:col-span-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#080E1A] p-4 overflow-x-auto bg-engineering-grid">
-          <svg viewBox="0 0 900 440" className="w-full min-w-[680px] h-auto">
-            <defs>
-              <marker id="soc-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        {/* Interactive Infinite-Mesh SVG Graph */}
+        <div className="lg:col-span-8">
+          <InfiniteMeshViewport
+            bounds={bounds}
+            title={`System-on-Chip Protocol Knowledge Graph (${SOC_NODES.length} Subsystems · ${SOC_EDGES.length} Bridges)`}
+            subtitle="Pan across the schematic mesh and click any subsystem block or interconnect link"
+            minHeightClass="h-[460px] sm:h-[520px]"
+            showMiniMap={true}
+            minimapItems={minimapItems}
+            minimapLinks={minimapLinks}
+            renderDefs={() => (
+              <marker id="soc-graph-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
                 <polygon points="0 0, 8 3, 0 6" fill="#06b6d4" />
               </marker>
-            </defs>
-
+            )}
+          >
             {SOC_EDGES.map((edge, idx) => {
               const a = nodeMap.get(edge.from);
               const b = nodeMap.get(edge.to);
@@ -40,49 +91,85 @@ export const SocConnectivityMap: React.FC<{ onSelectProtocol: (id: string) => vo
               const acy = a.y + a.height / 2;
               const bcx = b.x + b.width / 2;
               const bcy = b.y + b.height / 2;
-              const horiz = Math.abs(bcx - acx) >= Math.abs(bcy - acy);
-              const x1 = horiz ? (bcx >= acx ? a.x + a.width : a.x) : acx;
-              const y1 = horiz ? acy : (bcy >= acy ? a.y + a.height : a.y);
-              const x2 = horiz ? (bcx >= acx ? b.x : b.x + b.width) : bcx;
-              const y2 = horiz ? bcy : (bcy >= acy ? b.y : b.y + b.height);
-              const curve = idx % 2 === 0 ? -16 : 16;
-              const mx = (x1 + x2) / 2 + (horiz ? 0 : curve);
-              const my = (y1 + y2) / 2 + (horiz ? curve : 0);
+              const horiz = Math.abs(bcx - acx) >= Math.abs(bcy - acy) * 0.85;
+              const laneOffset = idx % 3 === 0 ? -12 : idx % 3 === 1 ? 0 : 12;
+
+              let x1: number, y1: number, x2: number, y2: number, cx1: number, cy1: number, cx2: number, cy2: number;
+              if (horiz) {
+                x1 = bcx >= acx ? a.x + a.width : a.x;
+                x2 = bcx >= acx ? b.x : b.x + b.width;
+                y1 = acy + laneOffset;
+                y2 = bcy + laneOffset;
+                cx1 = x1 + (x2 - x1) * 0.48;
+                cy1 = y1;
+                cx2 = x2 - (x2 - x1) * 0.48;
+                cy2 = y2;
+              } else {
+                x1 = acx + laneOffset;
+                x2 = bcx + laneOffset;
+                y1 = bcy >= acy ? a.y + a.height : a.y;
+                y2 = bcy >= acy ? b.y : b.y + b.height;
+                cx1 = x1;
+                cy1 = y1 + (y2 - y1) * 0.48;
+                cx2 = x2;
+                cy2 = y2 - (y2 - y1) * 0.48;
+              }
+
+              const mx = (x1 + x2) / 2;
+              const my = (y1 + y2) / 2;
               const isHighlighted =
                 selectedEdgeId === edge.id ||
                 (!selectedEdgeId && (edge.from === selectedNodeId || edge.to === selectedNodeId));
+              const badgeW = Math.max(96, Math.min(138, edge.label.length * 6.2 + 16));
+
               return (
                 <g
                   key={edge.id}
+                  opacity={isHighlighted ? 1 : 0.36}
                   onClick={() => setSelectedEdgeId(edge.id)}
-                  className="cursor-pointer"
+                  className="cursor-pointer svg-glide"
                 >
                   <path
-                    d={`M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`}
+                    d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
                     fill="none"
-                    stroke={isHighlighted ? '#06b6d4' : 'rgba(148,163,184,0.35)'}
-                    strokeWidth={isHighlighted ? 2.5 : 1.5}
-                    markerEnd="url(#soc-arrow)"
+                    stroke={isHighlighted ? '#06b6d4' : 'var(--text-secondary)'}
+                    strokeWidth={isHighlighted ? 2.4 : 1.4}
+                    markerEnd="url(#soc-graph-arrow)"
+                  />
+                  {isHighlighted && (
+                    <path
+                      d={`M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`}
+                      fill="none"
+                      stroke="#ffffff"
+                      strokeOpacity={0.35}
+                      strokeWidth={1.2}
+                      className="schematic-flow-active"
+                    />
+                  )}
+                  <circle
+                    cx={x1}
+                    cy={y1}
+                    r={3.2}
+                    fill={isHighlighted ? '#06b6d4' : 'var(--text-secondary)'}
+                    stroke="var(--bg-canvas)"
+                    strokeWidth={1}
                   />
                   <rect
-                    x={mx - 58}
+                    x={mx - badgeW / 2}
                     y={my - 10}
-                    width={116}
+                    width={badgeW}
                     height={20}
                     rx={4}
-                    className={
-                      isHighlighted
-                        ? 'fill-cyan-950 stroke-cyan-500'
-                        : 'fill-white dark:fill-slate-900 stroke-slate-300 dark:stroke-slate-700'
-                    }
+                    fill="var(--bg-elevated)"
+                    stroke={isHighlighted ? '#06b6d4' : 'var(--border-subtle)'}
+                    strokeWidth={isHighlighted ? 1.2 : 1}
                   />
                   <text
                     x={mx}
                     y={my + 3.5}
                     textAnchor="middle"
-                    className={`font-mono text-[10px] font-medium ${
-                      isHighlighted ? 'fill-cyan-300' : 'fill-slate-600 dark:fill-slate-400'
-                    }`}
+                    className="font-mono text-[9.5px] font-medium"
+                    fill={isHighlighted ? 'var(--sem-control)' : 'var(--text-secondary)'}
                   >
                     {edge.label}
                   </text>
@@ -92,6 +179,7 @@ export const SocConnectivityMap: React.FC<{ onSelectProtocol: (id: string) => vo
 
             {SOC_NODES.map((node) => {
               const isSel = selectedNodeId === node.id && !selectedEdgeId;
+              const accent = isSel ? '#06b6d4' : '#3b82f6';
               return (
                 <g
                   key={node.id}
@@ -99,56 +187,86 @@ export const SocConnectivityMap: React.FC<{ onSelectProtocol: (id: string) => vo
                     setSelectedNodeId(node.id);
                     setSelectedEdgeId(null);
                   }}
-                  className="cursor-pointer"
+                  className="cursor-pointer svg-glide"
                 >
+                  {isSel && (
+                    <rect
+                      x={node.x - 4}
+                      y={node.y - 4}
+                      width={node.width + 8}
+                      height={node.height + 8}
+                      rx={11}
+                      fill="none"
+                      stroke="#06b6d4"
+                      strokeWidth={1.25}
+                      strokeDasharray="4 3"
+                      opacity={0.78}
+                    />
+                  )}
                   <rect
                     x={node.x}
                     y={node.y}
                     width={node.width}
                     height={node.height}
                     rx={8}
-                    className={
-                      isSel
-                        ? 'fill-cyan-50 dark:fill-slate-800'
-                        : 'fill-white dark:fill-slate-900'
-                    }
-                    stroke={isSel ? '#06b6d4' : '#475569'}
+                    fill={isSel ? 'var(--bg-elevated)' : 'var(--bg-surface)'}
+                    stroke={accent}
                     strokeWidth={isSel ? 2.25 : 1.5}
                   />
-                  <rect
-                    x={node.x + 1}
-                    y={node.y + 1}
-                    width={node.width - 2}
-                    height={5}
-                    rx={3}
-                    fill={isSel ? '#06b6d4' : '#3b82f6'}
-                    opacity={0.8}
+                  <path
+                    d={`M ${node.x + 8} ${node.y} H ${node.x + node.width - 8} Q ${node.x + node.width} ${node.y} ${node.x + node.width} ${node.y + 8} V ${node.y + 20} H ${node.x} V ${node.y + 8} Q ${node.x} ${node.y} ${node.x + 8} ${node.y} Z`}
+                    fill={accent}
+                    fillOpacity={isSel ? 0.24 : 0.14}
+                  />
+                  <line
+                    x1={node.x}
+                    y1={node.y + 20}
+                    x2={node.x + node.width}
+                    y2={node.y + 20}
+                    stroke={accent}
+                    strokeOpacity={0.4}
+                    strokeWidth={1}
                   />
                   <text
-                    x={node.x + 14}
-                    y={node.y + 24}
-                    className="font-mono text-[10px] fill-cyan-600 dark:fill-cyan-400"
+                    x={node.x + 12}
+                    y={node.y + 13}
+                    className="font-mono text-[8.5px] font-semibold uppercase tracking-wider"
+                    fill={accent}
                   >
                     {node.domain}
                   </text>
                   <text
-                    x={node.x + 14}
-                    y={node.y + 46}
-                    className="font-display text-[13px] font-semibold fill-slate-900 dark:fill-slate-100"
+                    x={node.x + 12}
+                    y={node.y + 42}
+                    className="font-display text-[13px] font-semibold"
+                    fill="var(--text-primary)"
                   >
                     {node.label}
                   </text>
                   <text
-                    x={node.x + 14}
-                    y={node.y + 66}
-                    className="text-[11px] fill-slate-500 dark:fill-slate-400"
+                    x={node.x + 12}
+                    y={node.y + 60}
+                    className="text-[10.5px]"
+                    fill="var(--text-secondary)"
                   >
                     {node.subtitle}
                   </text>
+                  {[0.25, 0.5, 0.75].map((ratio, pIdx) => (
+                    <rect
+                      key={pIdx}
+                      x={node.x + node.width * ratio - 4}
+                      y={node.y + node.height - 2.5}
+                      width={8}
+                      height={4}
+                      rx={1}
+                      fill={accent}
+                      fillOpacity={0.55}
+                    />
+                  ))}
                 </g>
               );
             })}
-          </svg>
+          </InfiniteMeshViewport>
         </div>
 
         {/* Right Inspector Panel */}
