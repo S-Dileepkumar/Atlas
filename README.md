@@ -11,8 +11,9 @@
 <p align="center">
   <a href="#where-to-find-what--how-to-use">Where to Find What</a> •
   <a href="#features">Features</a> •
+  <a href="#6-complete-mind-map-infinity-mesh-schematics--mini-map-navigation">Mind Map & Schematics</a> •
   <a href="#30-protocol-categories--16-master-knowledge-domains">Protocol Domains</a> •
-  <a href="#rtl-design-systemverilog--uvm-curriculum-42-modules">RTL / SV / UVM</a> •
+  <a href="#3-rtl-design-systemverilog--uvm-curriculum-42-modules">RTL / SV / UVM</a> •
   <a href="#open-source-silicon-ip-universe">Open-Source IP Universe</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#github-pages-deployment">GitHub Pages Deployment</a> •
@@ -30,6 +31,8 @@ Built for **RTL designers, SoC architects, design verification (DV) engineers, s
 - **498 Protocols & Standards** across **30 Categories** and **16 Master Knowledge Domains** (`100%` passing the 16-checkpoint specification audit)
 - **42 Interactive RTL Design, SystemVerilog (IEEE 1800) & UVM (IEEE 1800.2) Modules** (14 per pillar) cross-linked to protocols and open-source RTL
 - **37 Real Open-Source Silicon IPs** and **6 Reference SoC Topologies** (OpenTitan EarlGrey, Chipyard, PULPissimo, CVA6 SoC, LiteX, OpenPiton)
+- **Complete Interactive Mind Map (Sections, Common & Merged)** uniting all 6 platform sections, 24 sub-branches, and 8 shared cross-cutting engineering foundations in one zoomable CAD workspace
+- **Infinity-Mesh CAD Schematics & Interactive Mini-Map Overlays** powered by `react-zoom-pan-pinch` across Protocol Block/FSM Diagrams, SoC Explorer, IP Architectures, Knowledge Graph, and Mind Map
 - **544 Interactive Hardware Explainers** powered by **14 Synchronized Visualization Renderers**
 - **1,108-Node / 1,031-Edge Semiconductor Engineering Knowledge Graph** with shortest-path tracing, blast-radius analysis, natural-language queries, and live Verilog/SV repo ingestion
 - **30-Subtopic AES 7-Chapter Hardware Security Deep Dive** (plus an interactive FIPS-197 AES-128 round stepper) and **28 Linked Silicon Glossary Terms**
@@ -53,18 +56,19 @@ You can open the interactive **How to Use & Guide** page directly inside the web
 
 | Feature / Workbench | Where to Find It in the UI | How to Use It |
 |---|---|---|
+| **Complete Mind Map (Merged / Sections / Common)** | Header -> **Mind Map**, Home strip, Footer, or Search (`/`) | Switch between **Merged (All + Common)**, **All Sections (6 Pillars / 24 Branches)**, and **Common Bridges (8 shared concepts)**. Pan, zoom, jump via the Mini-Map, click any node to highlight cross-section bridges, or launch directly into linked Protocols, RTL/SV/UVM modules, and IPs. |
 | **Platform Guide (Roadmap)** | Header right bar -> **Guide** (`?`), Home strip, Footer, or Search (`/`) | Browse role-based workflows, click-paths, tool playbooks, and keyboard shortcuts. |
-| **Protocol Specs (498)** | Header -> **Protocol Atlas** (or Home 30-Domain Directory) | Pick any protocol in the left category tree, filter signals, click any signal row or right-rail pinout chip to inspect RTL/SVA/UVM rules, switch **Focus Mode** (`All`, `RTL`, `UVM`, `Interview`), and compare Expected vs Bug waveforms. |
+| **Protocol Specs (498)** | Header -> **Protocol Atlas** (or Home 30-Domain Directory) | Pick any protocol in the left category tree, filter signals, pan/zoom **Infinity-Mesh Block & FSM Diagrams** with the mini-map, click any signal row or pinout chip to inspect RTL/SVA/UVM rules, switch **Focus Mode** (`All`, `RTL`, `UVM`, `Interview`), and compare Expected vs Bug waveforms. |
 | **Waveform Studio** | Protocol Atlas sub-bar -> **Waveform Lab** (or Home card) | Select a bus (`AXI4`, `AXI4-Lite`, `AXI4-Stream`, `APB`, `SPI`, `I2C`, `UART`), inject backpressure stalls, step cycle-by-cycle, and check handshake violation flags. |
 | **Compliance Checker** | Protocol Atlas sub-bar -> **Compliance Checker** (or Home card) | Load or edit cycle traces in JSON and run live AMBA / TileLink rule validation (`VALID/READY` stability, `WLAST`, 4KB boundaries). |
-| **Protocol Compare & Bus Fabric Map** | Header -> **Compare** button; Protocol Atlas sub-bar -> **Protocol Compare** / **Bus Fabric Map** | Benchmark two protocols side-by-side (ordering, coherency, bursts, signal count) or trace CPU -> NoC -> DDR5/PCIe/RoT links across an SoC fabric. |
+| **Protocol Compare & Bus Fabric Map** | Header -> **Compare** button; Protocol Atlas sub-bar -> **Protocol Compare** / **Bus Fabric Map** | Benchmark two protocols side-by-side (ordering, coherency, bursts, signal count) or explore the pannable CPU -> NoC -> DDR5/PCIe/RoT SoC fabric map. |
 | **RTL Design Handbook (14)** | Header -> **RTL Design** (or Protocol Doc footer links) | Navigate chapters via the sticky left syllabus, study normative design rules and *Pitfall vs Verified Fix* cards, copy/export `.sv` snippets, and launch linked CDC/RTL labs. |
 | **SystemVerilog IEEE 1800 (14)** | Header -> **SystemVerilog** (or RTL Design sub-bar) | Master 2-state vs 4-state types, interfaces/modports, clocking blocks, OOP & parameterized classes, constraints, covergroups, SVA sequences, event regions, and DPI-C. |
 | **UVM Methodology IEEE 1800.2 (14)** | Header -> **UVM** (or RTL Design sub-bar) | Learn UVM topology, factory overrides, objections, virtual sequences, TLM ports, scoreboards, UVM RAL, `uvm_config_db`, and protocol agent patterns. |
 | **RTL Explorer, CDC Analyzer & Verification Hub** | RTL Design sub-bar -> **RTL Source Explorer**, **Clock Domains (CDC)**, **UVM & SVA Gen**, **Verification Hub** | Inspect extracted RTL module trees, async FIFO / 2-FF / reset-bridge clock islands across IPs, generate parameterized SV interfaces/agents, and review `core_ibex` / `dvsim` / `cocotb` testbenches. |
-| **Open-Source Silicon IP Universe (37)** | Header -> **IP Universe** (sub-tabs: **Processors**, **GPUs**, **AI Accelerators**, **IP Comparison**) | Filter CPUs, GPUs, AI accelerators, security cores, and interconnects; toggle between **IP Explorer** (modules, FSMs, CSR bit-fields) and **Protocol Explorer** (bus connectivity). |
-| **SoC Explorer (6) & 16-Domain Atlas** | IP Universe sub-bar -> **SoC Explorer** / **16-Domain Atlas** | Inspect EarlGrey, Chipyard, PULPissimo, CVA6 SoC, LiteX, and OpenPiton memory maps and crossbars, plus ISA, packaging, physical design, DFT, and ISO 26262 safety domains. |
-| **Knowledge Graph & Repo Ingestion** | IP Universe sub-bar -> **Knowledge Graph** / Home; Repo Ingestion via Search/Guide | Trace shortest paths and blast radius across 1,108 nodes & 1,031 edges, run natural-language queries, export JSON/CSV/Markdown/Mermaid, or paste live Verilog/SV/Chisel RTL. |
+| **Open-Source Silicon IP Universe (37)** | Header -> **IP Universe** (sub-tabs: **Processors**, **GPUs**, **AI Accelerators**, **IP Comparison**) | Filter CPUs, GPUs, AI accelerators, security cores, and interconnects; toggle between **IP Explorer** (pannable internal microarchitecture CAD schematic, modules, FSMs, CSR bit-fields) and **Protocol Explorer** (bus connectivity hub). |
+| **SoC Explorer (6) & 16-Domain Atlas** | IP Universe sub-bar -> **SoC Explorer** / **16-Domain Atlas** | Pan/zoom EarlGrey, Chipyard, PULPissimo, CVA6 SoC, LiteX, and OpenPiton silicon topologies with the live Mini-Map navigator, plus browse ISA, packaging, physical design, DFT, and ISO 26262 domains. |
+| **Knowledge Graph & Repo Ingestion** | IP Universe sub-bar -> **Knowledge Graph** / Home; Repo Ingestion via Search/Guide | Trace shortest paths and blast radius across 1,108 nodes & 1,031 edges with an interactive click-and-drag Mini-Map viewport indicator, run natural-language queries, export JSON/CSV/Markdown/Mermaid, or paste live Verilog/SV/Chisel RTL. |
 | **Interactive Explainers (544)** | Header -> **Explainers** (or **Explainer** links on Home / Protocol cards) | Scrub timelines, toggle **Overview / Detail / Expert** live, enable **Verification View**, mutate signals with **Try It**, check **What Changes**, and complete 3-question self-checks. |
 | **AES 7-Chapter Lab (30 Topics)** | Home -> **AES 7-Chapter Deep Dive** / Utility cards | Study GF(2⁸), S-Box, DOM masking, TL-UL integrity, TVLA/fault attacks, and step cycle-by-cycle through a live FIPS-197 AES-128 state matrix. |
 | **Completeness Audit & Glossary** | Home Utility Strip / Footer -> **Completeness Audit**, **Glossary** | Verify 16-checkpoint `100%` documentation coverage across all 498 protocols and look up linked RTL/DV terminology. |
@@ -109,7 +113,12 @@ Every silicon IP includes both:
 1. **IP Explorer:** Submodule RTL trees, internal block diagrams, extracted FSM state diagrams, CSR register maps (`HJSON / reggen` bit fields), compile-time parameters, clocking/reset architecture, and upstream verification commands.
 2. **Protocol Explorer:** Interactive SVG bus connectivity hub linking external ports (`OBI`, `AXI4`, `AXI4-Lite`, `TL-UL`, `RoCC`, `PCIe`, `I2C`, `UART`) directly into their protocol specs.
 
-### 6. Specialized Silicon Engineering Labs
+### 6. Complete Mind Map, Infinity-Mesh Schematics & Mini-Map Navigation
+- **Complete Mind Map (`MindMapView`):** Switch seamlessly between **Merged (All + Common)**, **All Sections (6 Pillars & 24 Sub-Branches)**, and **Common Bridges (8 Shared Engineering Foundations)** with interactive node inspection, a **Common Engineering Crosswalk Matrix**, and direct 1-click links into Protocols, RTL/SV/UVM modules, and Silicon IPs.
+- **Infinity-Mesh CAD Viewports (`InfiniteMeshViewport`):** 3-tier vector engineering grid (`8px` / `32px` / `160px` + precision crosshairs) backed by Light/Dark CSS variables and smooth `react-zoom-pan-pinch` pan, pinch/Ctrl+Wheel zoom, wheel-lock toggle, fit-to-view, and expandable canvas workspace.
+- **Interactive Mini-Map Navigator Overlays:** Real-time topology thumbnail with domain-colored block/edge footprints, live viewport position indicator (`ResizeObserver` synced), click-and-drag jump-to-section, **Center** action, and **Map** visibility toggle across SoC Explorer, SoC Connectivity Map, Knowledge Graph, IP Architectures, Protocol Block/FSM diagrams, and Mind Map.
+
+### 7. Specialized Silicon Engineering Labs
 - **Clock Domain Analysis (CDC) Tool:** Maps clock islands, reset domains, asynchronous crossings, and synchronizer insertion points (`2-FF`, Gray async FIFOs, reset bridges) across multi-clock IPs.
 - **AES 7-Chapter Deep Dive & Interactive FIPS-197 Lab:** Full 30-subtopic hardware security curriculum covering GF(2⁸) finite fields, SubBytes/ShiftRows/MixColumns/KeyExpansion, DOM masking countermeasures, `TL-UL` integrity, TVLA/fault injection, and an interactive cycle-by-cycle AES-128 state matrix stepper.
 - **Documentation Completeness Dashboard:** Live 16-checkpoint **MASTER INSTRUCTION** audit tracking Fundamentals, Architecture, Specifications, Signals, Transactions, Timing, RTL Hierarchy, Internal Modules, Registers, Parameters, Verification, Assertions, Coverage, Debugging, Corner Cases, and Primary Citations (`100%` pass rate across all 498 protocols and 37 IPs).
@@ -150,7 +159,7 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 
 ## Tech Stack
 
-- **Frontend:** React 19, TypeScript 7, Tailwind CSS v4 (`@tailwindcss/vite`), Lucide Icons, Motion
+- **Frontend:** React 19, TypeScript 7, Tailwind CSS v4 (`@tailwindcss/vite`), `react-zoom-pan-pinch`, Lucide Icons, Motion
 - **Build & Tooling:** Vite 8, `esbuild` 0.28, `tsx`, TypeScript typechecker (`tsc --noEmit`)
 - **Deployment:** Static production bundle with automated GitHub Actions Pages CI/CD
 
@@ -169,19 +178,23 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 │   │   └── useTimelineController.ts   # Shared playback, scrubbing, keyboard & hash deep-link hook
 │   ├── components/
 │   │   ├── explainer/                 # Interactive Explainer Studio + all 14 synchronized renderers
+│   │   ├── InfiniteMeshViewport.tsx   # Pan/zoom CAD viewport (react-zoom-pan-pinch) + Infinity-Mesh + Mini-Map
+│   │   ├── MindMapView.tsx            # Unified Mind Map (All Sections, Common Bridges & Merged view)
 │   │   ├── PlatformGuideView.tsx      # "How to Use What & Where to Find Everything" guide page
 │   │   ├── RtlSvUvmStudioView.tsx     # 42-module RTL Design, SystemVerilog & UVM interactive studio
 │   │   ├── ProtocolDocView.tsx        # Protocol Docs, Signal Inspector drawer, waveforms & assertions
 │   │   ├── WaveformViewer.tsx         # Interactive bus/bit waveform viewer & violation detector
-│   │   ├── DiagramViewers.tsx         # SVG Block Diagram, FSM Graph & exportable CodeBlock viewers
+│   │   ├── DiagramViewers.tsx         # Infinity-Mesh SVG Block Diagram, FSM Graph & exportable CodeBlock
 │   │   ├── TechnicalVisualizers.tsx   # Packet Layer Stack & Register Memory Map visualizers
 │   │   ├── SimulatorLab.tsx           # Interactive cycle-accurate protocol waveform simulator
 │   │   ├── ComplianceChecker.tsx      # AMBA / TileLink protocol trace invariant checker
-│   │   ├── KnowledgeGraphView.tsx     # 1,108-node Knowledge Graph explorer & pathfinder
+│   │   ├── KnowledgeGraphView.tsx     # 1,108-node Knowledge Graph explorer + interactive Mini-Map & pathfinder
+│   │   ├── SocExplorerView.tsx        # Multi-SoC topology schematics + interactive Mini-Map
+│   │   ├── SocMapAndUvm.tsx          # SoC Bus Fabric Map + UVM & SVA code generator
 │   │   ├── DocumentationCompletenessDashboard.tsx
 │   │   ├── MasterArchitectureView.tsx
-│   │   ├── IpDetailView.tsx
-│   │   ├── SearchModal.tsx            # Global search across protocols, IPs, RTL/SV/UVM, glossary & guide
+│   │   ├── IpDetailView.tsx           # Dual IP Explorer / Protocol Explorer with CAD schematics
+│   │   ├── SearchModal.tsx            # Global search across protocols, IPs, RTL/SV/UVM, Mind Map, glossary & guide
 │   │   └── ...
 │   ├── data/
 │   │   ├── explainers/                # 544 explainer topics + TOPIC_TEMPLATE
@@ -192,6 +205,7 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 │   │   ├── knowledgeGraphEngine.ts    # 1,108-node graph builder, BFS pathfinder & NL queries
 │   │   └── glossary.ts                # Multi-layer VLSI & verification terminology
 │   ├── App.tsx                        # Header navigation, workspace sub-bars, router & theme state
+│   ├── index.css                      # Light/Dark CSS tokens, Infinity-Mesh variables & scrollbar styles
 │   └── main.tsx
 ├── index.html
 ├── vite.config.ts
