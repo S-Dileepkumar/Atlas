@@ -709,33 +709,33 @@ export const CodeBlock: React.FC<{ title: string; language: string; code: string
   };
 
   return (
-    <div className="min-w-0 w-full rounded-lg border border-[var(--border-subtle)] bg-[#0B0F19] text-slate-100 overflow-hidden">
-      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[#1E293B] bg-[#111827]">
+    <div className="min-w-0 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-code)] text-[var(--text-primary)] overflow-hidden">
+      <div className="flex items-center justify-between gap-4 px-5 py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
         <div className="flex items-center gap-2 text-xs">
-          <span className="font-mono font-medium text-cyan-400">{title}</span>
-          <span className="text-slate-500" aria-hidden="true">·</span>
-          <span className="text-slate-400">{language}</span>
+          <span className="font-mono font-medium text-[var(--sem-control)]">{title}</span>
+          <span className="text-[var(--text-secondary)]" aria-hidden="true">·</span>
+          <span className="text-[var(--text-secondary)]">{language}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-[#1E293B] text-slate-300 hover:bg-[#161E2E] transition-colors cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="w-4 h-4 text-[var(--sem-high)]" /> : <Copy className="w-4 h-4" />}
             {copied ? 'Copied' : 'Copy'}
           </button>
           <button
             type="button"
             onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-[#1E293B] text-slate-300 hover:bg-[#161E2E] transition-colors cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap"
           >
             <Download className="w-4 h-4" />
             Export .sv
           </button>
         </div>
       </div>
-      <pre className="p-5 text-xs leading-relaxed overflow-x-auto font-mono text-slate-200 tabular-nums">
+      <pre className="p-5 text-xs leading-relaxed overflow-x-auto font-mono text-[var(--text-primary)] tabular-nums">
         <code>{code}</code>
       </pre>
     </div>

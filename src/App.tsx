@@ -1,11 +1,37 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { Dices, GitCompareArrows, HelpCircle, Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import {
+  ArrowUp,
+  Check,
+  ChevronDown,
+  Compass,
+  Dices,
+  GitCompareArrows,
+  HelpCircle,
+  Menu,
+  Moon,
+  Palette,
+  Printer,
+  Search,
+  Sun,
+  X,
+} from 'lucide-react';
 import { AppView, HomeDashboard } from './components/HomeDashboard';
+import { AtlasLogoMark, BrandBannerLockup } from './components/BrandLogo';
 import { SearchModal } from './components/SearchModal';
 import { ALL_PROTOCOLS, getProtocolById } from './data/protocols';
 import { ALL_IPS, getIpById } from './data/ips';
+import { ALL_SOCS } from './data/socs';
+import { ALL_EXPLAINER_TOPICS } from './data/explainers';
 import { AES_CURRICULUM } from './data/aesCurriculum';
 import type { CurriculumPillarId } from './data/rtlSvUvmCurriculum';
+import type { CryptoLabTabId } from './crypto/CryptoStackView';
+import {
+  COLOR_PALETTE_STORAGE_KEY,
+  COLOR_PALETTES,
+  ColorPaletteId,
+  THEME_MODE_STORAGE_KEY,
+  isValidPaletteId,
+} from './utils/themePalettes';
 
 const ProtocolDocView = lazy(() => import('./components/ProtocolDocView').then((m) => ({ default: m.ProtocolDocView })));
 const SimulatorLab = lazy(() => import('./components/SimulatorLab').then((m) => ({ default: m.SimulatorLab })));
@@ -40,6 +66,9 @@ const PlatformGuideView = lazy(() =>
 const MindMapView = lazy(() =>
   import('./components/MindMapView').then((m) => ({ default: m.MindMapView }))
 );
+const CryptoStackView = lazy(() =>
+  import('./crypto/CryptoStackView').then((m) => ({ default: m.CryptoStackView }))
+);
 
 function parseExplainerHash(): { active: boolean; topicId?: string; sceneIdx?: number; step?: number } {
   if (typeof window === 'undefined') return { active: false };
@@ -65,12 +94,36 @@ export default function App() {
   const [kgInitialNodeId, setKgInitialNodeId] = useState<string | undefined>(undefined);
   const [cdcIpId, setCdcIpId] = useState<string>('opentitan-aes');
   const [aesSubtopicId, setAesSubtopicId] = useState<string | undefined>(undefined);
+  const [cryptoTarget, setCryptoTarget] = useState<{
+    chapterId?: string;
+    subtopicId?: string;
+    lab?: CryptoLabTabId;
+  }>({});
   const [simProtocolId, setSimProtocolId] = useState<string>('axi4');
   const [compareProtoId, setCompareProtoId] = useState<string | undefined>(undefined);
   const [compareIpAId, setCompareIpAId] = useState<string | undefined>(undefined);
   const [curriculumModuleId, setCurriculumModuleId] = useState<string | undefined>(undefined);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [quickJumpOpen, setQuickJumpOpen] = useState<boolean>(false);
+  const [paletteOpen, setPaletteOpen] = useState<boolean>(false);
+  const quickJumpRef = useRef<HTMLDivElement | null>(null);
+  const paletteRef = useRef<HTMLDivElement | null>(null);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem(THEME_MODE_STORAGE_KEY);
+      return saved === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+  const [palette, setPalette] = useState<ColorPaletteId>(() => {
+    try {
+      const saved = localStorage.getItem(COLOR_PALETTE_STORAGE_KEY);
+      return isValidPaletteId(saved) ? saved : 'silicon-cyan';
+    } catch {
+      return 'silicon-cyan';
+    }
+  });
   const [useCaseFilter, setUseCaseFilter] = useState<'all' | 'rtl' | 'uvm' | 'interview'>('all');
   const [mobileDocDrawerOpen, setMobileDocDrawerOpen] = useState<boolean>(false);
   const [luckyPick, setLuckyPick] = useState<{
@@ -92,10 +145,28 @@ export default function App() {
     const root = document.documentElement;
     if (theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
+    try {
+      localStorage.setItem(THEME_MODE_STORAGE_KEY, theme);
+    } catch {
+      // Ignore storage errors
+    }
   }, [theme]);
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-palette', palette);
+    try {
+      localStorage.setItem(COLOR_PALETTE_STORAGE_KEY, palette);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [palette]);
+
+  useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (quickJumpOpen) setQuickJumpOpen(false);
+        if (paletteOpen) setPaletteOpen(false);
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
@@ -112,9 +183,21 @@ export default function App() {
         setSearchOpen(true);
       }
     };
+    const onPointerDown = (e: MouseEvent) => {
+      if (quickJumpRef.current && !quickJumpRef.current.contains(e.target as Node)) {
+        setQuickJumpOpen(false);
+      }
+      if (paletteRef.current && !paletteRef.current.contains(e.target as Node)) {
+        setPaletteOpen(false);
+      }
+    };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+    window.addEventListener('mousedown', onPointerDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('mousedown', onPointerDown);
+    };
+  }, [quickJumpOpen, paletteOpen]);
 
   const pickDifferent = <T,>(items: T[], getId: (item: T) => string, currentId?: string): T => {
     const pool = items.length > 1 && currentId ? items.filter((item) => getId(item) !== currentId) : items;
@@ -274,16 +357,18 @@ export default function App() {
     {
       id: 'ip-universe',
       label: 'IP Universe',
-      matchViews: ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'aes-deep-dive', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'],
+      matchViews: ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'],
     },
     { id: 'explainer', label: 'Explainers', matchViews: ['explainer'] },
+    { id: 'crypto', label: 'Crypto & PQC', matchViews: ['crypto', 'aes-deep-dive'] },
     { id: 'mind-map', label: 'Mind Map', matchViews: ['mind-map'] },
   ];
 
   // Context-aware workspace sub-bars
   const PROTOCOL_HUB_VIEWS: AppView[] = ['protocol', 'simulator', 'checker', 'compare', 'soc-map'];
   const RTL_SV_UVM_VIEWS: AppView[] = ['rtl-design', 'systemverilog', 'uvm-studio', 'rtl-explorer', 'cdc-analyzer', 'uvm', 'verification-hub'];
-  const IP_HUB_VIEWS: AppView[] = ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'aes-deep-dive', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'];
+  const IP_HUB_VIEWS: AppView[] = ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'];
+  const CRYPTO_SECURITY_VIEWS: AppView[] = ['crypto', 'aes-deep-dive'];
 
   const subBarLinks: Array<{ id: AppView; label: string }> = PROTOCOL_HUB_VIEWS.includes(view)
     ? [
@@ -317,6 +402,15 @@ export default function App() {
         { id: 'knowledge-graph', label: 'Knowledge Graph' },
         { id: 'ip-compare', label: 'Compare IPs' },
       ]
+    : CRYPTO_SECURITY_VIEWS.includes(view)
+    ? [
+        { id: 'crypto', label: 'Crypto & PQC Stack (10 Chapters)' },
+        { id: 'aes-deep-dive', label: 'AES 7-Chapter Lab' },
+        { id: 'cdc-analyzer', label: 'Clock Domains (CDC)' },
+        { id: 'rtl-design', label: 'RTL Design (14)' },
+        { id: 'verification-hub', label: 'Verification Hub' },
+        { id: 'ip-universe', label: 'Open-Source IPs' },
+      ]
     : [];
 
   return (
@@ -339,12 +433,13 @@ export default function App() {
             <button
               type="button"
               onClick={() => navigate('home')}
-              className="text-sm sm:text-base font-bold tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0 cursor-pointer hover:text-[var(--sem-control)] transition-colors"
+              className="inline-flex items-center gap-2 text-sm sm:text-base font-bold tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0 cursor-pointer hover:text-[var(--sem-control)] transition-colors"
             >
-              VLSI Protocol Atlas
+              <AtlasLogoMark className="w-6 h-6 shrink-0" />
+              <span>VLSI Protocol Atlas</span>
             </button>
 
-            <nav className="hidden md:flex items-center gap-3.5 xl:gap-5 text-[12.5px] xl:text-[13px] font-medium pl-3 border-l border-[var(--border-subtle)]">
+            <nav className="hidden lg:flex items-center gap-3 xl:gap-4 text-[12.5px] xl:text-[13px] font-medium pl-3 border-l border-[var(--border-subtle)]">
               {headerNavItems.map((item) => {
                 const active = item.matchViews.includes(view);
                 return (
@@ -365,8 +460,98 @@ export default function App() {
             </nav>
           </div>
 
-          {/* Right: Compare Matrix + Search Shortcut + Feeling Lucky + Guide + Theme Toggle */}
+          {/* Right: Quick Jump + Compare Matrix + Guide + Search + Feeling Lucky + Theme Toggle */}
           <div className="flex items-center gap-2 shrink-0">
+            <div ref={quickJumpRef} className="relative hidden md:block">
+              <button
+                type="button"
+                onClick={() => setQuickJumpOpen((v) => !v)}
+                aria-expanded={quickJumpOpen}
+                aria-haspopup="menu"
+                title="Quick Jump to KEM, Signatures, Side-Channel, NTT & IP Catalog"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  quickJumpOpen
+                    ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--sem-control)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)]'
+                }`}
+              >
+                <Compass className="w-3.5 h-3.5 text-[var(--sem-control)]" />
+                <span>Quick Jump</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+              </button>
+
+              {quickJumpOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-64 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl py-1.5 z-50 text-xs"
+                >
+                  <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
+                    Direct Silicon &amp; PQC Jumps
+                  </div>
+                  {[
+                    {
+                      label: 'KEM · ML-KEM (FIPS 203)',
+                      meta: 'Ch 08 + Area Estimator',
+                      action: () => {
+                        setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ml-kem', lab: 'params' });
+                        navigate('crypto');
+                      },
+                    },
+                    {
+                      label: 'Signatures · ML-DSA & FN-DSA',
+                      meta: 'Ch 08 + 2026 Matrix',
+                      action: () => {
+                        setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ml-dsa', lab: 'pqc' });
+                        navigate('crypto');
+                      },
+                    },
+                    {
+                      label: 'Side-Channel & Fault Lab',
+                      meta: 'Ch 07 + DOM Power Trace',
+                      action: () => {
+                        setCryptoTarget({ chapterId: 'ch7-attacks', subtopicId: 'atk-sca', lab: 'sca' });
+                        navigate('crypto');
+                      },
+                    },
+                    {
+                      label: 'NTT Butterfly Accelerator',
+                      meta: 'Z_3329 Stage Inspector',
+                      action: () => {
+                        setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ntt-math', lab: 'pqc' });
+                        navigate('crypto');
+                      },
+                    },
+                    {
+                      label: 'IP Catalog (37 Silicon IPs)',
+                      meta: 'Ibex, OpenTitan, CVA6, Vortex',
+                      action: () => navigate('ip-universe'),
+                    },
+                    {
+                      label: 'Protocol Specs (498 Buses)',
+                      meta: 'AXI4, TL-UL, PCIe Gen5, CXL',
+                      action: () => navigate('protocol'),
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setQuickJumpOpen(false);
+                        item.action();
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer flex items-center justify-between gap-2"
+                    >
+                      <span className="font-medium text-[var(--text-primary)]">{item.label}</span>
+                      <span className="font-mono text-[10px] text-[var(--sem-control)] shrink-0">
+                        {item.meta}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={() => navigate('compare')}
@@ -378,7 +563,7 @@ export default function App() {
               }`}
             >
               <GitCompareArrows className="w-4 h-4" />
-              <span className="hidden lg:inline">Compare</span>
+              <span className="hidden xl:inline">Compare</span>
             </button>
 
             <button
@@ -414,10 +599,106 @@ export default function App() {
               onClick={() => handleFeelingLucky('any')}
               title="Jump to a random protocol, open-source IP, CDC map, or lab"
               aria-label="Feeling Lucky random discovery"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--sem-data)] hover:bg-[var(--bg-elevated)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--sem-active)] hover:bg-[var(--bg-elevated)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Dices className="w-4 h-4" />
             </button>
+
+            {/* Curated Color Palette Switcher */}
+            <div ref={paletteRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setPaletteOpen((v) => !v)}
+                aria-expanded={paletteOpen}
+                aria-haspopup="menu"
+                title="Select Color Palette"
+                aria-label="Select Color Palette"
+                className={`inline-flex items-center gap-1.5 px-2.5 h-8 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  paletteOpen
+                    ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--sem-control)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)]'
+                }`}
+              >
+                <Palette className="w-3.5 h-3.5 text-[var(--sem-control)]" />
+                <span className="hidden xl:inline">
+                  {COLOR_PALETTES.find((p) => p.id === palette)?.name || 'Palette'}
+                </span>
+                <span
+                  className="w-2.5 h-2.5 rounded-full border border-[var(--border-subtle)]"
+                  style={{ backgroundColor: 'var(--sem-control)' }}
+                />
+              </button>
+
+              {paletteOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-80 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl p-2.5 z-50 space-y-2 text-xs"
+                >
+                  <div className="flex items-center justify-between px-1.5 pb-1.5 border-b border-[var(--border-subtle)]">
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                      Engineering Color Palettes
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[11px] font-medium text-[var(--text-primary)] hover:border-[var(--sem-control)] cursor-pointer"
+                    >
+                      {theme === 'dark' ? (
+                        <>
+                          <Sun className="w-3 h-3 text-[var(--sem-active)]" /> Dark
+                        </>
+                      ) : (
+                        <>
+                          <Moon className="w-3 h-3 text-[var(--sem-control)]" /> Light
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    {COLOR_PALETTES.map((opt) => {
+                      const active = palette === opt.id;
+                      const swatches = theme === 'dark' ? opt.darkSwatches : opt.lightSwatches;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setPalette(opt.id);
+                            setPaletteOpen(false);
+                          }}
+                          className={`w-full p-2.5 rounded-md border text-left transition-colors cursor-pointer flex items-start justify-between gap-2.5 ${
+                            active
+                              ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)]'
+                              : 'border-transparent hover:bg-[var(--bg-canvas)] hover:border-[var(--border-subtle)]'
+                          }`}
+                        >
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                              <span>{opt.name}</span>
+                              {active && <Check className="w-3.5 h-3.5 text-[var(--sem-control)]" />}
+                            </div>
+                            <div className="text-[11px] text-[var(--text-secondary)] leading-snug">
+                              {opt.subtitle}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 pt-0.5" aria-hidden="true">
+                            {swatches.map((hex) => (
+                              <span
+                                key={hex}
+                                className="w-3 h-3 rounded-full border border-white/20 shadow-xs"
+                                style={{ backgroundColor: hex }}
+                              />
+                            ))}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button
               type="button"
@@ -427,17 +708,17 @@ export default function App() {
               className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all duration-150 shrink-0 cursor-pointer"
             >
               {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400 transition-transform duration-150 rotate-0" />
+                <Sun className="w-4 h-4 text-[var(--sem-active)] transition-transform duration-150 rotate-0" />
               ) : (
-                <Moon className="w-4 h-4 text-slate-700 transition-transform duration-150 rotate-0" />
+                <Moon className="w-4 h-4 text-[var(--text-primary)] transition-transform duration-150 rotate-0" />
               )}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile primary hub navigation (< md) */}
-      <div className="md:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs">
+      {/* Mobile / tablet primary hub navigation (< lg) */}
+      <div className="lg:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-4 py-2 flex items-center gap-2 overflow-x-auto text-xs">
         {headerNavItems.map((item) => {
           const active = item.matchViews.includes(view);
           return (
@@ -447,7 +728,7 @@ export default function App() {
               onClick={() => navigate(item.id === 'protocol-atlas' ? 'protocol' : item.id)}
               className={`px-2.5 py-1 rounded whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
                 active
-                  ? 'bg-[var(--sem-control)] text-white font-medium'
+                  ? 'bg-[var(--sem-control)] text-white dark:text-slate-950 font-semibold'
                   : 'text-[var(--text-secondary)] border border-[var(--border-subtle)]'
               }`}
             >
@@ -519,16 +800,16 @@ export default function App() {
 
         {/* Lucky Discovery Banner (shown after rolling Feeling Lucky so users can chain random picks seamlessly) */}
         {luckyPick && (
-          <div className="border-b border-amber-500/30 bg-amber-50/70 dark:bg-amber-950/25">
-            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="border-b border-[var(--sem-active)]/40 bg-[var(--bg-surface)]">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5 min-w-0">
-                <Dices className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <Dices className="w-4 h-4 text-[var(--sem-active)] shrink-0" />
                 <div className="min-w-0 truncate">
-                  <span className="font-semibold text-amber-800 dark:text-amber-300">
+                  <span className="font-semibold text-[var(--sem-active)]">
                     Lucky Pick · {luckyPick.kind}:
                   </span>{' '}
-                  <strong className="text-slate-900 dark:text-slate-100">{luckyPick.title}</strong>
-                  <span className="hidden sm:inline text-slate-600 dark:text-slate-400">
+                  <strong className="text-[var(--text-primary)]">{luckyPick.title}</strong>
+                  <span className="hidden sm:inline text-[var(--text-secondary)]">
                     {' '}— {luckyPick.subtitle}
                   </span>
                 </div>
@@ -537,28 +818,28 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => handleFeelingLucky(luckyPick.scope)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-medium cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[var(--sem-active)] hover:opacity-90 text-slate-950 font-semibold cursor-pointer"
                 >
                   <Dices className="w-3 h-3" /> Roll Again
                 </button>
                 <button
                   type="button"
                   onClick={() => handleFeelingLucky('protocol')}
-                  className="px-2.5 py-1 rounded border border-amber-500/40 bg-white/80 dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-cyan-500 font-medium cursor-pointer"
+                  className="px-2.5 py-1 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--sem-control)] font-medium cursor-pointer"
                 >
                   Random Protocol
                 </button>
                 <button
                   type="button"
                   onClick={() => handleFeelingLucky('ip')}
-                  className="px-2.5 py-1 rounded border border-amber-500/40 bg-white/80 dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-cyan-500 font-medium cursor-pointer"
+                  className="px-2.5 py-1 rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--sem-control)] font-medium cursor-pointer"
                 >
                   Random IP
                 </button>
                 <button
                   type="button"
                   onClick={() => setLuckyPick(null)}
-                  className="p-1 rounded text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
+                  className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
                   title="Dismiss Lucky Banner"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -570,13 +851,13 @@ export default function App() {
 
         <Suspense
           fallback={
-            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-12 space-y-4">
-              <div className="h-7 w-64 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
-              <div className="h-4 w-96 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-12 space-y-4">
+              <div className="h-7 w-64 rounded bg-[var(--bg-surface)] animate-pulse" />
+              <div className="h-4 w-96 rounded bg-[var(--bg-surface)] animate-pulse" />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-                <div className="h-44 rounded-lg bg-slate-200/70 dark:bg-slate-800/70 animate-pulse" />
-                <div className="h-44 rounded-lg bg-slate-200/70 dark:bg-slate-800/70 animate-pulse" />
-                <div className="h-44 rounded-lg bg-slate-200/70 dark:bg-slate-800/70 animate-pulse" />
+                <div className="h-44 rounded-lg bg-[var(--bg-surface)] animate-pulse" />
+                <div className="h-44 rounded-lg bg-[var(--bg-surface)] animate-pulse" />
+                <div className="h-44 rounded-lg bg-[var(--bg-surface)] animate-pulse" />
               </div>
             </div>
           }
@@ -713,6 +994,7 @@ export default function App() {
                   setCdcIpId(ipId);
                   navigate('cdc-analyzer');
                 }}
+                onOpenCrypto={() => navigate('crypto')}
               />
             )}
 
@@ -795,6 +1077,22 @@ export default function App() {
               />
             )}
 
+            {view === 'crypto' && (
+              <CryptoStackView
+                initialChapterId={cryptoTarget.chapterId}
+                initialSubtopicId={cryptoTarget.subtopicId}
+                initialLab={cryptoTarget.lab}
+                onBack={() => navigate('home')}
+                onNavigate={navigate}
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+                onOpenCdc={(ipId) => {
+                  setCdcIpId(ipId);
+                  navigate('cdc-analyzer');
+                }}
+              />
+            )}
+
             {view === 'guide' && (
               <PlatformGuideView
                 onNavigate={navigate}
@@ -809,42 +1107,259 @@ export default function App() {
         </Suspense>
       </main>
 
-      {/* Quiet Engineering Footer */}
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] py-8 px-4 sm:px-6 text-xs text-[var(--text-secondary)]">
-        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="font-semibold text-[var(--text-primary)]">
-              VLSI Protocol Atlas &amp; Open-Source IP Universe · MIT License
+      {/* Authoritative Semiconductor Engineering Footer */}
+      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs text-[var(--text-secondary)]">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 pt-12 pb-8 space-y-10">
+          {/* Top Grid: Brand Overview + 4 Structured Domain Navigation Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
+            {/* Brand & Architecture Summary (4 cols) */}
+            <div className="lg:col-span-4 space-y-4">
+              <button
+                type="button"
+                onClick={() => navigate('home')}
+                aria-label="VLSI Protocol Atlas Home"
+                className="inline-flex items-center text-left rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--sem-control)]/40 hover:opacity-95 transition-opacity cursor-pointer"
+              >
+                <BrandBannerLockup />
+              </button>
+
+              <p className="leading-relaxed max-w-sm">
+                Full-stack semiconductor reference uniting on-chip interconnect specifications, synthesizable RTL/SystemVerilog/UVM design patterns, reverse-engineered open-source cores, side-channel defenses, and NIST 2026 Post-Quantum Cryptography.
+              </p>
+
+              {/* Verified Corpus Inventory */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono tabular-nums text-[11px] text-[var(--text-primary)] pt-1">
+                <span>{ALL_PROTOCOLS.length} Protocols</span>
+                <span aria-hidden="true" className="text-[var(--text-secondary)]">·</span>
+                <span>{ALL_IPS.length} Silicon IPs</span>
+                <span aria-hidden="true" className="text-[var(--text-secondary)]">·</span>
+                <span>{ALL_SOCS.length} SoCs</span>
+                <span aria-hidden="true" className="text-[var(--text-secondary)]">·</span>
+                <span>{ALL_EXPLAINER_TOPICS.length} Explainers</span>
+              </div>
+
+              {/* Footer Utility Actions & Quick Palette Switcher */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSearchOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Search className="w-3.5 h-3.5 text-[var(--sem-control)]" />
+                  Search Atlas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Printer className="w-3.5 h-3.5 text-[var(--sem-control)]" />
+                  Print / PDF
+                </button>
+              </div>
             </div>
-            <div>
-              Grounded in ARM AMBA, PCI-SIG, JEDEC, MIPI, IEEE 1800 / 1800.2, RISC-V, OpenTitan, Ibex, OpenHW, UC Berkeley, PULP, Vortex &amp; LiteX.
+
+            {/* Column 1: Protocols & Fabrics (2 cols) */}
+            <div className="lg:col-span-2 space-y-3">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+                Protocols &amp; Fabrics
+              </div>
+              <ul className="space-y-2">
+                {[
+                  { label: `Protocol Specs (${ALL_PROTOCOLS.length})`, view: 'protocol' as AppView },
+                  { label: 'Waveform Simulator Lab', view: 'simulator' as AppView },
+                  { label: 'Compliance & SVA Checker', view: 'checker' as AppView },
+                  { label: 'Protocol Compare Matrix', view: 'compare' as AppView },
+                  { label: 'SoC Bus Fabric Map', view: 'soc-map' as AppView },
+                ].map((link) => (
+                  <li key={link.view}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(link.view)}
+                      className="text-left hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 2: RTL, SV & Verification (2 cols) */}
+            <div className="lg:col-span-2 space-y-3">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+                RTL, SV &amp; UVM
+              </div>
+              <ul className="space-y-2">
+                {[
+                  { label: 'RTL Design Handbook (14)', view: 'rtl-design' as AppView },
+                  { label: 'SystemVerilog IEEE 1800', view: 'systemverilog' as AppView },
+                  { label: 'UVM IEEE 1800.2 Studio', view: 'uvm-studio' as AppView },
+                  { label: 'Clock Domain Analyzer (CDC)', view: 'cdc-analyzer' as AppView },
+                  { label: 'RTL Source Explorer', view: 'rtl-explorer' as AppView },
+                  { label: 'Verification Hub', view: 'verification-hub' as AppView },
+                ].map((link) => (
+                  <li key={link.view}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(link.view)}
+                      className="text-left hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 3: Silicon IPs & Graphs (2 cols) */}
+            <div className="lg:col-span-2 space-y-3">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+                Silicon IPs &amp; Graphs
+              </div>
+              <ul className="space-y-2">
+                {[
+                  { label: `Open-Source IP Catalog (${ALL_IPS.length})`, view: 'ip-universe' as AppView },
+                  { label: `SoC Topologies (${ALL_SOCS.length})`, view: 'soc-explorer' as AppView },
+                  { label: '16-Domain Architecture', view: 'master-architecture' as AppView },
+                  { label: 'Knowledge Graph', view: 'knowledge-graph' as AppView },
+                  { label: `Explainer Studio (${ALL_EXPLAINER_TOPICS.length})`, view: 'explainer' as AppView },
+                  { label: 'Atlas Mind Map', view: 'mind-map' as AppView },
+                ].map((link) => (
+                  <li key={link.view}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(link.view)}
+                      className="text-left hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Column 4: Crypto, PQC & Quality (2 cols) */}
+            <div className="lg:col-span-2 space-y-3">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+                Crypto, PQC &amp; Quality
+              </div>
+              <ul className="space-y-2">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCryptoTarget({ chapterId: 'ch8-pqc', lab: 'pqc' });
+                      navigate('crypto');
+                    }}
+                    className="text-left font-medium text-[var(--text-primary)] hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                  >
+                    Crypto &amp; PQC Stack (10 Ch)
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate('aes-deep-dive')}
+                    className="text-left hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                  >
+                    AES 7-Chapter FIPS-197 Lab
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate('completeness-dashboard')}
+                    className="text-left hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                  >
+                    16-Checkpoint Audit (100%)
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate('glossary')}
+                    className="text-left hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                  >
+                    Silicon Glossary
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate('guide')}
+                    className="text-left font-medium text-[var(--sem-control)] hover:underline cursor-pointer"
+                  >
+                    How to Use &amp; Guide
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <button type="button" onClick={() => navigate('rtl-design')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              RTL Design
-            </button>
-            <button type="button" onClick={() => navigate('systemverilog')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              SystemVerilog
-            </button>
-            <button type="button" onClick={() => navigate('uvm-studio')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              UVM
-            </button>
-            <button type="button" onClick={() => navigate('master-architecture')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              16-Domain Atlas
-            </button>
-            <button type="button" onClick={() => navigate('completeness-dashboard')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              Completeness Audit
-            </button>
-            <button type="button" onClick={() => navigate('glossary')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              Glossary
-            </button>
-            <button type="button" onClick={() => navigate('mind-map')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
-              Mind Map
-            </button>
-            <button type="button" onClick={() => navigate('guide')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer font-medium text-[var(--sem-control)]">
-              How to Use &amp; Guide
-            </button>
+
+          {/* Middle Bar: Palette Quick Selector & Grounding Standards */}
+          <div className="pt-6 border-t border-[var(--border-subtle)] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-primary)] font-semibold">
+                Grounded Standards &amp; Upstream Hardware
+              </div>
+              <div className="text-[11px] leading-relaxed">
+                NIST FIPS 203 / 204 / 205 · ARM AMBA 5 · TileLink · PCI-SIG · JEDEC · MIPI · IEEE 1800 / 1800.2 · RISC-V · lowRISC OpenTitan &amp; Ibex · OpenHW CVA6 · UC Berkeley Rocket &amp; Gemmini · PULP · Vortex · LiteX
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+              <span className="text-[11px] font-mono text-[var(--text-secondary)] mr-1">
+                Palette:
+              </span>
+              {COLOR_PALETTES.map((opt) => {
+                const active = palette === opt.id;
+                const swatch = theme === 'dark' ? opt.darkSwatches[2] : opt.lightSwatches[2];
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setPalette(opt.id)}
+                    title={opt.name}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-[11px] transition-colors cursor-pointer whitespace-nowrap ${
+                      active
+                        ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--text-primary)] font-semibold'
+                        : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: swatch }}
+                    />
+                    {opt.name.split(' ')[0]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Legal & Navigation Strip */}
+          <div className="pt-5 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-4 text-[11px]">
+            <div className="flex flex-wrap items-center gap-2">
+              <strong className="text-[var(--text-primary)]">MIT License</strong>
+              <span aria-hidden="true">·</span>
+              <span>VLSI Protocol Atlas &amp; Open-Source Silicon Security Reference</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="font-mono tabular-nums">
+                Shortcut: <span className="text-[var(--sem-control)]">/</span> or{' '}
+                <span className="text-[var(--sem-control)]">Cmd+K</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="inline-flex items-center gap-1 font-medium text-[var(--text-primary)] hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+              >
+                Back to Top
+                <ArrowUp className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </footer>
@@ -859,6 +1374,10 @@ export default function App() {
         onSelectAesSubtopic={(subId) => {
           setAesSubtopicId(subId);
           navigate('aes-deep-dive');
+        }}
+        onSelectCryptoSubtopic={(chapterId, subtopicId) => {
+          setCryptoTarget({ chapterId, subtopicId });
+          navigate('crypto');
         }}
         onSelectCurriculum={openCurriculum}
         onSelectGuide={() => navigate('guide')}

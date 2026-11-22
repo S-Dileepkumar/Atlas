@@ -2,66 +2,283 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  :root {
+  /* ============================================================================
+     PALETTE 1 (DEFAULT): SILICON CYAN — High-Contrast EDA & Oscilloscope
+     ============================================================================ */
+  :root,
+  :root[data-palette="silicon-cyan"] {
     --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* Clean Light Mode Surface & Typography Tokens */
-    --bg-canvas: #ffffff;
-    --bg-surface: #f8fafc;
-    --bg-elevated: #ffffff;
-    --border-subtle: #e2e8f0;
+    --bg-canvas: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-elevated: #f1f5f9;
+    --bg-code: #f1f5f9;
+    --border-subtle: #cbd5e1;
     --text-primary: #0f172a;
     --text-secondary: #475569;
 
-    /* Accessible Light Mode Semantic & Waveform Tokens */
-    --sem-high: #059669;
-    --sem-control: #0891b2;
-    --sem-data: #059669;
-    --sem-error: #e11d48;
-    --sem-active: #d97706;
+    --sem-high: #047857;
+    --sem-control: #0e7490;
+    --sem-data: #047857;
+    --sem-error: #be123c;
+    --sem-active: #b45309;
     --sem-surface: #ffffff;
     --sem-canvas: #f8fafc;
-    --sem-border: #e2e8f0;
+    --sem-border: #cbd5e1;
+    --math-glow: rgba(14, 116, 144, 0.08);
+    --math-border: rgba(14, 116, 144, 0.28);
 
-    /* Infinity-Mesh Engineering Grid Tokens (Light Mode) */
     --mesh-bg: #f8fafc;
     --mesh-subminor-line: rgba(15, 23, 42, 0.032);
     --mesh-minor-line: rgba(15, 23, 42, 0.068);
-    --mesh-major-line: rgba(15, 23, 42, 0.12);
-    --mesh-crosshair: rgba(8, 145, 178, 0.24);
-    --mesh-node-dot: rgba(8, 145, 178, 0.34);
-    --mesh-vignette: rgba(15, 23, 42, 0.045);
+    --mesh-major-line: rgba(15, 23, 42, 0.11);
+    --mesh-crosshair: rgba(14, 116, 144, 0.24);
+    --mesh-node-dot: rgba(14, 116, 144, 0.34);
+    --mesh-vignette: rgba(15, 23, 42, 0.04);
   }
 
-  .dark {
-    /* Deep Slate Dark Mode Surface & Typography Tokens */
-    --bg-canvas: #0b0f19;
-    --bg-surface: #111827;
-    --bg-elevated: #161e2e;
+  .dark,
+  .dark[data-palette="silicon-cyan"] {
+    --bg-canvas: #0b0f14;
+    --bg-surface: #141b23;
+    --bg-elevated: #1b2430;
+    --bg-code: #090d12;
     --border-subtle: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b9cb3;
 
-    /* Vibrant High-Contrast Dark Mode Waveform Tokens */
-    --sem-high: #10b981;
-    --sem-control: #06b6d4;
-    --sem-data: #10b981;
-    --sem-error: #f43f5e;
+    --sem-high: #34d399;
+    --sem-control: #22d3ee;
+    --sem-data: #34d399;
+    --sem-error: #fb7185;
     --sem-active: #f59e0b;
-    --sem-surface: #111827;
-    --sem-canvas: #0b0f19;
+    --sem-surface: #141b23;
+    --sem-canvas: #0b0f14;
     --sem-border: #1e293b;
+    --math-glow: rgba(34, 211, 238, 0.10);
+    --math-border: rgba(34, 211, 238, 0.28);
 
-    /* Infinity-Mesh Engineering Grid Tokens (Dark Mode) */
-    --mesh-bg: #080d18;
-    --mesh-subminor-line: rgba(148, 163, 184, 0.042);
-    --mesh-minor-line: rgba(148, 163, 184, 0.09);
-    --mesh-major-line: rgba(148, 163, 184, 0.165);
-    --mesh-crosshair: rgba(56, 189, 248, 0.28);
-    --mesh-node-dot: rgba(6, 182, 212, 0.42);
-    --mesh-vignette: rgba(2, 6, 23, 0.42);
+    --mesh-bg: #0b0f14;
+    --mesh-subminor-line: rgba(139, 156, 179, 0.04);
+    --mesh-minor-line: rgba(139, 156, 179, 0.085);
+    --mesh-major-line: rgba(139, 156, 179, 0.155);
+    --mesh-crosshair: rgba(34, 211, 238, 0.26);
+    --mesh-node-dot: rgba(34, 211, 238, 0.40);
+    --mesh-vignette: rgba(5, 8, 14, 0.46);
+  }
+
+  /* ============================================================================
+     PALETTE 2: COBALT WAFER — Deep Fab Blueprint & Gold Callouts
+     ============================================================================ */
+  :root[data-palette="cobalt-wafer"] {
+    --bg-canvas: #f4f7fb;
+    --bg-surface: #ffffff;
+    --bg-elevated: #ebf1f9;
+    --bg-code: #eef3fa;
+    --border-subtle: #cbd7e6;
+    --text-primary: #0c1527;
+    --text-secondary: #475874;
+
+    --sem-high: #047857;
+    --sem-control: #1d4ed8;
+    --sem-data: #047857;
+    --sem-error: #dc2626;
+    --sem-active: #b45309;
+    --sem-surface: #ffffff;
+    --sem-canvas: #f4f7fb;
+    --sem-border: #cbd7e6;
+    --math-glow: rgba(29, 78, 216, 0.08);
+    --math-border: rgba(29, 78, 216, 0.28);
+
+    --mesh-bg: #f4f7fb;
+    --mesh-crosshair: rgba(29, 78, 216, 0.24);
+    --mesh-node-dot: rgba(29, 78, 216, 0.34);
+  }
+
+  .dark[data-palette="cobalt-wafer"] {
+    --bg-canvas: #090d16;
+    --bg-surface: #111827;
+    --bg-elevated: #192338;
+    --bg-code: #070a11;
+    --border-subtle: #23304a;
+    --text-primary: #eaf0f8;
+    --text-secondary: #93a4c3;
+
+    --sem-high: #34d399;
+    --sem-control: #60a5fa;
+    --sem-data: #34d399;
+    --sem-error: #f87171;
+    --sem-active: #fbbf24;
+    --sem-surface: #111827;
+    --sem-canvas: #090d16;
+    --sem-border: #23304a;
+    --math-glow: rgba(96, 165, 250, 0.11);
+    --math-border: rgba(96, 165, 250, 0.30);
+
+    --mesh-bg: #090d16;
+    --mesh-crosshair: rgba(96, 165, 250, 0.26);
+    --mesh-node-dot: rgba(96, 165, 250, 0.42);
+  }
+
+  /* ============================================================================
+     PALETTE 3: PHOSPHOR LOGIC — Logic Analyzer Emerald & Sky
+     ============================================================================ */
+  :root[data-palette="phosphor-logic"] {
+    --bg-canvas: #f6faf8;
+    --bg-surface: #ffffff;
+    --bg-elevated: #ecf5f0;
+    --bg-code: #eff6f2;
+    --border-subtle: #cbe0d5;
+    --text-primary: #0d1f18;
+    --text-secondary: #456256;
+
+    --sem-high: #0284c7;
+    --sem-control: #047857;
+    --sem-data: #0284c7;
+    --sem-error: #be123c;
+    --sem-active: #b45309;
+    --sem-surface: #ffffff;
+    --sem-canvas: #f6faf8;
+    --sem-border: #cbe0d5;
+    --math-glow: rgba(4, 120, 87, 0.08);
+    --math-border: rgba(4, 120, 87, 0.28);
+
+    --mesh-bg: #f6faf8;
+    --mesh-crosshair: rgba(4, 120, 87, 0.22);
+    --mesh-node-dot: rgba(4, 120, 87, 0.34);
+  }
+
+  .dark[data-palette="phosphor-logic"] {
+    --bg-canvas: #080e0c;
+    --bg-surface: #101a17;
+    --bg-elevated: #162420;
+    --bg-code: #060b09;
+    --border-subtle: #1e332c;
+    --text-primary: #e4f0eb;
+    --text-secondary: #8aa89e;
+
+    --sem-high: #38bdf8;
+    --sem-control: #10b981;
+    --sem-data: #38bdf8;
+    --sem-error: #fb7185;
+    --sem-active: #f59e0b;
+    --sem-surface: #101a17;
+    --sem-canvas: #080e0c;
+    --sem-border: #1e332c;
+    --math-glow: rgba(16, 185, 129, 0.11);
+    --math-border: rgba(16, 185, 129, 0.30);
+
+    --mesh-bg: #080e0c;
+    --mesh-crosshair: rgba(16, 185, 129, 0.25);
+    --mesh-node-dot: rgba(16, 185, 129, 0.40);
+  }
+
+  /* ============================================================================
+     PALETTE 4: AMBER TELEMETRY — Low-Blue-Light Warm Charcoal & Copper
+     ============================================================================ */
+  :root[data-palette="amber-telemetry"] {
+    --bg-canvas: #faf8f5;
+    --bg-surface: #ffffff;
+    --bg-elevated: #f3efe9;
+    --bg-code: #f4f0ea;
+    --border-subtle: #dfd5c8;
+    --text-primary: #1e1813;
+    --text-secondary: #625447;
+
+    --sem-high: #0f766e;
+    --sem-control: #b45309;
+    --sem-data: #0f766e;
+    --sem-error: #dc2626;
+    --sem-active: #c2410c;
+    --sem-surface: #ffffff;
+    --sem-canvas: #faf8f5;
+    --sem-border: #dfd5c8;
+    --math-glow: rgba(180, 83, 9, 0.08);
+    --math-border: rgba(180, 83, 9, 0.28);
+
+    --mesh-bg: #faf8f5;
+    --mesh-crosshair: rgba(180, 83, 9, 0.22);
+    --mesh-node-dot: rgba(180, 83, 9, 0.32);
+  }
+
+  .dark[data-palette="amber-telemetry"] {
+    --bg-canvas: #110e0b;
+    --bg-surface: #1b1612;
+    --bg-elevated: #251e18;
+    --bg-code: #0c0a08;
+    --border-subtle: #342a21;
+    --text-primary: #f4ece4;
+    --text-secondary: #a8998b;
+
+    --sem-high: #2dd4bf;
+    --sem-control: #f59e0b;
+    --sem-data: #2dd4bf;
+    --sem-error: #f87171;
+    --sem-active: #fb923c;
+    --sem-surface: #1b1612;
+    --sem-canvas: #110e0b;
+    --sem-border: #342a21;
+    --math-glow: rgba(245, 158, 11, 0.11);
+    --math-border: rgba(245, 158, 11, 0.30);
+
+    --mesh-bg: #110e0b;
+    --mesh-crosshair: rgba(245, 158, 11, 0.24);
+    --mesh-node-dot: rgba(245, 158, 11, 0.38);
+  }
+
+  /* ============================================================================
+     PALETTE 5: GRAPHITE CLEAN — Monochrome Slate & Crisp Indigo
+     ============================================================================ */
+  :root[data-palette="graphite-clean"] {
+    --bg-canvas: #f9fafb;
+    --bg-surface: #ffffff;
+    --bg-elevated: #f3f4f6;
+    --bg-code: #f3f4f6;
+    --border-subtle: #d1d5db;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+
+    --sem-high: #047857;
+    --sem-control: #4338ca;
+    --sem-data: #047857;
+    --sem-error: #be123c;
+    --sem-active: #b45309;
+    --sem-surface: #ffffff;
+    --sem-canvas: #f9fafb;
+    --sem-border: #d1d5db;
+    --math-glow: rgba(67, 56, 202, 0.08);
+    --math-border: rgba(67, 56, 202, 0.28);
+
+    --mesh-bg: #f9fafb;
+    --mesh-crosshair: rgba(67, 56, 202, 0.22);
+    --mesh-node-dot: rgba(67, 56, 202, 0.34);
+  }
+
+  .dark[data-palette="graphite-clean"] {
+    --bg-canvas: #0d0e12;
+    --bg-surface: #16181f;
+    --bg-elevated: #20232d;
+    --bg-code: #0a0b0e;
+    --border-subtle: #2a2e3b;
+    --text-primary: #f1f3f7;
+    --text-secondary: #98a0b3;
+
+    --sem-high: #34d399;
+    --sem-control: #818cf8;
+    --sem-data: #34d399;
+    --sem-error: #fb7185;
+    --sem-active: #fbbf24;
+    --sem-surface: #16181f;
+    --sem-canvas: #0d0e12;
+    --sem-border: #2a2e3b;
+    --math-glow: rgba(129, 140, 248, 0.11);
+    --math-border: rgba(129, 140, 248, 0.30);
+
+    --mesh-bg: #0d0e12;
+    --mesh-crosshair: rgba(129, 140, 248, 0.25);
+    --mesh-node-dot: rgba(129, 140, 248, 0.40);
   }
 
   body {
@@ -80,7 +297,6 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Uniform 1.5px stroke weight across monochrome vector icons */
   svg.lucide {
     stroke-width: 1.5;
   }
@@ -90,7 +306,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Custom thin (6px) theme-aware scrollbars for sidebars, code blocks, and waveforms */
+.formula-highlight {
+  background-color: var(--math-glow);
+  border: 1px solid var(--math-border);
+  border-radius: 6px;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border-subtle) transparent;
@@ -114,7 +335,6 @@
   background-color: var(--text-secondary);
 }
 
-/* Smooth 180ms micro-transitions for waveform cursor, FSM states, and SVG elements */
 .svg-glide {
   transition:
     transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -126,7 +346,6 @@
     r 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Crisp floating waveform hover tooltip */
 .waveform-tooltip {
   background-color: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
   color: var(--text-primary);
@@ -137,7 +356,6 @@
   box-shadow: 0 4px 16px rgba(2, 6, 23, 0.14);
 }
 
-/* Detailed CSS-variable Infinity-Mesh grid background for engineering stages */
 .bg-engineering-grid {
   background-color: var(--mesh-bg);
   background-size:
@@ -194,5 +412,34 @@ html {
   }
   .schematic-flow-active {
     animation: none;
+  }
+}
+
+@media print {
+  header,
+  footer,
+  aside,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  article,
+  section {
+    break-inside: avoid;
+    border-color: #cbd5e1 !important;
+    background: #ffffff !important;
+  }
+  pre {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    white-space: pre-wrap !important;
   }
 }

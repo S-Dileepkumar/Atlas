@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/assets/aistudio/gemini-svg_07b7b86a.svg" alt="VLSI Protocol Atlas — Open-Source Protocol & Silicon IP Intelligence Hub" width="580" />
+  <img src="public/assets/aistudio/image_79d2811e.png" alt="VLSI Protocol Atlas — Open-source protocol and silicon IP hub" width="580" />
 </p>
 
 <h1 align="center">VLSI Protocol Atlas & Open-Source IP Universe</h1>
@@ -171,7 +171,7 @@ Included hardware IPs and SoCs trace directly to authoritative open-source silic
 ├── .github/workflows/
 │   └── deploy.yml                     # Automated GitHub Actions build & GitHub Pages deploy
 ├── public/assets/aistudio/
-│   └── gemini-svg_07b7b86a.svg        # Official VLSI Protocol Atlas SVG brand logo (README only)
+│   └── image_79d2811e.png             # Official VLSI Protocol Atlas brand logo
 ├── src/
 │   ├── engine/
 │   │   ├── explainerSchema.ts         # Hardware explainer schema, semantic legend & validateTopic()

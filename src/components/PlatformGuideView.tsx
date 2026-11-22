@@ -312,10 +312,28 @@ export const PlatformGuideView: React.FC<PlatformGuideViewProps> = ({
         icon: Network,
       },
       {
+        id: 'guide-crypto-pqc-stack',
+        group: 'verification',
+        title: 'Crypto & PQC Stack (10 Chapters · Silicon → Post-Quantum)',
+        whereToFind: 'Top Header -> Crypto & PQC (or Home Utility Strip / Security Sub-bar)',
+        bestFor: 'Full-stack semiconductor security engineers mastering math, CMOS/SCA, faults, classical TLS, and NIST 2026 PQC (ML-KEM, ML-DSA, FN-DSA, SLH-DSA, HQC)',
+        whatItContains: '10 reverse-engineered chapters with live Extended GCD / CRT calculators, CMOS power & constant-time DOM masking simulator, Z_3329 NTT butterfly verifier, NIST 2026 key/signature footprint matrix, and 7-stage mastery tracker.',
+        howToUseSteps: [
+          'Use the 6-Stratum Stack Navigator to jump between Math, CMOS/Gates, Reverse-Engineering Attacks, Constant-Time Software, Classical Protocols, and PQC Silicon.',
+          'Experiment in the live NTT Butterfly, Side-Channel Leakage, and Mod Inverse/CRT sandboxes.',
+          'Track progress across the 7 Mastery Stages and jump straight to OpenTitan AES, TL-UL, CDC Analyzer, or AES 7-Chapter Lab.',
+        ],
+        primaryLabel: 'Open Crypto & PQC Stack',
+        primaryView: 'crypto',
+        secondaryLabel: 'Open AES 7-Chapter Lab',
+        secondaryView: 'aes-deep-dive',
+        icon: ShieldCheck,
+      },
+      {
         id: 'guide-aes-deep-dive',
         group: 'verification',
         title: 'AES 7-Chapter Hardware Security Deep Dive & FIPS-197 Stepper',
-        whereToFind: 'Home -> 4. AES 7-Chapter Deep Dive / AES Crypto & RTL Lab (or Footer / Search Atlas)',
+        whereToFind: 'Home -> 4. AES 7-Chapter Deep Dive / AES Crypto & RTL Lab (or Crypto & PQC sub-bar / Search Atlas)',
         bestFor: 'Learning hardware cryptography, DOM side-channel masking, TL-UL bus integrity, and fault testing',
         whatItContains: '30 topics across 7 chapters covering GF(2^8) math, SubBytes/ShiftRows/MixColumns/KeyExpansion, DOM masking, TVLA leakage analysis, UVM security verification, and a live FIPS-197 state matrix stepper.',
         howToUseSteps: [
@@ -391,7 +409,7 @@ export const PlatformGuideView: React.FC<PlatformGuideViewProps> = ({
             <button
               type="button"
               onClick={onOpenSearch}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md bg-[var(--sem-control)] text-white hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-md bg-[var(--sem-control)] text-white dark:text-slate-950 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
             >
               <Search className="w-4 h-4" />
               Global Search (/)
@@ -429,10 +447,10 @@ export const PlatformGuideView: React.FC<PlatformGuideViewProps> = ({
               action: () => onNavigate('ip-universe'),
             },
             {
-              hub: 'Explainers & Quality Labs',
-              path: 'Header -> Explainers · Home Utility Strip · Footer',
-              children: '544 Hardware Explainers (14 renderers), AES 7-Chapter Lab (30 topics), 16-Checkpoint Audit (100%), Silicon Glossary',
-              action: () => onNavigate('explainer'),
+              hub: 'Explainers, Crypto & Labs',
+              path: 'Header -> Explainers | Crypto & PQC · Home · Footer',
+              children: '544 Hardware Explainers (14 renderers), Crypto & PQC Stack (10 chapters), AES 7-Chapter Lab, 16-Checkpoint Audit (100%), Silicon Glossary',
+              action: () => onNavigate('crypto'),
             },
           ].map((item) => (
             <button
@@ -573,7 +591,7 @@ export const PlatformGuideView: React.FC<PlatformGuideViewProps> = ({
                         else if (entry.primaryIpId) onSelectIp(entry.primaryIpId);
                         else if (entry.primaryView) onNavigate(entry.primaryView);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-[var(--sem-control)] text-white hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-[var(--sem-control)] text-white dark:text-slate-950 hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
                     >
                       <span>{entry.primaryLabel}</span>
                       <ArrowRight className="w-3.5 h-3.5" />

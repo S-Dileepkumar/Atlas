@@ -5,6 +5,7 @@ import { ALL_IPS } from '../data/ips';
 import { ALL_SOCS } from '../data/socs';
 import { GLOSSARY_TERMS } from '../data/glossary';
 import { AES_CURRICULUM } from '../data/aesCurriculum';
+import { CRYPTO_CURRICULUM } from '../crypto/cryptoCurriculum';
 import { CurriculumPillarId, RTL_SV_UVM_CURRICULUM } from '../data/rtlSvUvmCurriculum';
 import {
   getEntityClassification,
@@ -13,8 +14,9 @@ import {
 } from '../utils/entityTaxonomy';
 
 interface SearchResultItem {
-  kind: 'protocol' | 'ip' | 'soc' | 'glossary' | 'aes' | 'curriculum' | 'guide' | 'mind-map';
+  kind: 'protocol' | 'ip' | 'soc' | 'glossary' | 'aes' | 'crypto' | 'curriculum' | 'guide' | 'mind-map';
   targetId: string;
+  chapterId?: string;
   pillar?: CurriculumPillarId;
   contextLabel: string;
   matchType: string;
@@ -30,10 +32,23 @@ interface SearchModalProps {
   onSelectSoc: () => void;
   onSelectGlossary: () => void;
   onSelectAesSubtopic?: (subtopicId: string) => void;
+  onSelectCryptoSubtopic?: (chapterId: string, subtopicId?: string) => void;
   onSelectCurriculum?: (pillar: CurriculumPillarId, moduleId: string) => void;
   onSelectGuide?: () => void;
   onSelectMindMap?: () => void;
 }
+
+type SearchFilterScope = 'all' | 'pqc-math' | 'protocols' | 'hardware-ip' | 'attacks' | 'rtl-uvm' | 'glossary';
+
+const SEARCH_FILTER_TABS: Array<{ id: SearchFilterScope; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'pqc-math', label: 'Math & PQC' },
+  { id: 'protocols', label: 'Protocols' },
+  { id: 'hardware-ip', label: 'Hardware / IP' },
+  { id: 'attacks', label: 'Attacks' },
+  { id: 'rtl-uvm', label: 'RTL / SV / UVM' },
+  { id: 'glossary', label: 'Glossary' },
+];
 
 export const SearchModal: React.FC<SearchModalProps> = ({
   isOpen,
@@ -43,11 +58,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onSelectSoc,
   onSelectGlossary,
   onSelectAesSubtopic,
+  onSelectCryptoSubtopic,
   onSelectCurriculum,
   onSelectGuide,
   onSelectMindMap,
 }) => {
   const [query, setQuery] = useState('');
+  const [scope, setScope] = useState<SearchFilterScope>('all');
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -294,8 +312,84 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       }
     }
 
+    for (const ch of CRYPTO_CURRICULUM) {
+      if (
+        ch.title.toLowerCase().includes(q) ||
+        ch.vlsiPerspective.toLowerCase().includes(q) ||
+        'pqc crypto cryptography post-quantum'.includes(q)
+      ) {
+        out.push({
+          kind: 'crypto',
+          targetId: ch.id,
+          chapterId: ch.id,
+          contextLabel: ch.stackLayerLabel,
+          matchType: 'Crypto & PQC Stack',
+          title: `${ch.number}. ${ch.title}`,
+          snippet: ch.keyTakeaway,
+        });
+      }
+      for (const sub of ch.subtopics) {
+        if (
+          sub.title.toLowerCase().includes(q) ||
+          sub.summary.toLowerCase().includes(q) ||
+          sub.mechanics.toLowerCase().includes(q) ||
+          sub.siliconAndRtlLink.toLowerCase().includes(q) ||
+          sub.attackAndDefense.toLowerCase().includes(q)
+        ) {
+          out.push({
+            kind: 'crypto',
+            targetId: sub.id,
+            chapterId: ch.id,
+            contextLabel: `Ch ${ch.number}. ${ch.title}`,
+            matchType: 'Crypto & PQC Topic',
+            title: sub.title,
+            snippet: sub.summary,
+          });
+        }
+      }
+    }
+
     return out.slice(0, 28);
   }, [query]);
+
+  const filteredResults = useMemo(() => {
+    const base = results;
+    if (scope === 'all') return base;
+    return base.filter((r) => {
+      if (scope === 'pqc-math') {
+        return r.kind === 'crypto' || r.kind === 'aes';
+      }
+      if (scope === 'protocols') {
+        return r.kind === 'protocol';
+      }
+      if (scope === 'hardware-ip') {
+        return r.kind === 'ip' || r.kind === 'soc';
+      }
+      if (scope === 'attacks') {
+        const txt = `${r.title} ${r.snippet} ${r.contextLabel}`.toLowerCase();
+        return (
+          r.kind === 'crypto' &&
+          (r.chapterId === 'ch7-attacks' ||
+            txt.includes('attack') ||
+            txt.includes('side-channel') ||
+            txt.includes('fault') ||
+            txt.includes('mask') ||
+            txt.includes('oracle'))
+        ) || r.kind === 'aes';
+      }
+      if (scope === 'rtl-uvm') {
+        return r.kind === 'curriculum';
+      }
+      if (scope === 'glossary') {
+        return r.kind === 'glossary';
+      }
+      return true;
+    });
+  }, [results, scope]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query, scope, isOpen]);
 
   if (!isOpen) return null;
 
@@ -306,14 +400,40 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     else if (r.kind === 'ip') onSelectIp(r.targetId);
     else if (r.kind === 'soc') onSelectSoc();
     else if (r.kind === 'aes') onSelectAesSubtopic?.(r.targetId);
+    else if (r.kind === 'crypto') {
+      onSelectCryptoSubtopic?.(
+        r.chapterId || r.targetId,
+        r.chapterId && r.targetId !== r.chapterId ? r.targetId : undefined
+      );
+    }
     else if (r.kind === 'curriculum' && r.pillar) onSelectCurriculum?.(r.pillar, r.targetId);
     else onSelectGlossary();
     onClose();
   };
 
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((prev) => (filteredResults.length ? (prev + 1) % filteredResults.length : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((prev) =>
+        filteredResults.length ? (prev - 1 + filteredResults.length) % filteredResults.length : 0
+      );
+    } else if (e.key === 'Enter' && filteredResults[activeIndex]) {
+      e.preventDefault();
+      handleSelect(filteredResults[activeIndex]);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4">
-      <div className="w-full max-w-2xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-start justify-center pt-16 sm:pt-20 px-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-2xl rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden shadow-2xl">
         <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--border-subtle)]">
           <Search className="w-4 h-4 text-[var(--sem-control)] shrink-0" />
           <input
@@ -321,48 +441,86 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search IPs (Ibex, Vortex, Gemmini), RTL modules, protocols, signals (AWVALID), SoCs, or glossary..."
+            onKeyDown={handleInputKeyDown}
+            placeholder="Search ML-KEM, NTT, Ibex, AXI4, DPA/CPA, RTL modules, or glossary..."
             className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none"
           />
           <kbd className="hidden sm:inline-flex px-1.5 py-0.5 text-[10px] font-mono tabular-nums rounded border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)]">
-            ESC
+            ↑↓ · Enter · ESC
           </kbd>
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close search"
             className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="max-h-[440px] overflow-y-auto divide-y divide-[var(--border-subtle)]">
-          {results.length === 0 ? (
-            <div className="p-8 text-center text-xs text-[var(--text-secondary)]">
-              No matching IPs, RTL modules, protocols, signals, or glossary terms found for "{query}".
+        {/* Scope Filter Tabs */}
+        <div className="px-4 py-2 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] flex items-center gap-1 overflow-x-auto text-[11px]">
+          {SEARCH_FILTER_TABS.map((tab) => {
+            const active = scope === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setScope(tab.id)}
+                className={`px-2.5 py-1 rounded font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                  active
+                    ? 'bg-[var(--sem-control)] text-white dark:text-slate-950 font-semibold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="max-h-[420px] overflow-y-auto divide-y divide-[var(--border-subtle)]">
+          {filteredResults.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[var(--text-secondary)] space-y-2">
+              <div>No matching results in this category{query ? ` for "${query}"` : ''}.</div>
+              {scope !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setScope('all')}
+                  className="text-[var(--sem-control)] hover:underline cursor-pointer font-medium"
+                >
+                  Show All Categories
+                </button>
+              )}
             </div>
           ) : (
-            results.map((r, i) => (
-              <button
-                key={`${r.kind}-${r.targetId}-${i}`}
-                type="button"
-                onClick={() => handleSelect(r)}
-                className="w-full px-5 py-3.5 text-left hover:bg-[var(--bg-elevated)] flex items-center justify-between gap-4 transition-colors cursor-pointer"
-              >
-                <div className="min-w-0">
-                  <div className="text-[11px] text-[var(--sem-control)] font-medium font-mono">
-                    {r.matchType} · {r.contextLabel}
+            filteredResults.map((r, i) => {
+              const isActive = i === activeIndex;
+              return (
+                <button
+                  key={`${r.kind}-${r.targetId}-${i}`}
+                  type="button"
+                  onMouseEnter={() => setActiveIndex(i)}
+                  onClick={() => handleSelect(r)}
+                  className={`w-full px-5 py-3.5 text-left flex items-center justify-between gap-4 transition-colors cursor-pointer ${
+                    isActive ? 'bg-[var(--bg-elevated)]' : 'hover:bg-[var(--bg-elevated)]'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-[var(--sem-control)] font-medium font-mono">
+                      {r.matchType} · {r.contextLabel}
+                    </div>
+                    <div className="text-sm font-medium text-[var(--text-primary)] truncate mt-0.5">
+                      {r.title}
+                    </div>
+                    <div className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
+                      {r.snippet}
+                    </div>
                   </div>
-                  <div className="text-sm font-medium text-[var(--text-primary)] truncate mt-0.5">
-                    {r.title}
-                  </div>
-                  <div className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
-                    {r.snippet}
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] shrink-0" />
-              </button>
-            ))
+                  <ArrowRight className="w-4 h-4 text-[var(--text-secondary)] shrink-0" />
+                </button>
+              );
+            })
           )}
         </div>
       </div>

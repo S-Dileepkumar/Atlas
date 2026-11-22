@@ -27,6 +27,7 @@ interface AesDeepDiveViewProps {
   onSelectIp: (ipId: string) => void;
   onSelectProtocol: (protocolId: string) => void;
   onOpenCdc: (ipId: string) => void;
+  onOpenCrypto?: () => void;
   initialSubtopicId?: string;
 }
 
@@ -42,17 +43,17 @@ const StateMatrix4x4: React.FC<{ title: string; bytes: number[]; highlightNote?:
   bytes,
   highlightNote,
 }) => (
-  <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 space-y-2">
+  <div className="p-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-2">
     <div className="flex items-center justify-between gap-2 text-[11px]">
-      <span className="font-semibold text-slate-900 dark:text-slate-100">{title}</span>
-      {highlightNote && <span className="text-cyan-700 dark:text-cyan-400 font-mono">{highlightNote}</span>}
+      <span className="font-semibold text-[var(--text-primary)]">{title}</span>
+      {highlightNote && <span className="text-[var(--sem-control)] font-mono">{highlightNote}</span>}
     </div>
     <div className="grid grid-cols-4 gap-1 font-mono text-xs tabular-nums">
       {[0, 1, 2, 3].map((row) =>
         [0, 1, 2, 3].map((col) => (
           <div
             key={`${row}-${col}`}
-            className="py-1.5 text-center rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-cyan-300"
+            className="py-1.5 text-center rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] dark:text-[var(--sem-control)]"
             title={`s[${row}][${col}]`}
           >
             {hex2(bytes[col * 4 + row] ?? 0)}
@@ -68,6 +69,7 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
   onSelectIp,
   onSelectProtocol,
   onOpenCdc,
+  onOpenCrypto,
   initialSubtopicId,
 }) => {
   const allSubtopics = useMemo(
@@ -123,28 +125,28 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
   return (
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* Top Header & Deep Cross-Platform Actions */}
-      <div className="flex flex-wrap items-start justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-start justify-between gap-4 pb-5 border-b border-[var(--border-subtle)]">
         <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
             {onBack && (
               <button
                 type="button"
                 onClick={onBack}
-                className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer mr-2"
+                className="inline-flex items-center gap-1 text-[var(--text-primary)] hover:text-[var(--sem-control)] cursor-pointer mr-2"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
             )}
-            <span>AES Cryptography & Hardware Architecture</span>
+            <span>AES Cryptography &amp; Hardware Architecture</span>
             <span aria-hidden="true">·</span>
             <span>7 Chapters · {allSubtopics.length} Deep-Dive Topics</span>
             <span aria-hidden="true">·</span>
             <span>FIPS-197 + OpenTitan hw/ip/aes RTL</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 [text-wrap:balance]">
-            AES Complete Technical Knowledge Base & Interactive Round Lab
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] [text-wrap:balance]">
+            AES Complete Technical Knowledge Base &amp; Interactive Round Lab
           </h1>
-          <p className="text-xs text-slate-600 dark:text-slate-300 max-w-3xl">
+          <p className="text-xs text-[var(--text-secondary)] max-w-3xl">
             From finite-field $GF(2^8)$ math and SPN ciphers through OpenTitan DOM masking, sparse FSMs, TL-UL/KeyMgr/EDN interfaces, BoringSSL UVM scoreboarding, and side-channel TVLA signoff.
           </p>
         </div>
@@ -153,33 +155,42 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
           <button
             type="button"
             onClick={() => onSelectIp('opentitan-aes')}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-cyan-600 hover:bg-cyan-500 text-white font-medium cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-[var(--sem-control)] hover:opacity-90 text-white dark:text-slate-950 font-semibold cursor-pointer"
           >
             <Cpu className="w-3.5 h-3.5" /> OpenTitan AES RTL IP
           </button>
           <button
             type="button"
             onClick={() => onOpenCdc('opentitan-aes')}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-500 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] cursor-pointer"
           >
-            <Clock className="w-3.5 h-3.5" /> EDN Clock Domains
+            <Clock className="w-3.5 h-3.5 text-[var(--sem-control)]" /> EDN Clock Domains
           </button>
           <button
             type="button"
             onClick={() => onSelectProtocol('tl-ul')}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-cyan-500 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] cursor-pointer"
           >
-            <Layers className="w-3.5 h-3.5" /> TL-UL Integrity Spec
+            <Layers className="w-3.5 h-3.5 text-[var(--sem-control)]" /> TL-UL Integrity Spec
           </button>
+          {onOpenCrypto && (
+            <button
+              type="button"
+              onClick={onOpenCrypto}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--sem-control)]" /> Crypto &amp; PQC Stack
+            </button>
+          )}
         </div>
       </div>
 
       {/* Interactive FIPS-197 AES-128 Hardware Round & GF(2^8) Stage */}
-      <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[var(--border-subtle)]">
           <div>
-            <div className="text-xs font-medium text-cyan-700 dark:text-cyan-400">
-              Interactive Hardware Datapath & Math Simulator [OFFICIAL SPECIFICATION · FIPS-197 Appendix B]
+            <div className="text-xs font-medium text-[var(--sem-control)]">
+              Interactive Hardware Datapath &amp; Math Simulator [OFFICIAL SPECIFICATION · FIPS-197 Appendix B]
             </div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
               Live AES-128 4×4 State Matrix & OpenTitan Round Loop Explorer
@@ -214,7 +225,7 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
                 if (activeRound >= 10) setActiveRound(0);
                 setPlaying((p) => !p);
               }}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-medium cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-[var(--sem-control)] hover:opacity-90 text-white dark:text-slate-950 font-semibold cursor-pointer"
             >
               {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
               {playing ? 'Pause' : 'Step Rounds'}
@@ -288,8 +299,8 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
                   }}
                   className={`flex-1 py-1.5 rounded font-mono text-[11px] cursor-pointer transition-colors ${
                     activeRound === r.round
-                      ? 'bg-cyan-600 text-white font-bold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      ? 'bg-[var(--sem-control)] text-white dark:text-slate-950 font-bold'
+                      : 'bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
                   }`}
                 >
                   {r.round}
@@ -641,7 +652,7 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
                 activeTopicIndex < allSubtopics.length - 1 &&
                 setSelectedId(allSubtopics[activeTopicIndex + 1].id)
               }
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-cyan-600 hover:bg-cyan-500 text-white font-medium disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[var(--sem-control)] hover:opacity-90 text-white dark:text-slate-950 font-semibold disabled:opacity-40 cursor-pointer"
             >
               {activeTopicIndex < allSubtopics.length - 1
                 ? allSubtopics[activeTopicIndex + 1].title

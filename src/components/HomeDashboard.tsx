@@ -25,6 +25,7 @@ import { LEARNING_PATHS, PROTOCOL_CATEGORIES } from '../data/categories';
 import { ALL_PROTOCOLS, getProtocolById } from '../data/protocols';
 import { ALL_IPS, PROJECTS, getIpById, getProjectById } from '../data/ips';
 import { ALL_SOCS } from '../data/socs';
+import { ALL_EXPLAINER_TOPICS } from '../data/explainers';
 import { GLOSSARY_TERMS } from '../data/glossary';
 import {
   ENTITY_CLASSIFICATIONS,
@@ -32,6 +33,7 @@ import {
   getEntityClassification,
   getLifecycleStatus,
 } from '../utils/entityTaxonomy';
+import { AtlasLogoMark } from './BrandLogo';
 
 export type AppView =
   | 'home'
@@ -63,6 +65,7 @@ export type AppView =
   | 'completeness-dashboard'
   | 'explainer'
   | 'mind-map'
+  | 'crypto'
   | 'guide';
 
 interface HomeDashboardProps {
@@ -135,8 +138,9 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       {/* Workspace Utility Strip */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[var(--border-subtle)] text-xs">
         <div className="flex flex-wrap items-center gap-2.5 text-[var(--text-secondary)]">
-          <span className="font-semibold text-[var(--text-primary)]">
-            VLSI Protocol Atlas & Open-Source IP Universe
+          <span className="inline-flex items-center gap-2 font-semibold text-[var(--text-primary)]">
+            <AtlasLogoMark className="w-4 h-4 shrink-0" />
+            <span>VLSI Protocol Atlas &amp; Open-Source IP Universe</span>
           </span>
           <span aria-hidden="true">·</span>
           <span className="font-mono tabular-nums">{ALL_PROTOCOLS.length} Protocols</span>
@@ -155,7 +159,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--sem-control)]/40 bg-[var(--bg-surface)] text-[var(--sem-control)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer whitespace-nowrap font-medium"
           >
             <Activity className="w-4 h-4" />
-            Interactive Explainer Studio ({ALL_PROTOCOLS.length + ALL_IPS.length + 9})
+            Interactive Explainer Studio ({ALL_EXPLAINER_TOPICS.length})
           </button>
           <button
             type="button"
@@ -188,6 +192,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           >
             <BarChart3 className="w-4 h-4 text-[var(--sem-control)]" />
             Completeness Dashboard (100%)
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('crypto')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <ShieldCheck className="w-4 h-4 text-[var(--sem-control)]" />
+            Crypto &amp; PQC Stack
           </button>
           <button
             type="button"
@@ -233,21 +245,21 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigate('explainer')}
-                className="px-4 py-2.5 text-xs font-semibold rounded-md bg-[var(--sem-control)] hover:opacity-90 text-white transition-opacity cursor-pointer whitespace-nowrap"
+                className="px-4 py-2.5 text-xs font-semibold rounded-md bg-[var(--sem-control)] hover:opacity-90 text-white dark:text-slate-950 transition-opacity cursor-pointer whitespace-nowrap"
               >
                 Launch Explainer Studio
               </button>
               <button
                 type="button"
                 onClick={() => onNavigate('ip-universe')}
-                className="px-4 py-2.5 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap"
+                className="px-4 py-2.5 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap"
               >
                 Explore IP Universe
               </button>
               <button
                 type="button"
                 onClick={() => onNavigate('simulator')}
-                className="px-4 py-2.5 text-xs font-medium rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:border-cyan-500 transition-colors cursor-pointer whitespace-nowrap"
+                className="px-4 py-2.5 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap"
               >
                 Waveform Lab
               </button>
@@ -255,7 +267,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 <button
                   type="button"
                   onClick={() => onFeelingLucky('any')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium rounded-md border border-[var(--sem-active)]/40 bg-[var(--sem-active)]/10 text-[var(--sem-active)] hover:bg-[var(--sem-active)]/20 transition-colors cursor-pointer whitespace-nowrap"
                 >
                   <Dices className="w-3.5 h-3.5" />
                   I&apos;m Feeling Lucky
@@ -263,30 +275,30 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-200/80 dark:border-slate-800/80 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-[var(--border-subtle)] text-xs">
               <div>
-                <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                <div className="font-mono text-lg font-bold text-[var(--text-primary)] tabular-nums">
                   {ALL_PROTOCOLS.length}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">Protocols &amp; Standards</div>
+                <div className="text-[11px] text-[var(--text-secondary)]">Protocols &amp; Standards</div>
               </div>
               <div>
-                <div className="font-mono text-lg font-bold text-cyan-700 dark:text-cyan-400 tabular-nums">
+                <div className="font-mono text-lg font-bold text-[var(--sem-control)] tabular-nums">
                   {ALL_IPS.length}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">Open-Source Silicon IPs</div>
+                <div className="text-[11px] text-[var(--text-secondary)]">Open-Source Silicon IPs</div>
               </div>
               <div>
-                <div className="font-mono text-lg font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {ALL_PROTOCOLS.length + ALL_IPS.length + 9}
+                <div className="font-mono text-lg font-bold text-[var(--text-primary)] tabular-nums">
+                  {ALL_EXPLAINER_TOPICS.length}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">Interactive Explainers</div>
+                <div className="text-[11px] text-[var(--text-secondary)]">Interactive Explainers</div>
               </div>
               <div>
-                <div className="font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                <div className="font-mono text-lg font-bold text-[var(--sem-high)] tabular-nums">
                   100%
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">16-Checkpoint Audit</div>
+                <div className="text-[11px] text-[var(--text-secondary)]">16-Checkpoint Audit</div>
               </div>
             </div>
           </div>
@@ -316,20 +328,20 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     key={id}
                     type="button"
                     onClick={() => onSelectIp(id)}
-                    className="w-full py-2.5 flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-900 px-2.5 -mx-2.5 rounded-md transition-colors cursor-pointer"
+                    className="w-full py-2.5 flex items-center justify-between gap-3 text-left hover:bg-[var(--bg-elevated)] px-2.5 -mx-2.5 rounded-md transition-colors cursor-pointer"
                   >
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      <div className="text-sm font-semibold text-[var(--text-primary)]">
                         {ip.name}{' '}
-                        <span className="font-normal text-xs text-slate-500 dark:text-slate-400">
+                        <span className="font-normal text-xs text-[var(--text-secondary)]">
                           · {proj.name} · {ip.rtlLanguage}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-600 dark:text-slate-400 truncate mt-0.5">
+                      <div className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
                         {ip.tagline}
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                    <ArrowRight className="w-4 h-4 text-[var(--sem-control)] shrink-0" />
                   </button>
                 );
               })}
@@ -395,13 +407,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             3 Interconnected Databases: Protocols · Hardware IPs · SoC Topologies
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { view: 'ip-universe' as AppView, title: 'IP Universe', desc: 'Filter all CPUs, GPUs, AI, crypto & interconnects', icon: Cpu },
             { view: 'soc-explorer' as AppView, title: 'SoC Explorer', desc: 'EarlGrey, Chipyard, PULP, CVA6, LiteX & OpenPiton', icon: Layers },
             { view: 'rtl-explorer' as AppView, title: 'RTL Explorer', desc: 'Module hierarchies, ports, FSMs & source code', icon: FolderTree },
             { view: 'cdc-analyzer' as AppView, title: 'Clock Domains', desc: 'Map clock islands, async FIFOs & CDC crossings', icon: Clock },
             { view: 'aes-deep-dive' as AppView, title: 'AES Crypto & RTL Lab', desc: '7 chapters (26 topics): GF(2^8), DOM S-Box, TL-UL, TVLA & live stepper', icon: ShieldCheck },
+            { view: 'crypto' as AppView, title: 'Crypto & PQC Stack', desc: '10-chapter silicon-to-PQC path: Math, CMOS/SCA, Faults, NTT & ML-KEM', icon: ShieldCheck },
             { view: 'verification-hub' as AppView, title: 'Verification Hub', desc: 'UVM core_ibex, dvsim, rtlsim & cocotb benches', icon: ShieldCheck },
             { view: 'ip-compare' as AppView, title: 'IP Comparison', desc: 'Ibex vs CVA6, Vortex vs MIAOW, Gemmini vs NVDLA', icon: GitCompare },
             { view: 'knowledge-graph' as AppView, title: 'Knowledge Graph', desc: 'Trace Protocol ↔ IP ↔ SoC silicon dependency links', icon: Network },
@@ -463,32 +476,32 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       {/* Core Full-Reference Protocols + Learning Paths + Recently Explored */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 space-y-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
             Structured Learning Paths
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {LEARNING_PATHS.map((path) => (
               <div
                 key={path.id}
-                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 space-y-3"
+                className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3"
               >
                 <div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <div className="text-xs text-[var(--text-secondary)]">
                     {path.audience} · {path.duration}
                   </div>
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+                  <h3 className="text-sm font-semibold text-[var(--text-primary)] mt-0.5">
                     {path.title}
                   </h3>
                 </div>
-                <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="space-y-1.5 pt-2 border-t border-[var(--border-subtle)]">
                   {path.steps.map((st, idx) => (
                     <button
                       key={st.protocolId}
                       type="button"
                       onClick={() => onSelectProtocol(st.protocolId)}
-                      className="w-full text-left text-xs text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 py-0.5 flex items-start gap-2 cursor-pointer"
+                      className="w-full text-left text-xs text-[var(--text-secondary)] hover:text-[var(--sem-control)] py-0.5 flex items-start gap-2 cursor-pointer transition-colors"
                     >
-                      <span className="font-mono text-slate-400 tabular-nums">0{idx + 1}.</span>
+                      <span className="font-mono text-[var(--sem-control)] tabular-nums">0{idx + 1}.</span>
                       <span>{st.label}</span>
                     </button>
                   ))}
@@ -500,18 +513,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
 
         <div className="lg:col-span-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Core Specs & Recent
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+              Core Specs &amp; Recent
             </h2>
             <button
               type="button"
               onClick={() => onNavigate('knowledge-graph')}
-              className="text-xs text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
+              className="text-xs text-[var(--sem-control)] hover:underline cursor-pointer"
             >
               Knowledge Graph →
             </button>
           </div>
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 divide-y divide-[var(--border-subtle)]">
             {Array.from(new Set([...recentIds, ...primaryFiveIds]))
               .slice(0, 5)
               .map((rid) => {
@@ -521,13 +534,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     key={rid}
                     type="button"
                     onClick={() => onSelectProtocol(rid)}
-                    className="w-full py-2.5 first:pt-0 last:pb-0 flex items-center justify-between text-left hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer"
+                    className="w-full py-2.5 first:pt-0 last:pb-0 flex items-center justify-between text-left hover:text-[var(--sem-control)] transition-colors cursor-pointer"
                   >
                     <div>
-                      <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">{p.name}</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">{p.standardBody} · {p.depth}</div>
+                      <div className="text-xs font-semibold text-[var(--text-primary)]">{p.name}</div>
+                      <div className="text-[11px] text-[var(--text-secondary)]">{p.standardBody} · {p.depth}</div>
                     </div>
-                    <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                    <BookOpen className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
                   </button>
                 );
               })}
@@ -536,13 +549,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       </section>
 
       {/* Complete 30-Domain Semiconductor Ecosystem Directory */}
-      <section className="space-y-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+      <section className="space-y-6 pt-6 border-t border-[var(--border-subtle)]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">
               Complete {PROTOCOL_CATEGORIES.length}-Domain Semiconductor Protocol, Architecture &amp; Standards Directory
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-3xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 max-w-3xl leading-relaxed">
               Browse all {PROTOCOL_CATEGORIES.length} specialized domains covering {ALL_PROTOCOLS.length} protocols, PHYs, ISA architectures, CDC/reset mechanisms, DFT, verification standards, and packaging flows — each with both full engineering documentation and an interactive explainer.
             </p>
           </div>
@@ -553,7 +566,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 setEntityFilter(e.target.value as EntityClassification | 'ALL');
                 setDirPage(0);
               }}
-              className="px-3 py-2 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              className="px-3 py-2 text-xs rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--sem-control)]"
             >
               <option value="ALL">All Entity Types</option>
               {ENTITY_CLASSIFICATIONS.map((c) => (
@@ -568,7 +581,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 setLifecycleFilter(e.target.value as LifecycleStatus | 'ALL');
                 setDirPage(0);
               }}
-              className="px-3 py-2 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+              className="px-3 py-2 text-xs rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--sem-control)]"
             >
               <option value="ALL">All Lifecycles</option>
               {LIFECYCLE_STATUSES.map((st) => (
@@ -585,7 +598,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 setDirPage(0);
               }}
               placeholder="Filter protocols, standards, or buses..."
-              className="px-3 py-2 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 w-60 focus:outline-none focus:border-cyan-500"
+              className="px-3 py-2 text-xs rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] w-60 focus:outline-none focus:border-[var(--sem-control)]"
             />
           </div>
         </div>
@@ -599,8 +612,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             }}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
               activeCategory === 'all'
-                ? 'bg-cyan-600 text-white'
-                : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                ? 'bg-[var(--sem-control)] text-white dark:text-slate-950 font-semibold'
+                : 'border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--sem-control)]'
             }`}
           >
             All Domains ({ALL_PROTOCOLS.length})
@@ -615,8 +628,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
                 activeCategory === cat.id
-                  ? 'bg-cyan-600 text-white'
-                  : 'border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  ? 'bg-[var(--sem-control)] text-white dark:text-slate-950 font-semibold'
+                  : 'border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--sem-control)]'
               }`}
             >
               {cat.shortName} ({cat.protocolIds.length})
@@ -625,13 +638,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
         </div>
 
         {activeCategoryObj && (
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-5 space-y-2 text-xs">
-            <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+          <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-2 text-xs">
+            <div className="font-semibold text-sm text-[var(--text-primary)]">
               {activeCategoryObj.name} · {filteredProtocols.length} entries
             </div>
-            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{activeCategoryObj.description}</p>
+            <p className="text-[var(--text-secondary)] leading-relaxed">{activeCategoryObj.description}</p>
             {activeCategoryObj.caveatNote && (
-              <div className="flex items-start gap-2 pt-1.5 text-amber-800 dark:text-amber-300">
+              <div className="flex items-start gap-2 pt-1.5 text-[var(--sem-active)]">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{activeCategoryObj.caveatNote}</span>
               </div>
@@ -639,10 +652,10 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-secondary)]">
           <span className="tabular-nums">
-            Showing <strong className="text-slate-900 dark:text-slate-100">{visibleDirectoryProtocols.length}</strong> of{' '}
-            <strong className="text-slate-900 dark:text-slate-100">{filteredProtocols.length}</strong> entries
+            Showing <strong className="text-[var(--text-primary)]">{visibleDirectoryProtocols.length}</strong> of{' '}
+            <strong className="text-[var(--text-primary)]">{filteredProtocols.length}</strong> entries
           </span>
           {totalDirPages > 1 && (
             <div className="flex items-center gap-2">
@@ -650,7 +663,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 type="button"
                 disabled={clampedDirPage === 0}
                 onClick={() => setDirPage((p) => Math.max(0, p - 1))}
-                className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
+                className="px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] disabled:opacity-40 cursor-pointer hover:border-[var(--sem-control)]"
               >
                 Prev
               </button>
@@ -661,7 +674,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 type="button"
                 disabled={clampedDirPage >= totalDirPages - 1}
                 onClick={() => setDirPage((p) => Math.min(totalDirPages - 1, p + 1))}
-                className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
+                className="px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] disabled:opacity-40 cursor-pointer hover:border-[var(--sem-control)]"
               >
                 Next
               </button>
@@ -679,33 +692,33 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 className="p-6 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--sem-control)] transition-colors flex flex-col justify-between gap-4"
               >
                 <div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    <span className="font-semibold text-cyan-700 dark:text-cyan-400">{entityCls}</span>
+                  <div className="text-[11px] text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--sem-control)]">{entityCls}</span>
                     <span aria-hidden="true"> · </span>
                     <span
                       className={
                         lifecycle === 'Superseded / Merged'
-                          ? 'text-amber-700 dark:text-amber-400 font-medium'
+                          ? 'text-[var(--sem-active)] font-medium'
                           : lifecycle === 'Deprecated / Historical'
-                          ? 'text-rose-700 dark:text-rose-400 font-medium'
+                          ? 'text-[var(--sem-error)] font-medium'
                           : ''
                       }
                     >
                       {lifecycle}
                     </span>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1.5">
+                  <h3 className="text-base font-bold text-[var(--text-primary)] mt-1.5">
                     {p.name}
-                    <span className="font-normal text-xs text-slate-500 dark:text-slate-400 ml-2">
+                    <span className="font-normal text-xs text-[var(--text-secondary)] ml-2">
                       {p.fullName}
                     </span>
                   </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                  <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">
                     {p.tagline}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--border-subtle)] text-xs">
+                  <span className="font-mono text-[var(--text-secondary)] tabular-nums">
                     {p.standardBody} · {p.signals.length} signals
                   </span>
                   <div className="flex items-center gap-3">
@@ -713,7 +726,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => onOpenExplainer(`proto-${p.id}`)}
-                        className="font-medium text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer"
+                        className="font-medium text-[var(--text-secondary)] hover:text-[var(--sem-control)] hover:underline cursor-pointer"
                       >
                         Explainer
                       </button>
@@ -721,7 +734,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                     <button
                       type="button"
                       onClick={() => onSelectProtocol(p.id)}
-                      className="font-semibold text-cyan-700 dark:text-cyan-400 hover:underline cursor-pointer"
+                      className="font-semibold text-[var(--sem-control)] hover:underline cursor-pointer"
                     >
                       Explore Spec →
                     </button>
@@ -739,18 +752,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                 type="button"
                 disabled={clampedDirPage === 0}
                 onClick={() => setDirPage((p) => Math.max(0, p - 1))}
-                className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
+                className="px-3.5 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] disabled:opacity-40 cursor-pointer hover:border-[var(--sem-control)]"
               >
                 ← Previous Page
               </button>
-              <span className="font-mono tabular-nums px-3 text-slate-600 dark:text-slate-300">
+              <span className="font-mono tabular-nums px-3 text-[var(--text-secondary)]">
                 Page {clampedDirPage + 1} of {totalDirPages}
               </span>
               <button
                 type="button"
                 disabled={clampedDirPage >= totalDirPages - 1}
                 onClick={() => setDirPage((p) => Math.min(totalDirPages - 1, p + 1))}
-                className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-40 cursor-pointer hover:border-cyan-500"
+                className="px-3.5 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] disabled:opacity-40 cursor-pointer hover:border-[var(--sem-control)]"
               >
                 Next Page →
               </button>
@@ -760,12 +773,12 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
       </section>
 
       {/* Authoritative Specification Sources & Open-Source Silicon Repositories */}
-      <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+      <section className="space-y-4 pt-4 border-t border-[var(--border-subtle)]">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            Authoritative Specification Sources & Open-Source RTL Repositories
+          <h2 className="text-lg font-bold text-[var(--text-primary)]">
+            Authoritative Specification Sources &amp; Open-Source RTL Repositories
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
             Direct official links to all 9 primary semiconductor standards organizations and open-source RTL hardware repositories.
           </p>
         </div>
@@ -790,13 +803,13 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
               href={ext.url}
               target="_blank"
               rel="noreferrer"
-              className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 hover:border-cyan-500 transition-colors flex items-center justify-between gap-3"
+              className="p-3.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--sem-control)] transition-colors flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">{ext.name}</div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">{ext.org}</div>
+                <div className="font-semibold text-[var(--text-primary)] truncate">{ext.name}</div>
+                <div className="text-[11px] text-[var(--text-secondary)] mt-0.5 truncate">{ext.org}</div>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+              <ExternalLink className="w-3.5 h-3.5 text-[var(--sem-control)] shrink-0" />
             </a>
           ))}
         </div>
