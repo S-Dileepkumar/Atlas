@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Dices,
   BarChart3,
+  GitFork,
 } from 'lucide-react';
 import { CategoryId, EntityClassification, LifecycleStatus } from '../types/protocol';
 import { LEARNING_PATHS, PROTOCOL_CATEGORIES } from '../data/categories';
@@ -61,6 +62,7 @@ export type AppView =
   | 'uvm'
   | 'completeness-dashboard'
   | 'explainer'
+  | 'mind-map'
   | 'guide';
 
 interface HomeDashboardProps {
@@ -154,6 +156,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           >
             <Activity className="w-4 h-4" />
             Interactive Explainer Studio ({ALL_PROTOCOLS.length + ALL_IPS.length + 9})
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate('mind-map')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <GitFork className="w-4 h-4 text-[var(--sem-control)]" />
+            All Sections &amp; Common Mind Map
           </button>
           <button
             type="button"

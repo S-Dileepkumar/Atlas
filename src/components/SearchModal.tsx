@@ -13,7 +13,7 @@ import {
 } from '../utils/entityTaxonomy';
 
 interface SearchResultItem {
-  kind: 'protocol' | 'ip' | 'soc' | 'glossary' | 'aes' | 'curriculum' | 'guide';
+  kind: 'protocol' | 'ip' | 'soc' | 'glossary' | 'aes' | 'curriculum' | 'guide' | 'mind-map';
   targetId: string;
   pillar?: CurriculumPillarId;
   contextLabel: string;
@@ -32,6 +32,7 @@ interface SearchModalProps {
   onSelectAesSubtopic?: (subtopicId: string) => void;
   onSelectCurriculum?: (pillar: CurriculumPillarId, moduleId: string) => void;
   onSelectGuide?: () => void;
+  onSelectMindMap?: () => void;
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({
@@ -44,6 +45,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   onSelectAesSubtopic,
   onSelectCurriculum,
   onSelectGuide,
+  onSelectMindMap,
 }) => {
   const [query, setQuery] = useState('');
 
@@ -64,6 +66,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     const q = query.trim().toLowerCase();
     if (!q) {
       return [
+        {
+          kind: 'mind-map' as const,
+          targetId: 'mind-map',
+          contextLabel: 'All Sections · Common · Merged',
+          matchType: 'Mind Map',
+          title: 'Complete VLSI Atlas Mind Map (Sections, Common & Merged)',
+          snippet: 'Interactive architecture mind map connecting all 6 sections, 24 sub-branches, and 8 common cross-cutting bridges',
+        },
         {
           kind: 'guide' as const,
           targetId: 'platform-guide',
@@ -92,6 +102,23 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     }
 
     const out: SearchResultItem[] = [];
+
+    if (
+      'mind map all sections common merged bridges architecture tree overview'.includes(q) ||
+      q.includes('mind') ||
+      q.includes('merged') ||
+      q.includes('common') ||
+      q.includes('section')
+    ) {
+      out.push({
+        kind: 'mind-map',
+        targetId: 'mind-map',
+        contextLabel: 'All Sections · Common · Merged',
+        matchType: 'Mind Map',
+        title: 'Complete VLSI Atlas Mind Map (Sections, Common & Merged)',
+        snippet: 'Interactive CAD mind map combining all 6 sections, 24 sub-branches, and 8 common cross-cutting bridges',
+      });
+    }
 
     if (
       'how to use what where to find everything platform guide help navigation roadmap shortcuts workflows'.includes(q) ||
@@ -273,7 +300,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   if (!isOpen) return null;
 
   const handleSelect = (r: SearchResultItem) => {
-    if (r.kind === 'guide') onSelectGuide?.();
+    if (r.kind === 'mind-map') onSelectMindMap?.();
+    else if (r.kind === 'guide') onSelectGuide?.();
     else if (r.kind === 'protocol') onSelectProtocol(r.targetId);
     else if (r.kind === 'ip') onSelectIp(r.targetId);
     else if (r.kind === 'soc') onSelectSoc();

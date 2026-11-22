@@ -279,6 +279,21 @@ export const PlatformGuideView: React.FC<PlatformGuideViewProps> = ({
         icon: GraduationCap,
       },
       {
+        id: 'guide-mind-map',
+        group: 'explainers-kg',
+        title: 'Complete Mind Map (All Sections, Common & Merged)',
+        whereToFind: 'Top Header -> Mind Map (or Home Utility Strip -> All Sections & Common Mind Map)',
+        bestFor: 'Seeing the entire VLSI Atlas at a glance — every section, cross-cutting common concept, and direct jump links',
+        whatItContains: 'Interactive infinity-mesh Mind Map switching between Merged (All + Common), All Sections (6 Pillars / 24 Branches), and Common Bridges (8 shared foundations like Valid/Ready, CDC, SVA, RAL, Coherency).',
+        howToUseSteps: [
+          'Switch modes between Merged (All + Common), All Sections, and Common Bridges depending on your focus.',
+          'Click any branch, sub-branch, or Common Bridge node to highlight cross-section dependencies and launch directly into that workbench.',
+        ],
+        primaryLabel: 'Open Mind Map',
+        primaryView: 'mind-map',
+        icon: Network,
+      },
+      {
         id: 'guide-knowledge-graph',
         group: 'explainers-kg',
         title: 'Semiconductor Knowledge Graph & Live Repo Ingestion',

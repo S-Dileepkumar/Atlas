@@ -37,6 +37,9 @@ const RtlSvUvmStudioView = lazy(() =>
 const PlatformGuideView = lazy(() =>
   import('./components/PlatformGuideView').then((m) => ({ default: m.PlatformGuideView }))
 );
+const MindMapView = lazy(() =>
+  import('./components/MindMapView').then((m) => ({ default: m.MindMapView }))
+);
 
 function parseExplainerHash(): { active: boolean; topicId?: string; sceneIdx?: number; step?: number } {
   if (typeof window === 'undefined') return { active: false };
@@ -274,6 +277,7 @@ export default function App() {
       matchViews: ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'aes-deep-dive', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'],
     },
     { id: 'explainer', label: 'Explainers', matchViews: ['explainer'] },
+    { id: 'mind-map', label: 'Mind Map', matchViews: ['mind-map'] },
   ];
 
   // Context-aware workspace sub-bars
@@ -374,7 +378,7 @@ export default function App() {
               }`}
             >
               <GitCompareArrows className="w-4 h-4" />
-              <span>Compare</span>
+              <span className="hidden lg:inline">Compare</span>
             </button>
 
             <button
@@ -780,6 +784,17 @@ export default function App() {
               />
             )}
 
+            {view === 'mind-map' && (
+              <MindMapView
+                onNavigate={navigate}
+                onSelectProtocol={openProtocol}
+                onSelectIp={openIp}
+                onOpenCurriculum={openCurriculum}
+                onOpenExplainer={openExplainer}
+                onOpenKnowledgeGraph={openKnowledgeGraph}
+              />
+            )}
+
             {view === 'guide' && (
               <PlatformGuideView
                 onNavigate={navigate}
@@ -824,6 +839,9 @@ export default function App() {
             <button type="button" onClick={() => navigate('glossary')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
               Glossary
             </button>
+            <button type="button" onClick={() => navigate('mind-map')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer">
+              Mind Map
+            </button>
             <button type="button" onClick={() => navigate('guide')} className="hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer font-medium text-[var(--sem-control)]">
               How to Use &amp; Guide
             </button>
@@ -844,6 +862,7 @@ export default function App() {
         }}
         onSelectCurriculum={openCurriculum}
         onSelectGuide={() => navigate('guide')}
+        onSelectMindMap={() => navigate('mind-map')}
       />
     </div>
   );
