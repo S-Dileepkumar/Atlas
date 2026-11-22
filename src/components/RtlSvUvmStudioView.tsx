@@ -125,9 +125,21 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const selectModule = (id: string) => {
+  const selectModule = (id: string, scrollToReader = false) => {
+    const savedScrollY = window.scrollY;
     setSelectedModuleId(id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (scrollToReader) {
+      const readerEl = document.getElementById('rtl-module-reader');
+      if (readerEl) {
+        readerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      window.requestAnimationFrame(() => {
+        if (Math.abs(window.scrollY - savedScrollY) > 2) {
+          window.scrollTo({ top: savedScrollY, behavior: 'auto' });
+        }
+      });
+    }
   };
 
   return (
@@ -298,7 +310,7 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
         </aside>
 
         {/* Right Detail Stream */}
-        <div className="flex-1 min-w-0 w-full space-y-8">
+        <div id="rtl-module-reader" className="scroll-mt-20 flex-1 min-w-0 w-full space-y-8 [overflow-anchor:none]">
           <article className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 sm:p-8 space-y-8">
             {/* Module Heading */}
             <header className="pb-6 border-b border-[var(--border-subtle)] space-y-3">
@@ -431,7 +443,7 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
             {prevMod ? (
               <button
                 type="button"
-                onClick={() => selectModule(prevMod.id)}
+                onClick={() => selectModule(prevMod.id, true)}
                 className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -446,7 +458,7 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
             {nextMod && (
               <button
                 type="button"
-                onClick={() => selectModule(nextMod.id)}
+                onClick={() => selectModule(nextMod.id, true)}
                 className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer ml-auto"
               >
                 <span>

@@ -191,19 +191,19 @@ export const ComparisonEngine: React.FC<ComparisonEngineProps> = ({ initialProto
 
       {/* Quick Jump Footer */}
       <div className="flex flex-wrap items-center gap-3 text-xs">
-        <span className="text-slate-500 dark:text-slate-400">Open full reference:</span>
+        <span className="text-[var(--text-secondary)]">Open full reference:</span>
         <button
           type="button"
           onClick={() => onSelectProtocol(docA.id)}
-          className="text-cyan-700 dark:text-cyan-400 font-medium hover:underline cursor-pointer"
+          className="text-[var(--sem-control)] font-medium hover:underline cursor-pointer"
         >
           {docA.name} Documentation →
         </button>
-        <span className="text-slate-400" aria-hidden="true">·</span>
+        <span className="text-[var(--text-secondary)]" aria-hidden="true">·</span>
         <button
           type="button"
           onClick={() => onSelectProtocol(docB.id)}
-          className="text-blue-700 dark:text-blue-400 font-medium hover:underline cursor-pointer"
+          className="text-[var(--sem-high)] font-medium hover:underline cursor-pointer"
         >
           {docB.name} Documentation →
         </button>

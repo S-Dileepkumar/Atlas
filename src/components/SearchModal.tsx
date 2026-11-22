@@ -85,6 +85,24 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     if (!q) {
       return [
         {
+          kind: 'crypto' as const,
+          targetId: 'pqc-ml-kem',
+          chapterId: 'ch8-pqc',
+          contextLabel: 'Ch 08 · NIST FIPS 203 + Area Estimator',
+          matchType: 'Quick Jump',
+          title: 'ML-KEM (Kyber) & Lattice NTT Accelerator',
+          snippet: 'Inspect Module-LWE polynomial math, Z_3329 butterfly pipeline, and ASIC area/cycle tradeoffs',
+        },
+        {
+          kind: 'crypto' as const,
+          targetId: 'atk-sca',
+          chapterId: 'ch7-attacks',
+          contextLabel: 'Ch 07 · Power, EM & Masking Lab',
+          matchType: 'Quick Jump',
+          title: 'Side-Channel & Fault Reverse Engineering Lab',
+          snippet: 'Simulate SPA/DPA/CPA Hamming-weight leakage and 1st-order DOM masking attenuation',
+        },
+        {
           kind: 'mind-map' as const,
           targetId: 'mind-map',
           contextLabel: 'All Sections · Common · Merged',
@@ -100,7 +118,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           title: 'How to Use What & Where to Find Everything',
           snippet: 'Interactive roadmap across 498 protocols, 42 RTL/SV/UVM modules, 37 silicon IPs, Explainers & Knowledge Graph',
         },
-        ...ALL_IPS.slice(0, 4).map((ip) => ({
+        ...ALL_IPS.slice(0, 3).map((ip) => ({
           kind: 'ip' as const,
           targetId: ip.id,
           contextLabel: ip.category,
@@ -108,7 +126,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           title: `${ip.name} (${ip.rtlLanguage})`,
           snippet: ip.tagline,
         })),
-        ...ALL_PROTOCOLS.slice(0, 4).map((p) => ({
+        ...ALL_PROTOCOLS.slice(0, 3).map((p) => ({
           kind: 'protocol' as const,
           targetId: p.id,
           contextLabel: `${p.standardBody} · ${getLifecycleStatus(p)}`,

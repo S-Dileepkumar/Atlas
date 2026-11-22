@@ -1,9 +1,7 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import {
   ArrowUp,
   Check,
-  ChevronDown,
-  Compass,
   Dices,
   GitCompareArrows,
   HelpCircle,
@@ -17,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AppView, HomeDashboard } from './components/HomeDashboard';
 import { AtlasLogoMark, BrandBannerLockup } from './components/BrandLogo';
+import { QuickJumpMenu, QuickJumpTargetId } from './components/QuickJumpMenu';
 import { SearchModal } from './components/SearchModal';
 import { ALL_PROTOCOLS, getProtocolById } from './data/protocols';
 import { ALL_IPS, getIpById } from './data/ips';
@@ -104,9 +103,7 @@ export default function App() {
   const [compareIpAId, setCompareIpAId] = useState<string | undefined>(undefined);
   const [curriculumModuleId, setCurriculumModuleId] = useState<string | undefined>(undefined);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
-  const [quickJumpOpen, setQuickJumpOpen] = useState<boolean>(false);
   const [paletteOpen, setPaletteOpen] = useState<boolean>(false);
-  const quickJumpRef = useRef<HTMLDivElement | null>(null);
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
@@ -163,9 +160,8 @@ export default function App() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (quickJumpOpen) setQuickJumpOpen(false);
-        if (paletteOpen) setPaletteOpen(false);
+      if (e.key === 'Escape' && paletteOpen) {
+        setPaletteOpen(false);
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -184,9 +180,6 @@ export default function App() {
       }
     };
     const onPointerDown = (e: MouseEvent) => {
-      if (quickJumpRef.current && !quickJumpRef.current.contains(e.target as Node)) {
-        setQuickJumpOpen(false);
-      }
       if (paletteRef.current && !paletteRef.current.contains(e.target as Node)) {
         setPaletteOpen(false);
       }
@@ -197,7 +190,7 @@ export default function App() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('mousedown', onPointerDown);
     };
-  }, [quickJumpOpen, paletteOpen]);
+  }, [paletteOpen]);
 
   const pickDifferent = <T,>(items: T[], getId: (item: T) => string, currentId?: string): T => {
     const pool = items.length > 1 && currentId ? items.filter((item) => getId(item) !== currentId) : items;
@@ -234,6 +227,26 @@ export default function App() {
     }
     setView(v);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleQuickJump = (target: QuickJumpTargetId) => {
+    if (target === 'ml-kem') {
+      setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ml-kem', lab: 'params' });
+      navigate('crypto');
+    } else if (target === 'ml-dsa') {
+      setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ml-dsa', lab: 'pqc' });
+      navigate('crypto');
+    } else if (target === 'sca-lab') {
+      setCryptoTarget({ chapterId: 'ch7-attacks', subtopicId: 'atk-sca', lab: 'sca' });
+      navigate('crypto');
+    } else if (target === 'ntt-butterfly') {
+      setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ntt-math', lab: 'pqc' });
+      navigate('crypto');
+    } else if (target === 'ip-catalog') {
+      navigate('ip-universe');
+    } else {
+      navigate('protocol');
+    }
   };
 
   const openCurriculum = (pillar: CurriculumPillarId, moduleId?: string) => {
@@ -460,102 +473,13 @@ export default function App() {
             </nav>
           </div>
 
-          {/* Right: Quick Jump + Compare Matrix + Guide + Search + Feeling Lucky + Theme Toggle */}
+          {/* Right: Compare Matrix + Guide + Search + Feeling Lucky + Palette + Theme Toggle */}
           <div className="flex items-center gap-2 shrink-0">
-            <div ref={quickJumpRef} className="relative hidden md:block">
-              <button
-                type="button"
-                onClick={() => setQuickJumpOpen((v) => !v)}
-                aria-expanded={quickJumpOpen}
-                aria-haspopup="menu"
-                title="Quick Jump to KEM, Signatures, Side-Channel, NTT & IP Catalog"
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  quickJumpOpen
-                    ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--sem-control)]'
-                    : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)]'
-                }`}
-              >
-                <Compass className="w-3.5 h-3.5 text-[var(--sem-control)]" />
-                <span>Quick Jump</span>
-                <ChevronDown className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-              </button>
-
-              {quickJumpOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 mt-2 w-64 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-2xl py-1.5 z-50 text-xs"
-                >
-                  <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-[var(--text-secondary)]">
-                    Direct Silicon &amp; PQC Jumps
-                  </div>
-                  {[
-                    {
-                      label: 'KEM · ML-KEM (FIPS 203)',
-                      meta: 'Ch 08 + Area Estimator',
-                      action: () => {
-                        setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ml-kem', lab: 'params' });
-                        navigate('crypto');
-                      },
-                    },
-                    {
-                      label: 'Signatures · ML-DSA & FN-DSA',
-                      meta: 'Ch 08 + 2026 Matrix',
-                      action: () => {
-                        setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ml-dsa', lab: 'pqc' });
-                        navigate('crypto');
-                      },
-                    },
-                    {
-                      label: 'Side-Channel & Fault Lab',
-                      meta: 'Ch 07 + DOM Power Trace',
-                      action: () => {
-                        setCryptoTarget({ chapterId: 'ch7-attacks', subtopicId: 'atk-sca', lab: 'sca' });
-                        navigate('crypto');
-                      },
-                    },
-                    {
-                      label: 'NTT Butterfly Accelerator',
-                      meta: 'Z_3329 Stage Inspector',
-                      action: () => {
-                        setCryptoTarget({ chapterId: 'ch8-pqc', subtopicId: 'pqc-ntt-math', lab: 'pqc' });
-                        navigate('crypto');
-                      },
-                    },
-                    {
-                      label: 'IP Catalog (37 Silicon IPs)',
-                      meta: 'Ibex, OpenTitan, CVA6, Vortex',
-                      action: () => navigate('ip-universe'),
-                    },
-                    {
-                      label: 'Protocol Specs (498 Buses)',
-                      meta: 'AXI4, TL-UL, PCIe Gen5, CXL',
-                      action: () => navigate('protocol'),
-                    },
-                  ].map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setQuickJumpOpen(false);
-                        item.action();
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer flex items-center justify-between gap-2"
-                    >
-                      <span className="font-medium text-[var(--text-primary)]">{item.label}</span>
-                      <span className="font-mono text-[10px] text-[var(--sem-control)] shrink-0">
-                        {item.meta}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             <button
               type="button"
               onClick={() => navigate('compare')}
               title="Open Protocol Comparison Matrix"
+              aria-label="Open Protocol Comparison Matrix"
               className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 view === 'compare'
                   ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
@@ -563,7 +487,7 @@ export default function App() {
               }`}
             >
               <GitCompareArrows className="w-4 h-4" />
-              <span className="hidden xl:inline">Compare</span>
+              <span className="hidden 2xl:inline">Compare</span>
             </button>
 
             <button
@@ -578,7 +502,7 @@ export default function App() {
               }`}
             >
               <HelpCircle className="w-4 h-4" />
-              <span className="hidden xl:inline">Guide</span>
+              <span className="hidden 2xl:inline">Guide</span>
             </button>
 
             <button
@@ -611,7 +535,7 @@ export default function App() {
                 onClick={() => setPaletteOpen((v) => !v)}
                 aria-expanded={paletteOpen}
                 aria-haspopup="menu"
-                title="Select Color Palette"
+                title={`Color Palette: ${COLOR_PALETTES.find((p) => p.id === palette)?.name || 'Palette'}`}
                 aria-label="Select Color Palette"
                 className={`inline-flex items-center gap-1.5 px-2.5 h-8 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   paletteOpen
@@ -620,7 +544,7 @@ export default function App() {
                 }`}
               >
                 <Palette className="w-3.5 h-3.5 text-[var(--sem-control)]" />
-                <span className="hidden xl:inline">
+                <span className="hidden 2xl:inline">
                   {COLOR_PALETTES.find((p) => p.id === palette)?.name || 'Palette'}
                 </span>
                 <span
@@ -740,60 +664,86 @@ export default function App() {
 
       {/* Main Content Viewport */}
       <main className="flex-1">
-        {/* Clean Context-Aware Hub Sub-Bar */}
-        {subBarLinks.length > 0 && (
+        {/* Clean Context-Aware Hub Sub-Bar with Repositioned Quick Jump */}
+        {view !== 'home' && (
           <div className="border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/70">
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
-                {subBarLinks.map((lnk) => {
-                  const active = view === lnk.id || (lnk.id === 'ip-universe' && view === 'ip-detail');
-                  return (
-                    <button
-                      key={lnk.id}
-                      type="button"
-                      onClick={() => navigate(lnk.id)}
-                      className={`px-3 py-1 rounded whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
-                        active
-                          ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-medium'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]/60 border border-transparent'
-                      }`}
-                    >
-                      {lnk.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Use-Case Filter when inside Protocol Docs */}
-              {view === 'protocol' && (
-                <div
-                  role="group"
-                  aria-label="Protocol Doc Focus Filter"
-                  className="inline-flex items-center p-0.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] shrink-0"
-                >
-                  {(
-                    [
-                      { id: 'all', label: 'All Focus' },
-                      { id: 'rtl', label: 'RTL Focus' },
-                      { id: 'uvm', label: 'UVM Focus' },
-                      { id: 'interview', label: 'Interview Prep' },
-                    ] as const
-                  ).map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setUseCaseFilter(opt.id)}
-                      className={`px-2.5 py-1 text-[11px] font-medium rounded cursor-pointer transition-colors whitespace-nowrap ${
-                        useCaseFilter === opt.id
-                          ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-3">
+              {subBarLinks.length > 0 ? (
+                <div className="flex items-center gap-1.5 overflow-x-auto text-xs min-w-0">
+                  {subBarLinks.map((lnk) => {
+                    const active = view === lnk.id || (lnk.id === 'ip-universe' && view === 'ip-detail');
+                    return (
+                      <button
+                        key={lnk.id}
+                        type="button"
+                        onClick={() => navigate(lnk.id)}
+                        className={`px-3 py-1 rounded whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                          active
+                            ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] font-medium'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]/60 border border-transparent'
+                        }`}
+                      >
+                        {lnk.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                  <button
+                    type="button"
+                    onClick={() => navigate('home')}
+                    className="hover:text-[var(--sem-control)] transition-colors cursor-pointer"
+                  >
+                    Atlas Home
+                  </button>
+                  <span aria-hidden="true">/</span>
+                  <span className="font-medium text-[var(--text-primary)]">
+                    {view === 'explainer'
+                      ? 'Interactive Explainer Studio'
+                      : view === 'mind-map'
+                      ? 'All Sections & Common Mind Map'
+                      : view === 'glossary'
+                      ? 'Silicon Glossary'
+                      : 'Platform Guide & Navigation'}
+                  </span>
                 </div>
               )}
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0 ml-auto">
+                {/* Use-Case Filter when inside Protocol Docs */}
+                {view === 'protocol' && (
+                  <div
+                    role="group"
+                    aria-label="Protocol Doc Focus Filter"
+                    className="inline-flex items-center p-0.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] shrink-0"
+                  >
+                    {(
+                      [
+                        { id: 'all', label: 'All Focus' },
+                        { id: 'rtl', label: 'RTL Focus' },
+                        { id: 'uvm', label: 'UVM Focus' },
+                        { id: 'interview', label: 'Interview Prep' },
+                      ] as const
+                    ).map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setUseCaseFilter(opt.id)}
+                        className={`px-2.5 py-1 text-[11px] font-medium rounded cursor-pointer transition-colors whitespace-nowrap ${
+                          useCaseFilter === opt.id
+                            ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)]'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <QuickJumpMenu onJump={handleQuickJump} align="right" compact />
+              </div>
             </div>
           </div>
         )}
@@ -818,7 +768,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => handleFeelingLucky(luckyPick.scope)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[var(--sem-active)] hover:opacity-90 text-slate-950 font-semibold cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[var(--sem-active)] hover:opacity-90 text-white dark:text-slate-950 font-semibold cursor-pointer"
                 >
                   <Dices className="w-3 h-3" /> Roll Again
                 </button>
@@ -872,6 +822,7 @@ export default function App() {
                 onOpenSearch={() => setSearchOpen(true)}
                 onFeelingLucky={handleFeelingLucky}
                 onOpenExplainer={openExplainer}
+                onQuickJump={handleQuickJump}
               />
             )}
 

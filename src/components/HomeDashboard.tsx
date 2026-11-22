@@ -34,6 +34,7 @@ import {
   getLifecycleStatus,
 } from '../utils/entityTaxonomy';
 import { AtlasLogoMark } from './BrandLogo';
+import { QuickJumpMenu, QuickJumpTargetId } from './QuickJumpMenu';
 
 export type AppView =
   | 'home'
@@ -76,6 +77,7 @@ interface HomeDashboardProps {
   onOpenSearch: () => void;
   onFeelingLucky?: (scope?: 'any' | 'protocol' | 'ip') => void;
   onOpenExplainer?: (topicId?: string) => void;
+  onQuickJump?: (target: QuickJumpTargetId) => void;
 }
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({
@@ -86,6 +88,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
   onOpenSearch,
   onFeelingLucky,
   onOpenExplainer,
+  onQuickJump,
 }) => {
   const [activeCategory, setActiveCategory] = useState<CategoryId | 'all'>('all');
   const [entityFilter, setEntityFilter] = useState<EntityClassification | 'ALL'>('ALL');
@@ -209,6 +212,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
             <BookOpen className="w-4 h-4 text-[var(--sem-control)]" />
             How to Use &amp; Guide
           </button>
+          {onQuickJump && <QuickJumpMenu onJump={onQuickJump} align="right" />}
         </div>
       </div>
 
