@@ -1212,7 +1212,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => {
-                      setCryptoTarget({ chapterId: 'ch8-pqc', lab: 'pqc' });
+                      setCryptoTarget({ chapterId: 'ch8-pqc' });
                       navigate('crypto');
                     }}
                     className="text-left font-medium text-[var(--text-primary)] hover:text-[var(--sem-control)] transition-colors cursor-pointer"

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   ArrowLeft,
@@ -96,11 +96,20 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
   const [highlightedSubtopicId, setHighlightedSubtopicId] = useState<string | undefined>(
     initialSubtopicId
   );
+  const [activeSubtopicId, setActiveSubtopicId] = useState<string | undefined>(
+    () =>
+      initialSubtopicId ||
+      (initialChapterId
+        ? CRYPTO_CURRICULUM.find((c) => c.id === initialChapterId)?.subtopics[0]?.id
+        : CRYPTO_CURRICULUM[0]?.subtopics[0]?.id)
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [activeStratumFilter, setActiveStratumFilter] = useState<StackStratumId | 'all'>('all');
   const [activeLab, setActiveLab] = useState<LabTabId>(initialLab || 'pqc');
-  const [labOpen, setLabOpen] = useState(true);
+  const [labOpen, setLabOpen] = useState<boolean>(Boolean(initialLab));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const leftSidebarScrollRef = useRef<HTMLDivElement | null>(null);
+  const suppressSpyUntilRef = useRef<number>(0);
 
   // Collapsible hierarchical sidebar state (persisted)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
@@ -188,15 +197,17 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
         setSearchQuery('');
         setSelectedChapterId(owner.id);
         setHighlightedSubtopicId(initialSubtopicId);
+        setActiveSubtopicId(initialSubtopicId);
       }
     }
   }, [initialSubtopicId]);
 
   useEffect(() => {
     if (!highlightedSubtopicId) return;
+    suppressSpyUntilRef.current = Date.now() + 650;
     const timer = window.setTimeout(() => {
       const el = document.getElementById(`crypto-sub-${highlightedSubtopicId}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
     return () => window.clearTimeout(timer);
   }, [highlightedSubtopicId, selectedChapterId]);
@@ -322,10 +333,98 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
     [mlKemK, mlKemEta1, mlKemDu, mlKemDv, mlKemHwMode]
   );
 
+  // Scroll-spy: highlight the subtopic currently crossing the reading line as user scrolls
+  useEffect(() => {
+    if (visibleSubtopics.length === 0) return;
+    let rafId = 0;
+
+    const updateActiveFromScroll = () => {
+      rafId = 0;
+      if (Date.now() < suppressSpyUntilRef.current) return;
+
+      const readingLine = 150;
+      const nearBottom =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 40;
+
+      let nextId = visibleSubtopics[0].id;
+      if (nearBottom) {
+        nextId = visibleSubtopics[visibleSubtopics.length - 1].id;
+      } else {
+        for (const sub of visibleSubtopics) {
+          const el = document.getElementById(`crypto-sub-${sub.id}`);
+          if (!el) continue;
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= readingLine) {
+            nextId = sub.id;
+          } else {
+            break;
+          }
+        }
+      }
+
+      setActiveSubtopicId((prev) => (prev === nextId ? prev : nextId));
+    };
+
+    const onScroll = () => {
+      if (!rafId) {
+        rafId = window.requestAnimationFrame(updateActiveFromScroll);
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, [visibleSubtopics]);
+
+  // Keep the left sidebar & right mini-TOC scrolled cleanly to the active subtopic/chapter
+  useEffect(() => {
+    const scrollContainerToTarget = (
+      container: HTMLElement | null,
+      target: HTMLElement | null
+    ) => {
+      if (!container || !target) return;
+      const cRect = container.getBoundingClientRect();
+      const tRect = target.getBoundingClientRect();
+      const pad = 20;
+      if (tRect.top < cRect.top + pad || tRect.bottom > cRect.bottom - pad) {
+        const nextTop =
+          container.scrollTop + (tRect.top - cRect.top) - (cRect.height / 2 - tRect.height / 2);
+        container.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+      }
+    };
+
+    const subTarget = activeSubtopicId
+      ? document.getElementById(`crypto-sidebar-sub-${activeSubtopicId}`)
+      : null;
+    const chTarget = document.getElementById(`crypto-sidebar-ch-${activeChapter.id}`);
+    scrollContainerToTarget(leftSidebarScrollRef.current, subTarget || chTarget);
+  }, [activeSubtopicId, activeChapter.id]);
+
+  const jumpToSubtopic = (subId: string) => {
+    suppressSpyUntilRef.current = Date.now() + 650;
+    setActiveSubtopicId(subId);
+    setHighlightedSubtopicId(subId);
+    setMobileSidebarOpen(false);
+    const el = document.getElementById(`crypto-sub-${subId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const selectChapter = (id: string, subId?: string, forceScrollToReader = false) => {
     const savedScrollY = window.scrollY;
+    const targetChapter = CRYPTO_CURRICULUM.find((c) => c.id === id);
+    const ownerGroup = SIDEBAR_GROUPS.find((g) => g.chapterIds.includes(id));
+    if (ownerGroup) {
+      setExpandedGroups((prev) => (prev[ownerGroup.id] === false ? { ...prev, [ownerGroup.id]: true } : prev));
+    }
     setSelectedChapterId(id);
     setHighlightedSubtopicId(subId);
+    setActiveSubtopicId(subId || targetChapter?.subtopics[0]?.id);
     setMobileSidebarOpen(false);
     if (forceScrollToReader && !subId) {
       const readerEl = document.getElementById('crypto-chapter-reader');
@@ -511,9 +610,15 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
       {/* Interactive Engineering Workbench */}
       <section
         id="crypto-workbench"
-        className="scroll-mt-24 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 space-y-5 no-print"
+        className={`scroll-mt-24 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-5 no-print ${
+          labOpen ? 'space-y-5' : ''
+        }`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]">
+        <div
+          className={`flex flex-wrap items-center justify-between gap-4 ${
+            labOpen ? 'pb-4 border-b border-[var(--border-subtle)]' : ''
+          }`}
+        >
           <div className="space-y-0.5">
             <div className="text-xs font-mono text-[var(--sem-control)] font-medium">
               Implementation Lab · Interactive Silicon &amp; Cryptographic Calculators
@@ -563,7 +668,11 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
             <button
               type="button"
               onClick={() => setLabOpen((v) => !v)}
-              className="px-3 py-1.5 text-xs rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer whitespace-nowrap shrink-0"
+              className={`px-3 py-1.5 text-xs font-medium rounded-md border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                labOpen
+                  ? 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  : 'border-[var(--sem-control)]/50 bg-[var(--bg-canvas)] text-[var(--sem-control)] hover:border-[var(--sem-control)]'
+              }`}
             >
               {labOpen ? 'Hide Lab' : 'Show Lab'}
             </button>
@@ -1402,7 +1511,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
         )}
       </section>
 
-      {/* Main Three-Zone Documentation Architecture: Left Hierarchical Nav | Main Reader | Right Sticky Mini-TOC & Related Silicon */}
+      {/* Main Three-Zone Documentation Architecture: Left Hierarchical Nav | Main Reader | Right Sticky Parameter Snapshot & Related Silicon */}
       <div
         id="crypto-chapter-reader"
         className="scroll-mt-28 [overflow-anchor:none] grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
@@ -1450,7 +1559,10 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
               )}
             </div>
 
-            <div className="space-y-2 max-h-[65vh] overflow-y-auto [overflow-anchor:none] pr-1">
+            <div
+              ref={leftSidebarScrollRef}
+              className="space-y-2 max-h-[65vh] overflow-y-auto [overflow-anchor:none] pr-1"
+            >
               {SIDEBAR_GROUPS.map((grp) => {
                 const grpChapters = filteredChapters.filter((ch) =>
                   grp.chapterIds.includes(ch.id)
@@ -1479,6 +1591,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                         return (
                           <div key={ch.id} className="space-y-1">
                             <button
+                              id={`crypto-sidebar-ch-${ch.id}`}
                               type="button"
                               onClick={() => selectChapter(ch.id)}
                               className={`w-full text-left px-3 py-2 rounded-md border transition-colors cursor-pointer ${
@@ -1498,21 +1611,27 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
 
                             {active && (
                               <div className="pl-3 space-y-0.5 pb-1">
-                                {ch.subtopics.map((sub) => (
-                                  <button
-                                    key={sub.id}
-                                    type="button"
-                                    onClick={() => setHighlightedSubtopicId(sub.id)}
-                                    className={`w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors cursor-pointer truncate ${
-                                      highlightedSubtopicId === sub.id
-                                        ? 'text-[var(--sem-control)] font-semibold bg-[var(--bg-canvas)]'
-                                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                                    }`}
-                                    title={sub.title}
-                                  >
-                                    {sub.title}
-                                  </button>
-                                ))}
+                                {ch.subtopics.map((sub) => {
+                                  const isSubActive =
+                                    activeSubtopicId === sub.id ||
+                                    (!activeSubtopicId && highlightedSubtopicId === sub.id);
+                                  return (
+                                    <button
+                                      key={sub.id}
+                                      id={`crypto-sidebar-sub-${sub.id}`}
+                                      type="button"
+                                      onClick={() => jumpToSubtopic(sub.id)}
+                                      className={`w-full text-left px-2.5 py-1.5 rounded-r text-xs border-l-2 transition-colors cursor-pointer truncate ${
+                                        isSubActive
+                                          ? 'border-[var(--sem-control)] text-[var(--sem-control)] font-semibold bg-[var(--bg-elevated)]'
+                                          : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-canvas)]'
+                                      }`}
+                                      title={sub.title}
+                                    >
+                                      {sub.title}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -1614,14 +1733,17 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
           <div className="space-y-5">
             {visibleSubtopics.map((sub, idx) => {
               const isHighlighted = highlightedSubtopicId === sub.id;
+              const isActiveInView = activeSubtopicId === sub.id;
               const isCollapsed = collapsedSubtopics[sub.id] ?? !showSiliconNotes;
               return (
                 <article
                   key={sub.id}
                   id={`crypto-sub-${sub.id}`}
-                  className={`rounded-lg border p-6 space-y-4 transition-colors ${
+                  className={`scroll-mt-24 rounded-lg border p-6 space-y-4 transition-colors ${
                     isHighlighted
                       ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)]'
+                      : isActiveInView
+                      ? 'border-[var(--sem-control)]/60 bg-[var(--bg-surface)]'
                       : 'border-[var(--border-subtle)] bg-[var(--bg-surface)]'
                   }`}
                 >
@@ -1752,35 +1874,8 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
           </div>
         </div>
 
-        {/* Right Sticky Mini-TOC + Live Parameter Snapshot + Related Silicon */}
+        {/* Right Sticky Live Parameter Snapshot + Related Silicon */}
         <aside className="hidden xl:block xl:col-span-3 xl:sticky xl:top-[76px] space-y-4 no-print">
-          {/* Mini-TOC */}
-          <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-[var(--text-primary)]">On This Chapter</span>
-              <span className="font-mono tabular-nums text-[var(--sem-control)]">
-                {progressPct}% stack
-              </span>
-            </div>
-            <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
-              {visibleSubtopics.map((sub, i) => (
-                <button
-                  key={sub.id}
-                  type="button"
-                  onClick={() => setHighlightedSubtopicId(sub.id)}
-                  className={`w-full text-left px-2 py-1 rounded text-xs transition-colors cursor-pointer truncate ${
-                    highlightedSubtopicId === sub.id
-                      ? 'bg-[var(--bg-elevated)] text-[var(--sem-control)] font-semibold'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                  }`}
-                  title={sub.title}
-                >
-                  {activeChapter.number}.{i + 1} {sub.title}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Live ML-KEM Snapshot */}
           <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 space-y-3 text-xs">
             <div className="flex items-center justify-between">
