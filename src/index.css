@@ -1,6 +1,21 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --text-xs: 0.84375rem;
+  --text-xs--line-height: 1.55;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.65;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.65;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.45;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 1.25;
+}
+
 @layer base {
   /* ============================================================================
      PALETTE 1 (DEFAULT): SILICON CYAN — High-Contrast EDA & Oscilloscope
@@ -283,6 +298,8 @@
 
   body {
     font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.65;
     background-color: var(--bg-canvas);
     color: var(--text-primary);
     transition: background-color 180ms ease, color 180ms ease;

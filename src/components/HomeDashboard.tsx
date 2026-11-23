@@ -717,7 +717,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
                       {p.fullName}
                     </span>
                   </h3>
-                  <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">
+                  <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
                     {p.tagline}
                   </p>
                 </div>

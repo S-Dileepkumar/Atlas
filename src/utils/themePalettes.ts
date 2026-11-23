@@ -14,7 +14,7 @@ export interface ColorPaletteOption {
 }
 
 export const COLOR_PALETTE_STORAGE_KEY = 'vpa_color_palette_v1';
-export const THEME_MODE_STORAGE_KEY = 'vpa_theme_mode_v1';
+export const THEME_MODE_STORAGE_KEY = 'vpa_theme_mode_v2';
 
 export const COLOR_PALETTES: ColorPaletteOption[] = [
   {

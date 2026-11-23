@@ -523,12 +523,12 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
 
           {/* LEVEL 1 — FUNDAMENTAL UNDERSTANDING */}
           {(depthLayer === 'all' || depthLayer === 'l1') && (
-            <div className="rounded-lg border border-cyan-500/30 bg-cyan-50/40 dark:bg-cyan-950/20 p-6 space-y-4 text-xs">
-              <div className="flex items-center gap-2 text-sm font-bold text-cyan-800 dark:text-cyan-300">
+            <div className="rounded-lg border border-cyan-500/30 bg-cyan-50/40 dark:bg-cyan-950/20 p-6 space-y-4 text-sm">
+              <div className="flex items-center gap-2 text-base font-bold text-cyan-800 dark:text-cyan-300">
                 <BookOpen className="w-4 h-4" />
                 LEVEL 1 — Fundamental Understanding (First Principles & Everyday Analogy)
               </div>
-              <p className="text-sm text-slate-800 dark:text-slate-100 leading-relaxed">
+              <p className="text-base text-slate-800 dark:text-slate-100 leading-relaxed">
                 {topic.level1Fundamental.summary}
               </p>
               <div className="p-3.5 rounded border border-cyan-500/20 bg-white/80 dark:bg-slate-900/70 text-slate-700 dark:text-slate-200 leading-relaxed">
@@ -550,12 +550,12 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
 
           {/* LEVEL 2 — ENGINEERING UNDERSTANDING */}
           {(depthLayer === 'all' || depthLayer === 'l2') && (
-            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-4 text-xs">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-4 text-sm">
+              <div className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
                 <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 LEVEL 2 — Engineering Understanding (Architecture, Math & Worked Example)
               </div>
-              <p className="text-slate-700 dark:text-slate-200 leading-relaxed text-sm">
+              <p className="text-slate-700 dark:text-slate-200 leading-relaxed text-base">
                 {topic.level2Engineering.architectureAndSpec}
               </p>
               <div className="space-y-2">
@@ -581,8 +581,8 @@ export const AesDeepDiveView: React.FC<AesDeepDiveViewProps> = ({
 
           {/* LEVEL 3 — EXPERT UNDERSTANDING */}
           {(depthLayer === 'all' || depthLayer === 'l3') && (
-            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-5 text-xs">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-100">
+            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-6 space-y-5 text-sm">
+              <div className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 LEVEL 3 — Expert Understanding (Microarchitecture, Corner Cases & Verification Trade-Offs)
               </div>

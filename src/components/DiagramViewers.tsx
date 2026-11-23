@@ -735,7 +735,7 @@ export const CodeBlock: React.FC<{ title: string; language: string; code: string
           </button>
         </div>
       </div>
-      <pre className="p-5 text-xs leading-relaxed overflow-x-auto font-mono text-[var(--text-primary)] tabular-nums">
+      <pre className="p-5 text-sm leading-relaxed overflow-x-auto font-mono text-[var(--text-primary)] tabular-nums">
         <code>{code}</code>
       </pre>
     </div>

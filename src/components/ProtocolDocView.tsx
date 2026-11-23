@@ -719,7 +719,7 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
                 </button>
               </div>
 
-              <div className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex items-start gap-3 text-xs text-[var(--text-secondary)]">
+              <div className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex items-start gap-3 text-sm text-[var(--text-secondary)]">
                 <GraduationCap className="w-4 h-4 text-[var(--sem-control)] shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-[var(--text-primary)]">In Simple Words (Student Guide): </strong>
@@ -734,15 +734,15 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                 <div>
-                  <h4 className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+                  <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">
                     Signal Definition &amp; Timing Rules
                   </h4>
-                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{selectedSignal.summary}</p>
-                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed mt-2">
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{selectedSignal.summary}</p>
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed mt-2">
                     {selectedSignal.timingRules}
                   </p>
                 </div>
-                <div className="space-y-2.5 text-xs">
+                <div className="space-y-2.5 text-sm">
                   <div>
                     <span className="font-semibold text-[var(--sem-high)]">Legal Condition: </span>
                     <span className="text-[var(--text-secondary)]">{selectedSignal.legalConditions}</span>
@@ -773,7 +773,7 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[var(--border-subtle)] text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[var(--border-subtle)] text-sm">
                 <div>
                   <h4 className="font-semibold text-[var(--text-primary)] mb-1.5">UVM Driver / Verification Note</h4>
                   <p className="text-[var(--text-secondary)] leading-relaxed">{selectedSignal.uvmDriverNote}</p>
@@ -867,7 +867,7 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
             <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 sm:p-8 space-y-6">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">01. Protocol Overview</h2>
-                <p className="text-sm text-[var(--text-secondary)] mt-2.5 leading-relaxed">
+                <p className="text-base text-[var(--text-secondary)] mt-2.5 leading-relaxed">
                   {protocol.overview.definition}
                 </p>
               </div>
@@ -875,19 +875,19 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 border-t border-[var(--border-subtle)]">
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--text-primary)]">Why It Was Developed</h3>
-                  <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">
+                  <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
                     {protocol.overview.whyDeveloped}
                   </p>
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--text-primary)]">Core Problem Solved</h3>
-                  <p className="text-xs text-[var(--text-secondary)] mt-2 leading-relaxed">
+                  <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
                     {protocol.overview.problemSolved}
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5 border-t border-[var(--border-subtle)] text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5 border-t border-[var(--border-subtle)] text-sm">
                 <div>
                   <h3 className="font-semibold text-[var(--text-primary)] mb-2.5">Primary SoC Applications</h3>
                   <ul className="space-y-1.5 text-[var(--text-secondary)] list-disc pl-4">
@@ -915,8 +915,8 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
               </div>
 
               <div className="pt-5 border-t border-[var(--border-subtle)]">
-                <h3 className="text-xs font-semibold text-[var(--text-primary)] mb-3">Role Terminology</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Role Terminology</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   {protocol.overview.terminology.map((t, i) => (
                     <div key={i} className="flex flex-col gap-0.5">
                       <span className="font-semibold font-mono text-[var(--sem-control)]">{t.term}</span>
@@ -933,12 +933,12 @@ export const ProtocolDocView: React.FC<ProtocolDocViewProps> = ({
                 <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                   02. Technical Specifications Matrix
                 </h2>
-                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                <p className="text-sm text-[var(--text-secondary)] mt-1">
                   Normative standard constraints separated from configurable and implementation-specific parameters.
                 </p>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)]">
                       <th className="py-3.5 px-6 font-semibold">Parameter</th>

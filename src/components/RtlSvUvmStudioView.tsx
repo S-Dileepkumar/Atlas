@@ -326,16 +326,16 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
                 {activeModule.title}
               </h2>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{activeModule.summary}</p>
+              <p className="text-base text-[var(--text-secondary)] leading-relaxed">{activeModule.summary}</p>
             </header>
 
             {/* First-Principles Mechanism */}
             <section className="space-y-3">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+              <h3 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-[var(--sem-control)]" />
                 Architectural Mechanism &amp; Theory
               </h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{activeModule.deepTheory}</p>
+              <p className="text-base text-[var(--text-secondary)] leading-relaxed">{activeModule.deepTheory}</p>
             </section>
 
             {/* Normative Engineering Rules */}
@@ -343,7 +343,7 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
                 Normative Synthesis &amp; Verification Rules
               </h3>
-              <ul className="space-y-2 text-xs text-[var(--text-secondary)] list-disc pl-4">
+              <ul className="space-y-2 text-sm text-[var(--text-secondary)] list-disc pl-4">
                 {activeModule.normativeRules.map((rule, idx) => (
                   <li key={idx} className="leading-relaxed">
                     {rule}
@@ -355,24 +355,24 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
             {/* Side-by-Side Common Pitfall vs Verified Fix */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
               <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-5 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--sem-error)]">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--sem-error)]">
                   <AlertTriangle className="w-4 h-4" />
                   Common Hardware / TB Pitfall
                 </div>
-                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{activeModule.commonPitfall}</p>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{activeModule.commonPitfall}</p>
               </div>
               <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-5 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--sem-high)]">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--sem-high)]">
                   <CheckCircle2 className="w-4 h-4" />
                   Verified Production Fix
                 </div>
-                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{activeModule.verifiedFix}</p>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{activeModule.verifiedFix}</p>
               </div>
             </section>
 
             {/* Compilable Code Example */}
             <section className="space-y-3 min-w-0">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
                 Production Reference Code ({activeModule.codeLanguage})
               </h3>
               <CodeBlock
@@ -384,10 +384,10 @@ export const RtlSvUvmStudioView: React.FC<RtlSvUvmStudioViewProps> = ({
 
             {/* Design Review / Interview Takeaway */}
             <section className="rounded-md border border-[var(--sem-control)]/40 bg-[var(--bg-elevated)] p-5 space-y-1.5">
-              <div className="text-xs font-semibold text-[var(--sem-control)]">
+              <div className="text-sm font-semibold text-[var(--sem-control)]">
                 Design Review &amp; Interview Takeaway
               </div>
-              <p className="text-xs text-[var(--text-primary)] leading-relaxed">{activeModule.interviewTakeaway}</p>
+              <p className="text-sm text-[var(--text-primary)] leading-relaxed">{activeModule.interviewTakeaway}</p>
             </section>
 
             {/* Cross-Links to Protocols & Open-Source IPs */}

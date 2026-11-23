@@ -33,6 +33,9 @@ import {
 } from './utils/themePalettes';
 
 const ProtocolDocView = lazy(() => import('./components/ProtocolDocView').then((m) => ({ default: m.ProtocolDocView })));
+const ProtocolDirectoryView = lazy(() =>
+  import('./components/ProtocolDirectoryView').then((m) => ({ default: m.ProtocolDirectoryView }))
+);
 const SimulatorLab = lazy(() => import('./components/SimulatorLab').then((m) => ({ default: m.SimulatorLab })));
 const ComplianceChecker = lazy(() => import('./components/ComplianceChecker').then((m) => ({ default: m.ComplianceChecker })));
 const ComparisonEngine = lazy(() => import('./components/ComparisonEngine').then((m) => ({ default: m.ComparisonEngine })));
@@ -108,9 +111,9 @@ export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       const saved = localStorage.getItem(THEME_MODE_STORAGE_KEY);
-      return saved === 'light' ? 'light' : 'dark';
+      return saved === 'dark' ? 'dark' : 'light';
     } catch {
-      return 'dark';
+      return 'light';
     }
   });
   const [palette, setPalette] = useState<ColorPaletteId>(() => {
@@ -378,13 +381,14 @@ export default function App() {
   ];
 
   // Context-aware workspace sub-bars
-  const PROTOCOL_HUB_VIEWS: AppView[] = ['protocol', 'simulator', 'checker', 'compare', 'soc-map'];
+  const PROTOCOL_HUB_VIEWS: AppView[] = ['protocol-atlas', 'protocol', 'simulator', 'checker', 'compare', 'soc-map'];
   const RTL_SV_UVM_VIEWS: AppView[] = ['rtl-design', 'systemverilog', 'uvm-studio', 'rtl-explorer', 'cdc-analyzer', 'uvm', 'verification-hub'];
   const IP_HUB_VIEWS: AppView[] = ['ip-universe', 'processors', 'gpus', 'ai-accelerators', 'ip-detail', 'ip-compare', 'soc-explorer', 'master-architecture', 'knowledge-graph', 'completeness-dashboard', 'repo-ingestion'];
   const CRYPTO_SECURITY_VIEWS: AppView[] = ['crypto', 'aes-deep-dive'];
 
   const subBarLinks: Array<{ id: AppView; label: string }> = PROTOCOL_HUB_VIEWS.includes(view)
     ? [
+        { id: 'protocol-atlas', label: `All Protocols (${ALL_PROTOCOLS.length})` },
         { id: 'protocol', label: 'Protocol Specs' },
         { id: 'simulator', label: 'Waveform Lab' },
         { id: 'checker', label: 'Compliance Checker' },
@@ -452,7 +456,7 @@ export default function App() {
               <span>VLSI Protocol Atlas</span>
             </button>
 
-            <nav className="hidden lg:flex items-center gap-3 xl:gap-4 text-[12.5px] xl:text-[13px] font-medium pl-3 border-l border-[var(--border-subtle)]">
+            <nav className="hidden lg:flex items-center gap-3 xl:gap-4 text-[13px] xl:text-[13.5px] font-medium pl-3 border-l border-[var(--border-subtle)]">
               {headerNavItems.map((item) => {
                 const active = item.matchViews.includes(view);
                 return (
@@ -813,7 +817,7 @@ export default function App() {
           }
         >
           <div key={view} className="view-transition">
-            {(view === 'home' || view === 'protocol-atlas') && (
+            {view === 'home' && (
               <HomeDashboard
                 recentIds={recentIds}
                 onSelectProtocol={openProtocol}
@@ -826,6 +830,14 @@ export default function App() {
               />
             )}
 
+            {view === 'protocol-atlas' && (
+              <ProtocolDirectoryView
+                onSelectProtocol={openProtocol}
+                onOpenExplainer={openExplainer}
+                onNavigate={navigate}
+              />
+            )}
+
             {view === 'protocol' && (
               <ProtocolDocView
                 protocol={getProtocolById(selectedProtocolId)}
@@ -833,7 +845,7 @@ export default function App() {
                 onSelectProtocol={openProtocol}
                 mobileSidebarOpen={mobileDocDrawerOpen}
                 onCloseMobileSidebar={() => setMobileDocDrawerOpen(false)}
-                onBack={() => navigate('home')}
+                onBack={() => navigate('protocol-atlas')}
                 onOpenLab={(simId) => {
                   setSimProtocolId(simId);
                   navigate('simulator');
@@ -1074,12 +1086,12 @@ export default function App() {
                 <BrandBannerLockup />
               </button>
 
-              <p className="leading-relaxed max-w-sm">
+              <p className="text-sm leading-relaxed max-w-sm">
                 Full-stack semiconductor reference uniting on-chip interconnect specifications, synthesizable RTL/SystemVerilog/UVM design patterns, reverse-engineered open-source cores, side-channel defenses, and NIST 2026 Post-Quantum Cryptography.
               </p>
 
               {/* Verified Corpus Inventory */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono tabular-nums text-[11px] text-[var(--text-primary)] pt-1">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono tabular-nums text-xs text-[var(--text-primary)] pt-1">
                 <span>{ALL_PROTOCOLS.length} Protocols</span>
                 <span aria-hidden="true" className="text-[var(--text-secondary)]">·</span>
                 <span>{ALL_IPS.length} Silicon IPs</span>
@@ -1112,7 +1124,7 @@ export default function App() {
 
             {/* Column 1: Protocols & Fabrics (2 cols) */}
             <div className="lg:col-span-2 space-y-3">
-              <div className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+              <div className="font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)]">
                 Protocols &amp; Fabrics
               </div>
               <ul className="space-y-2">

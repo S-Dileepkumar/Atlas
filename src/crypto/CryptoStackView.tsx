@@ -394,7 +394,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] [text-wrap:balance]">
             Reverse-Engineered Cryptography &amp; Post-Quantum Silicon Stack
           </h1>
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-[75ch]">
+          <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-[75ch]">
             Complete VLSI semiconductor security engineering reference moving bottom-up from mathematical foundations, CMOS gates, and CPU/cache microarchitecture through constant-time accelerators, side-channel &amp; fault reverse engineering, and NIST 2026 Post-Quantum Cryptography.
           </p>
         </div>
@@ -1463,7 +1463,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                     <button
                       type="button"
                       onClick={() => toggleSidebarGroup(grp.id)}
-                      className="w-full flex items-center justify-between gap-2 px-2 py-1 text-[11px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                      className="w-full flex items-center justify-between gap-2 px-2 py-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
                     >
                       <span>{grp.label}</span>
                       <ChevronDown
@@ -1487,11 +1487,11 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                                   : 'border-transparent hover:bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2 text-[11px] font-mono tabular-nums text-[var(--sem-control)]">
+                              <div className="flex items-center justify-between gap-2 text-xs font-mono tabular-nums text-[var(--sem-control)]">
                                 <span>Chapter {String(ch.number).padStart(2, '0')}</span>
                                 <span>{ch.subtopics.length} topics</span>
                               </div>
-                              <div className="text-xs font-semibold mt-0.5 leading-snug">
+                              <div className="text-sm font-semibold mt-0.5 leading-snug">
                                 {ch.title}
                               </div>
                             </button>
@@ -1503,7 +1503,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                                     key={sub.id}
                                     type="button"
                                     onClick={() => setHighlightedSubtopicId(sub.id)}
-                                    className={`w-full text-left px-2.5 py-1.5 rounded text-[11px] transition-colors cursor-pointer truncate ${
+                                    className={`w-full text-left px-2.5 py-1.5 rounded text-xs transition-colors cursor-pointer truncate ${
                                       highlightedSubtopicId === sub.id
                                         ? 'text-[var(--sem-control)] font-semibold bg-[var(--bg-canvas)]'
                                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -1587,10 +1587,10 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
               {activeChapter.number}. {activeChapter.title}
             </h2>
 
-            <div className="grid grid-cols-1 gap-3 text-xs">
+            <div className="grid grid-cols-1 gap-3 text-sm">
               <div className="p-4 rounded-md border border-[var(--sem-active)]/40 bg-[var(--bg-canvas)] space-y-1.5">
                 <div className="font-semibold text-[var(--sem-active)] flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5" />
+                  <Cpu className="w-4 h-4" />
                   Silicon &amp; VLSI Security Engineer Perspective
                 </div>
                 <p className="text-[var(--text-secondary)] leading-relaxed max-w-[75ch]">
@@ -1600,7 +1600,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
 
               <div className="p-4 rounded-md border border-[var(--sem-high)]/40 bg-[var(--bg-canvas)] space-y-1.5">
                 <div className="font-semibold text-[var(--sem-high)] flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5" />
+                  <Lock className="w-4 h-4" />
                   Verified Architectural Takeaway
                 </div>
                 <p className="text-[var(--text-secondary)] leading-relaxed max-w-[75ch]">
@@ -1633,7 +1633,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                       <h3 className="text-lg font-bold text-[var(--text-primary)]">
                         {sub.title}
                       </h3>
-                      <p className="text-sm text-[var(--text-secondary)] leading-relaxed max-w-[75ch]">
+                      <p className="text-base text-[var(--text-secondary)] leading-relaxed max-w-[75ch]">
                         {sub.summary}
                       </p>
                     </div>
@@ -1654,10 +1654,10 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                   {!isCollapsed && (
                     <>
                       {/* Side-by-Side Math / Formal <-> Silicon / RTL <-> Attack / Defense */}
-                      <div className="space-y-3 text-xs">
+                      <div className="space-y-3 text-sm">
                         <div className="p-4 formula-highlight space-y-1.5">
                           <div className="font-semibold text-[var(--sem-control)] flex items-center gap-1.5">
-                            <BookOpen className="w-3.5 h-3.5" />
+                            <BookOpen className="w-4 h-4" />
                             Mechanics &amp; Formal Structure
                           </div>
                           <p className="text-[var(--text-primary)] leading-relaxed max-w-[75ch]">
@@ -1668,7 +1668,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div className="p-4 rounded-md border border-[var(--sem-active)]/40 bg-[var(--bg-canvas)] space-y-1.5">
                             <div className="font-semibold text-[var(--sem-active)] flex items-center gap-1.5">
-                              <Cpu className="w-3.5 h-3.5" />
+                              <Cpu className="w-4 h-4" />
                               Silicon Notes (RTL, Area &amp; Microarchitecture)
                             </div>
                             <p className="text-[var(--text-secondary)] leading-relaxed">
@@ -1678,7 +1678,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
 
                           <div className="p-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] space-y-1.5">
                             <div className="font-semibold text-[var(--sem-error)] flex items-center gap-1.5">
-                              <ShieldAlert className="w-3.5 h-3.5" />
+                              <ShieldAlert className="w-4 h-4" />
                               Attack Surface &amp; Countermeasures
                             </div>
                             <p className="text-[var(--text-secondary)] leading-relaxed">
@@ -1768,7 +1768,7 @@ export const CryptoStackView: React.FC<CryptoStackViewProps> = ({
                   key={sub.id}
                   type="button"
                   onClick={() => setHighlightedSubtopicId(sub.id)}
-                  className={`w-full text-left px-2 py-1 rounded text-[11px] transition-colors cursor-pointer truncate ${
+                  className={`w-full text-left px-2 py-1 rounded text-xs transition-colors cursor-pointer truncate ${
                     highlightedSubtopicId === sub.id
                       ? 'bg-[var(--bg-elevated)] text-[var(--sem-control)] font-semibold'
                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
