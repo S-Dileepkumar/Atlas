@@ -436,7 +436,7 @@ export default function App() {
       <header className="sticky top-0 z-40 h-[60px] border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]/95 backdrop-blur-md">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
           {/* Left: Mobile Drawer Trigger + Brand + Primary Hub Nav */}
-          <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center gap-3 xl:gap-4 flex-1 min-w-0">
             {view === 'protocol' && (
               <button
                 type="button"
@@ -456,7 +456,7 @@ export default function App() {
               <span>VLSI Protocol Atlas</span>
             </button>
 
-            <nav className="hidden lg:flex items-center gap-3 xl:gap-4 text-[13px] xl:text-[13.5px] font-medium pl-3 border-l border-[var(--border-subtle)]">
+            <nav className="hidden lg:flex items-center gap-2.5 xl:gap-3.5 text-[13px] xl:text-[13.5px] font-medium pl-3 border-l border-[var(--border-subtle)] min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {headerNavItems.map((item) => {
                 const active = item.matchViews.includes(view);
                 return (
@@ -477,22 +477,8 @@ export default function App() {
             </nav>
           </div>
 
-          {/* Right: Compare Matrix + Guide + Search + Feeling Lucky + Palette + Theme Toggle */}
+          {/* Right: Guide + Search + Feeling Lucky + Palette + Theme Toggle */}
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => navigate('compare')}
-              title="Open Protocol Comparison Matrix"
-              aria-label="Open Protocol Comparison Matrix"
-              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                view === 'compare'
-                  ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
-                  : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
-              }`}
-            >
-              <GitCompareArrows className="w-4 h-4" />
-              <span className="hidden 2xl:inline">Compare</span>
-            </button>
 
             <button
               type="button"
@@ -745,6 +731,21 @@ export default function App() {
                     ))}
                   </div>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => navigate('compare')}
+                  title="Open Protocol Comparison Matrix"
+                  aria-label="Open Protocol Comparison Matrix"
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    view === 'compare'
+                      ? 'border-[var(--sem-control)] bg-[var(--bg-elevated)] text-[var(--sem-control)]'
+                      : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] hover:bg-[var(--bg-elevated)]'
+                  }`}
+                >
+                  <GitCompareArrows className="w-3.5 h-3.5 text-[var(--sem-control)]" />
+                  <span>Compare</span>
+                </button>
 
                 <QuickJumpMenu onJump={handleQuickJump} align="right" compact />
               </div>

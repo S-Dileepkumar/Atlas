@@ -206,6 +206,14 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => onNavigate('compare')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
+          >
+            <GitCompare className="w-4 h-4 text-[var(--sem-control)]" />
+            Compare Matrix
+          </button>
+          <button
+            type="button"
             onClick={() => onNavigate('guide')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--sem-control)] transition-colors cursor-pointer whitespace-nowrap font-medium"
           >
